@@ -1,29 +1,32 @@
-import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { 
-  Car, 
-  Calendar as CalendarIcon, 
-  Clock, 
-  Wrench, 
-  Battery, 
-  Shield,
-  Zap,
-  ArrowLeft,
-  CheckCircle2
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { bookTimeSlot, getAvailableTimeSlots, getNextAvailableDates, isTimeSlotAvailable } from '@/lib/bookingUtils';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import {
+  AlertCircle,
+  ArrowLeft,
+  Battery,
+  Calendar as CalendarIcon,
+  Car,
+  CheckCircle,
+  CheckCircle2,
+  Clock,
+  Shield,
+  Wrench,
+  Zap
+} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function BookingPage() {
   const navigate = useNavigate();
@@ -33,7 +36,9 @@ export default function BookingPage() {
   const [selectedService, setSelectedService] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
-  
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+  const [nextAvailableDates, setNextAvailableDates] = useState<string[]>([]);
+
   const services = [
     {
       id: 'maintenance',
@@ -76,10 +81,28 @@ export default function BookingPage() {
     { id: 'vf5', name: 'VinFast VF5', type: 'Hatchback' }
   ];
 
-  const timeSlots = [
-    '08:00', '09:00', '10:00', '11:00', 
-    '13:00', '14:00', '15:00', '16:00'
-  ];
+  // Load next available dates on component mount
+  useEffect(() => {
+    const dates = getNextAvailableDates();
+    setNextAvailableDates(dates);
+  }, []);
+
+  // Update available time slots when date changes
+  useEffect(() => {
+    if (selectedDate) {
+      // Use local date string to avoid timezone issues
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
+
+
+      const slots = getAvailableTimeSlots(dateString);
+      const times = slots.map(slot => slot.time);
+      setAvailableTimeSlots(times);
+      setSelectedTime(''); // Reset selected time when date changes
+    }
+  }, [selectedDate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,11 +115,79 @@ export default function BookingPage() {
       return;
     }
 
-    toast({
-      title: "Đặt lịch thành công!",
-      description: "Chúng tôi sẽ liên hệ xác nhận trong vòng 24h",
-    });
-    navigate('/customer');
+    // Check if the selected time slot is still available
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+
+    if (!isTimeSlotAvailable(dateString, selectedTime)) {
+      toast({
+        title: "Khung giờ đã hết chỗ",
+        description: "Khung giờ này đã được đặt bởi khách hàng khác, vui lòng chọn khung giờ khác",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const selectedServiceData = services.find(s => s.id === selectedService);
+    const selectedVehicleData = vehicleModels.find(v => v.id === selectedVehicle);
+
+    if (selectedServiceData && selectedVehicleData) {
+      // Book the time slot
+      const bookingSuccess = bookTimeSlot(dateString, selectedTime);
+      if (!bookingSuccess) {
+        toast({
+          title: "Đặt lịch thất bại",
+          description: "Khung giờ này không còn khả dụng, vui lòng chọn khung giờ khác",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Create booking data (only plain data, no React components)
+      const bookingData = {
+        id: `BK${Date.now()}`,
+        service: {
+          id: selectedServiceData.id,
+          name: selectedServiceData.name,
+          price: selectedServiceData.price,
+          duration: selectedServiceData.duration,
+          description: selectedServiceData.description
+        },
+        vehicle: {
+          id: selectedVehicle,
+          name: selectedVehicleData.name,
+          plate: (document.getElementById('plate') as HTMLInputElement)?.value || '',
+          model: selectedVehicleData.name
+        },
+        date: dateString,
+        time: selectedTime,
+        status: 'pending' as const,
+        center: 'Trung tâm bảo dưỡng Hà Nội',
+        notes: (document.querySelector('textarea') as HTMLTextAreaElement)?.value || '',
+        createdAt: new Date().toISOString(),
+        estimatedDuration: selectedServiceData.duration
+      };
+
+      // Persist booking to localStorage
+      try {
+        const existing = JSON.parse(localStorage.getItem('bookings') || '[]');
+        const updated = Array.isArray(existing) ? [...existing, bookingData] : [bookingData];
+        localStorage.setItem('bookings', JSON.stringify(updated));
+      } catch (_) {
+        localStorage.setItem('bookings', JSON.stringify([bookingData]));
+      }
+
+      toast({
+        title: "Đặt lịch thành công!",
+        description: "Lịch hẹn đã được tạo, vui lòng chờ xác nhận",
+      });
+
+      navigate('/customer/booking-status', {
+        state: { bookingData }
+      });
+    }
   };
 
   return (
@@ -216,10 +307,32 @@ export default function BookingPage() {
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
+                      key={nextAvailableDates.join(',')}
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      disabled={(date) => date < new Date()}
+                      disabled={(date) => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+
+                        // Use local date string to avoid timezone issues
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const dateString = `${year}-${month}-${day}`;
+
+
+                        // Disable past dates
+                        if (date < today) return true;
+
+                        // If we have available dates loaded, only allow those dates
+                        if (nextAvailableDates.length > 0) {
+                          return !nextAvailableDates.includes(dateString);
+                        }
+
+                        // If no available dates loaded yet, allow all future dates
+                        return false;
+                      }}
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
                     />
@@ -231,23 +344,61 @@ export default function BookingPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Chọn giờ</CardTitle>
-                <CardDescription>Lựa chọn khung giờ phù hợp</CardDescription>
+                <CardDescription>
+                  {selectedDate
+                    ? "Lựa chọn khung giờ phù hợp"
+                    : "Vui lòng chọn ngày trước"
+                  }
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-2">
-                  {timeSlots.map((time) => (
-                    <Button
-                      key={time}
-                      type="button"
-                      variant={selectedTime === time ? "default" : "outline"}
-                      className="justify-center"
-                      onClick={() => setSelectedTime(time)}
-                    >
-                      <Clock className="w-4 h-4 mr-2" />
-                      {time}
-                    </Button>
-                  ))}
-                </div>
+                {selectedDate ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableTimeSlots.length > 0 ? (
+                      availableTimeSlots.map((time) => (
+                        <Button
+                          key={time}
+                          type="button"
+                          variant={selectedTime === time ? "default" : "outline"}
+                          className="justify-center"
+                          onClick={() => setSelectedTime(time)}
+                        >
+                          <Clock className="w-4 h-4 mr-2" />
+                          {time}
+                        </Button>
+                      ))
+                    ) : (
+                      <div className="col-span-2 text-center py-8">
+                        <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          Ngày này đã hết lịch trống
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Vui lòng chọn ngày khác
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <CalendarIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Vui lòng chọn ngày trước
+                    </p>
+                  </div>
+                )}
+
+                {/* Show slot availability info */}
+                {selectedDate && availableTimeSlots.length > 0 && (
+                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <p className="text-sm text-green-700">
+                        Còn {availableTimeSlots.length} khung giờ trống
+                      </p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -259,7 +410,7 @@ export default function BookingPage() {
               <CardDescription>Mô tả tình trạng xe hoặc yêu cầu đặc biệt</CardDescription>
             </CardHeader>
             <CardContent>
-              <Textarea 
+              <Textarea
                 placeholder="Ví dụ: Xe có tiếng ồn lạ ở bánh trước, pin sạc chậm..."
                 className="min-h-[100px]"
               />

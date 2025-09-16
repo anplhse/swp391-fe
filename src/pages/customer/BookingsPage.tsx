@@ -1,0 +1,163 @@
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar, Search, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
+type BookingStatus = 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+
+interface PlainService {
+  id: string;
+  name: string;
+  price: string;
+  duration: string;
+  description: string;
+}
+
+interface PlainVehicle {
+  id: string;
+  name: string;
+  plate: string;
+  model: string;
+}
+
+interface BookingRecord {
+  id: string;
+  service: PlainService;
+  vehicle: PlainVehicle;
+  date: string; // yyyy-MM-dd
+  time: string; // HH:mm
+  status: BookingStatus;
+  center: string;
+  notes: string;
+  createdAt: string;
+  estimatedDuration: string;
+}
+
+export default function BookingsPage() {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState<'all' | BookingStatus>('all');
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem('bookings') || '[]');
+    if (Array.isArray(stored)) setBookings(stored);
+  }, []);
+
+  const filtered = useMemo(() => {
+    return bookings.filter(b => {
+      const matchText = [
+        b.id,
+        b.service?.name,
+        b.vehicle?.name,
+        b.vehicle?.plate,
+        b.center,
+        b.date,
+        b.time,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(query.toLowerCase());
+
+      const matchStatus = status === 'all' ? true : b.status === status;
+      return matchText && matchStatus;
+    });
+  }, [bookings, query, status]);
+
+  const clearAll = () => {
+    localStorage.removeItem('bookings');
+    setBookings([]);
+  };
+
+  return (
+    <DashboardLayout title="Quản lý lịch hẹn" user={user}>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Bộ lọc</CardTitle>
+            <CardDescription>Tìm kiếm và lọc theo trạng thái</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label>Tìm kiếm</Label>
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" placeholder="Mã lịch hẹn, dịch vụ, biển số..." value={query} onChange={(e) => setQuery(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <Label>Trạng thái</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as 'all' | BookingStatus)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tất cả" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="pending">Chờ xác nhận</SelectItem>
+                  <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                  <SelectItem value="in_progress">Đang thực hiện</SelectItem>
+                  <SelectItem value="completed">Hoàn thành</SelectItem>
+                  <SelectItem value="cancelled">Đã hủy</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end justify-end">
+              <Button variant="destructive" onClick={clearAll}>
+                <Trash2 className="w-4 h-4 mr-2" /> Xóa tất cả
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Danh sách lịch hẹn</CardTitle>
+            <CardDescription>{filtered.length} lịch hẹn</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {filtered.length === 0 && (
+              <div className="text-center text-muted-foreground py-12">
+                Chưa có lịch hẹn nào
+              </div>
+            )}
+
+            {filtered.map(b => (
+              <div key={b.id} className="border rounded-lg p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <div className="font-semibold">{b.service?.name}</div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      {b.date} - {b.time}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {b.center}
+                    </div>
+                    <div className="text-sm">
+                      Xe: {b.vehicle?.name} • {b.vehicle?.plate}
+                    </div>
+                  </div>
+                  <Badge>
+                    {b.status === 'pending' && 'Chờ xác nhận'}
+                    {b.status === 'confirmed' && 'Đã xác nhận'}
+                    {b.status === 'in_progress' && 'Đang thực hiện'}
+                    {b.status === 'completed' && 'Hoàn thành'}
+                    {b.status === 'cancelled' && 'Đã hủy'}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
+  );
+}
+
+

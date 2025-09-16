@@ -1,28 +1,28 @@
-import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Package, 
-  ArrowLeft,
-  CheckCircle2,
-  Clock,
-  Star,
-  Calendar,
-  CreditCard,
-  Bell
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import {
+  ArrowLeft,
+  Bell,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  Package,
+  Star
+} from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function ServicePackagesPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  
+
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
 
   const packages = [
@@ -70,11 +70,23 @@ export default function ServicePackagesPage() {
 
   const handlePurchase = (packageId: string) => {
     const pkg = packages.find(p => p.id === packageId);
-    toast({
-      title: "Chuyển hướng thanh toán",
-      description: `Đang xử lý mua ${pkg?.name}`,
-    });
-    // Redirect to payment or show payment modal
+    if (pkg) {
+      const paymentItems = [{
+        id: pkg.id,
+        name: pkg.name,
+        type: 'package' as const,
+        price: parseInt(pkg.price.replace(/[^\d]/g, '')),
+        quantity: 1,
+        description: pkg.services.join(', ')
+      }];
+
+      navigate('/customer/payment', {
+        state: {
+          items: paymentItems,
+          from: 'packages'
+        }
+      });
+    }
   };
 
   const handleRenewal = () => {
@@ -126,7 +138,7 @@ export default function ServicePackagesPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Dịch vụ đã sử dụng:</span>
@@ -169,7 +181,7 @@ export default function ServicePackagesPage() {
                     </Badge>
                   </div>
                 )}
-                
+
                 <CardHeader className="text-center">
                   <CardTitle className="text-xl">{pkg.name}</CardTitle>
                   <div className="space-y-2">
@@ -183,7 +195,7 @@ export default function ServicePackagesPage() {
                     </Badge>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     {pkg.services.map((service, index) => (
@@ -193,9 +205,9 @@ export default function ServicePackagesPage() {
                       </div>
                     ))}
                   </div>
-                  
-                  <Button 
-                    variant={pkg.popular ? "electric" : "outline"} 
+
+                  <Button
+                    variant={pkg.popular ? "electric" : "outline"}
                     className="w-full"
                     onClick={() => handlePurchase(pkg.id)}
                   >

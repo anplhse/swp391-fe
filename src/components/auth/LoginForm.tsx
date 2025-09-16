@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
-import { Eye, EyeOff, User, Wrench, Shield } from 'lucide-react';
+import { Eye, EyeOff, Shield, User, Wrench } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface LoginFormProps {
   onLogin: (email: string, password: string, role: string, userType: 'customer' | 'service') => void;
@@ -34,32 +34,30 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       {/* User Type Selection */}
       <div className="grid grid-cols-2 gap-4">
         <Card
-          className={`cursor-pointer transition-all ${
-            userType === 'customer'
-              ? 'bg-white/20 border-white/40 ring-2 ring-white/50'
-              : 'bg-white/10 border-white/20 hover:bg-white/15'
-          }`}
+          className={`cursor-pointer transition-all ${userType === 'customer'
+              ? 'bg-secondary border-border ring-2 ring-ring'
+              : 'bg-card border'
+            }`}
           onClick={() => {
             setUserType('customer');
             setRole('');
           }}
         >
           <CardContent className="p-4 text-center">
-            <User className="w-8 h-8 text-white mx-auto mb-2" />
-            <p className="text-white font-medium">Khách hàng</p>
+            <User className="w-8 h-8 text-primary mx-auto mb-2" />
+            <p className="text-foreground font-medium">Khách hàng</p>
           </CardContent>
         </Card>
         <Card
-          className={`cursor-pointer transition-all ${
-            userType === 'service'
-              ? 'bg-white/20 border-white/40 ring-2 ring-white/50'
-              : 'bg-white/10 border-white/20 hover:bg-white/15'
-          }`}
+          className={`cursor-pointer transition-all ${userType === 'service'
+              ? 'bg-secondary border-border ring-2 ring-ring'
+              : 'bg-card border'
+            }`}
           onClick={() => setUserType('service')}
         >
           <CardContent className="p-4 text-center">
-            <Wrench className="w-8 h-8 text-white mx-auto mb-2" />
-            <p className="text-white font-medium">Trung tâm</p>
+            <Wrench className="w-8 h-8 text-primary mx-auto mb-2" />
+            <p className="text-foreground font-medium">Trung tâm</p>
           </CardContent>
         </Card>
       </div>
@@ -67,9 +65,9 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       {/* Service Role Selection (only show if service is selected) */}
       {userType === 'service' && (
         <div className="space-y-2">
-          <Label className="text-white/90">Vai trò</Label>
+          <Label className="text-foreground">Vai trò</Label>
           <Select value={role} onValueChange={setRole}>
-            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+            <SelectTrigger>
               <SelectValue placeholder="Chọn vai trò của bạn" />
             </SelectTrigger>
             <SelectContent>
@@ -91,13 +89,12 @@ export function LoginForm({ onLogin }: LoginFormProps) {
 
       {/* Email */}
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-white/90">Email</Label>
+        <Label htmlFor="email" className="text-foreground">Email</Label>
         <Input
           id="email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
           placeholder="Nhập email của bạn"
           required
         />
@@ -105,21 +102,21 @@ export function LoginForm({ onLogin }: LoginFormProps) {
 
       {/* Password */}
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-white/90">Mật khẩu</Label>
+        <Label htmlFor="password" className="text-foreground">Mật khẩu</Label>
         <div className="relative">
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="bg-white/10 border-white/20 text-white placeholder:text-white/50 pr-10"
             placeholder="Nhập mật khẩu"
             required
+            className="pr-10"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -129,8 +126,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       {/* Submit Button */}
       <Button
         type="submit"
-        variant="electric"
-        className="w-full"
+        className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
         disabled={!email || !password || (userType === 'service' && !role)}
       >
         Đăng nhập
@@ -138,18 +134,18 @@ export function LoginForm({ onLogin }: LoginFormProps) {
 
       {/* Demo Accounts */}
       <div className="text-center">
-        <p className="text-white/70 text-sm mb-2">Tài khoản demo:</p>
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="text-white/60">
+        <p className="text-muted-foreground text-sm mb-2">Tài khoản demo:</p>
+        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+          <div>
             <p>Khách hàng: customer@demo.com</p>
             <p>Staff: staff@demo.com</p>
           </div>
-          <div className="text-white/60">
+          <div>
             <p>Tech: tech@demo.com</p>
             <p>Admin: admin@demo.com</p>
           </div>
         </div>
-        <p className="text-white/60 text-xs mt-1">Mật khẩu: demo123</p>
+        <p className="text-muted-foreground text-xs mt-1">Mật khẩu: demo123</p>
       </div>
     </form>
   );
