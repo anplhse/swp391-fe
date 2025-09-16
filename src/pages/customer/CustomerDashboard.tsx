@@ -1,227 +1,119 @@
-import React from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { 
-  Car, 
-  Calendar, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle, 
-  Wrench, 
-  CreditCard, 
-  Bell,
-  Plus,
-  History
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Calendar,
+  Clock,
+  Plus
 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function CustomerDashboard() {
   const navigate = useNavigate();
   // Get user from localStorage (demo)
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  // Mock data
-  const vehicles = [
-    {
-      id: 1,
-      name: 'VinFast VF8',
-      plate: '30A-123.45',
-      model: 'VF8 Plus',
-      battery: 85,
-      nextService: '2025-10-15',
-      status: 'healthy'
-    }
-  ];
+  // Types
+  interface BookingServiceInfo {
+    id?: string | number;
+    name: string;
+    price?: number;
+  }
 
-  const upcomingAppointments = [
-    {
-      id: 1,
-      service: 'Bảo dưỡng định kỳ',
-      date: '2025-10-15',
-      time: '09:00',
-      center: 'Trung tâm bảo dưỡng Hà Nội',
-      status: 'confirmed'
-    }
-  ];
+  type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
-  const recentServices = [
-    {
-      id: 1,
-      service: 'Kiểm tra tổng quát',
-      date: '2025-08-20',
-      cost: '2,500,000 VND',
-      status: 'completed'
-    },
-    {
-      id: 2,
-      service: 'Thay lốp xe',
-      date: '2025-07-10',
-      cost: '1,800,000 VND',
-      status: 'completed'
-    }
-  ];
+  interface Booking {
+    id?: string | number;
+    date: string; // YYYY-MM-DD
+    time: string; // HH:mm
+    status?: BookingStatus;
+    service?: BookingServiceInfo;
+  }
+
+  // Get bookings from localStorage
+  const bookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]');
+  const [statusFilter, setStatusFilter] = useState<'all' | BookingStatus>('all');
+  const filteredRecent = useMemo(() => {
+    const recent = bookings.slice(-5).reverse();
+    if (statusFilter === 'all') return recent;
+    return recent.filter(b => (b.status || 'pending') === statusFilter);
+  }, [bookings, statusFilter]);
 
   return (
     <DashboardLayout title="Dashboard Khách Hàng" user={user}>
       <div className="space-y-6">
-        {/* Welcome Section */}
-        <div className="bg-gradient-primary rounded-2xl p-6 text-white">
-          <h2 className="text-2xl font-bold mb-2">Chào mừng trở lại!</h2>
-          <p className="text-white/80">Quản lý xe điện và dịch vụ bảo dưỡng của bạn một cách dễ dàng.</p>
+        {/* Quick Actions removed per request */}
+
+        {/* Toolbar */}
+        <div className="flex items-center justify-between pb-4">
+          <div className="text-sm text-muted-foreground">Khách hàng / Dashboard</div>
+          <div className="flex items-center gap-3">
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | BookingStatus)}>
+              <SelectTrigger className="h-8 w-[160px]">
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="pending">Chờ xác nhận</SelectItem>
+                <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                <SelectItem value="completed">Hoàn thành</SelectItem>
+                <SelectItem value="cancelled">Đã hủy</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Button 
-            variant="electric" 
-            className="h-20 flex-col space-y-2"
-            onClick={() => navigate('/customer/booking')}
-          >
-            <Plus className="w-6 h-6" />
-            <span>Đặt lịch bảo dưỡng</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-20 flex-col space-y-2"
-            onClick={() => navigate('/customer/packages')}
-          >
-            <Car className="w-6 h-6" />
-            <span>Gói dịch vụ</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-20 flex-col space-y-2"
-            onClick={() => navigate('/customer/history')}
-          >
-            <History className="w-6 h-6" />
-            <span>Lịch sử dịch vụ</span>
-          </Button>
-        </div>
+        {/* Recent bookings only */}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Vehicle Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Car className="w-5 h-5" />
-                Xe của tôi
-              </CardTitle>
-              <CardDescription>
-                Tình trạng và thông tin xe điện
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {vehicles.map((vehicle) => (
-                <div key={vehicle.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold">{vehicle.name}</h3>
-                      <p className="text-sm text-muted-foreground">{vehicle.plate} • {vehicle.model}</p>
-                    </div>
-                    <Badge variant={vehicle.status === 'healthy' ? 'default' : 'destructive'}>
-                      {vehicle.status === 'healthy' ? 'Tốt' : 'Cần kiểm tra'}
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Pin:</span>
-                      <span className="font-medium">{vehicle.battery}%</span>
-                    </div>
-                    <Progress value={vehicle.battery} className="h-2" />
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    Bảo dưỡng tiếp theo: {new Date(vehicle.nextService).toLocaleDateString('vi-VN')}
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Upcoming Appointments */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Lịch hẹn sắp tới
-              </CardTitle>
-              <CardDescription>
-                Các cuộc hẹn bảo dưỡng đã đặt
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {upcomingAppointments.length > 0 ? (
-                <div className="space-y-4">
-                  {upcomingAppointments.map((appointment) => (
-                    <div key={appointment.id} className="border rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <h3 className="font-semibold">{appointment.service}</h3>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="w-4 h-4" />
-                            {new Date(appointment.date).toLocaleDateString('vi-VN')} - {appointment.time}
-                          </div>
-                          <p className="text-sm text-muted-foreground">{appointment.center}</p>
-                        </div>
-                        <Badge variant={appointment.status === 'confirmed' ? 'default' : 'secondary'}>
-                          {appointment.status === 'confirmed' ? 'Đã xác nhận' : 'Chờ xác nhận'}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground py-8">
-                  <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Chưa có lịch hẹn nào</p>
-                  <Button variant="outline" className="mt-4">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Đặt lịch ngay
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Services */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Wrench className="w-5 h-5" />
-              Dịch vụ gần đây
+              <Clock className="w-5 h-5" />
+              Lịch gần đây
             </CardTitle>
-            <CardDescription>
-              Lịch sử các dịch vụ đã sử dụng
-            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentServices.map((service) => (
-                <div key={service.id} className="flex items-center justify-between border-b pb-4 last:border-0">
-                  <div className="space-y-1">
-                    <h3 className="font-medium">{service.service}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(service.date).toLocaleDateString('vi-VN')}
-                    </p>
+            {bookings.length === 0 ? (
+              <div className="space-y-3">
+                {/* Mock data khi chưa có booking */}
+                <div className="flex items-center justify-between border rounded-lg p-3 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="w-4 h-4" />
+                    <span>2025-09-16 - 09:00</span>
                   </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CheckCircle2 className="w-4 h-4 text-accent" />
-                      <Badge variant="outline">Hoàn thành</Badge>
-                    </div>
-                    <p className="text-sm font-medium">{service.cost}</p>
-                  </div>
+                  <span className="capitalize">Bảo dưỡng định kỳ</span>
                 </div>
-              ))}
-            </div>
+                <div className="flex items-center justify-between border rounded-lg p-3 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="w-4 h-4" />
+                    <span>2025-09-17 - 13:00</span>
+                  </div>
+                  <span className="capitalize">Kiểm tra pin</span>
+                </div>
+                <div className="text-center pt-4">
+                  <Button variant="outline" onClick={() => navigate('/customer/booking')}>
+                    <Plus className="w-4 h-4 mr-2" /> Đặt lịch thật
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredRecent.map((b: Booking) => (
+                  <div key={b.id} className="flex items-center justify-between border rounded-lg p-3 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="w-4 h-4" />
+                      <span>{b.date} - {b.time}</span>
+                    </div>
+                    <span className="capitalize">{b.service?.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
+
       </div>
     </DashboardLayout>
   );
