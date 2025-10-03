@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertCircle,
-  ArrowLeft,
   Battery,
   Calendar,
   Car,
@@ -19,7 +18,6 @@ import {
   History,
   MapPin,
   Settings,
-  Shield,
   Wrench
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -55,11 +53,18 @@ interface ServiceRecord {
   };
 }
 
+interface VehiclePackage {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+}
+
 export default function VehicleProfilePage() {
   const navigate = useNavigate();
   const { vehicleId } = useParams();
   const { toast } = useToast();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = { email: 'customer@example.com', role: 'customer', userType: 'customer' };
 
   // Mock data - in real app, this would be fetched based on vehicleId
   const vehicle: Vehicle = {
@@ -155,26 +160,69 @@ export default function VehicleProfilePage() {
     .filter(service => service.status === 'completed')
     .reduce((sum, service) => sum + parseInt(service.cost.replace(/[^\d]/g, '')), 0);
 
-  const handleBookService = () => {
-    navigate('/customer/booking');
-  };
 
   const handleEditVehicle = () => {
     navigate('/customer/vehicles');
   };
 
+  // Mock packages for this vehicle
+  const packagesForThisVehicle: VehiclePackage[] = [
+    {
+      id: 'premium',
+      name: 'Gói Cao cấp',
+      startDate: '2024-01-01',
+      endDate: '2025-01-01',
+      status: 'active'
+    }
+  ];
+
+  const daysLeft = (end: string) => {
+    const diff = new Date(end).getTime() - new Date().getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const handleRenewPackage = (pkg: VehiclePackage) => {
+    const priceMap: Record<string, number> = {
+      basic: 15000000,
+      premium: 25000000,
+      vip: 40000000
+    };
+    const renewPrice = priceMap[pkg.id] ?? 0;
+    navigate('/customer/payment', {
+      state: {
+        items: [
+          {
+            id: pkg.id,
+            name: `${pkg.name} - Gia hạn`,
+            type: 'package',
+            price: renewPrice,
+            quantity: 1,
+            description: 'Gia hạn gói dịch vụ thêm 12 tháng'
+          }
+        ],
+        from: 'packages',
+        vehicleId: vehicleId
+      }
+    });
+  };
+
+  const handleBookService = () => {
+    // Điều hướng tới đặt lịch với vehicleId đã biết
+    const modelId = vehicle.name.toLowerCase().includes('vf8') ? 'vf8' : vehicle.name.toLowerCase().includes('vf9') ? 'vf9' : vehicle.name.toLowerCase().includes('e34') ? 'vfe34' : 'vf5';
+    navigate('/customer/booking', {
+      state: {
+        vehicles: [{ id: modelId, name: vehicle.name, type: modelId === 'vfe34' ? 'Sedan' : (modelId === 'vf5' ? 'Hatchback' : 'SUV'), plate: vehicle.plate, year: String(vehicle.year) }],
+        preselectVehicleId: modelId
+      }
+    });
+  };
+
   return (
-    <DashboardLayout title={`Hồ sơ xe - ${vehicle.name}`} user={user}>
+    <DashboardLayout title="" user={user}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/customer/vehicles')}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold">{vehicle.name}</h2>
-            <p className="text-muted-foreground">{vehicle.plate} • {vehicle.model} • {vehicle.year}</p>
-          </div>
+          <div className="flex-1" />
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleEditVehicle}>
               <Edit className="w-4 h-4 mr-2" />
@@ -253,7 +301,7 @@ export default function VehicleProfilePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
                   <Wrench className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -263,7 +311,7 @@ export default function VehicleProfilePage() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
                   <CreditCard className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -273,7 +321,7 @@ export default function VehicleProfilePage() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
                   <CheckCircle2 className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -283,7 +331,7 @@ export default function VehicleProfilePage() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
                   <Clock className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -305,10 +353,6 @@ export default function VehicleProfilePage() {
             <TabsTrigger value="maintenance">
               <Settings className="w-4 h-4 mr-2" />
               Lịch bảo dưỡng
-            </TabsTrigger>
-            <TabsTrigger value="warranty">
-              <Shield className="w-4 h-4 mr-2" />
-              Bảo hành
             </TabsTrigger>
           </TabsList>
 
@@ -401,6 +445,56 @@ export default function VehicleProfilePage() {
           </TabsContent>
 
           <TabsContent value="maintenance" className="space-y-4">
+            {/* Current Service Packages for this vehicle */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Gói dịch vụ hiện tại</CardTitle>
+                <CardDescription>Gói đang gắn với xe này</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {packagesForThisVehicle.length > 0 ? (
+                  <div className="space-y-4">
+                    {packagesForThisVehicle.map((p) => (
+                      <div key={p.id} className="border rounded-lg p-4 flex items-center justify-between gap-4">
+                        <div>
+                          <h3 className="font-semibold">{p.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(p.startDate).toLocaleDateString('vi-VN')} - {new Date(p.endDate).toLocaleDateString('vi-VN')}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {daysLeft(p.endDate) > 0 ? (
+                            <Badge variant="default">Còn {daysLeft(p.endDate)} ngày</Badge>
+                          ) : (
+                            <Badge variant="secondary">Hết hạn</Badge>
+                          )}
+                          {(daysLeft(p.endDate) <= 30) && (
+                            <>
+                              <span className="text-sm text-muted-foreground hidden md:inline">
+                                {(() => {
+                                  const priceMap: Record<string, number> = { basic: 15000000, premium: 25000000, vip: 40000000 };
+                                  const renewPrice = priceMap[p.id] ?? 0;
+                                  return `${renewPrice.toLocaleString('vi-VN')} VND`;
+                                })()}
+                              </span>
+                              <Button size="sm" onClick={() => handleRenewPackage(p)}>
+                                Gia hạn
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-start gap-3">
+                    <p className="text-sm text-muted-foreground">Chưa có gói dịch vụ nào được gắn cho xe này.</p>
+                    <Button onClick={() => navigate('/customer/packages')}>Mua gói dịch vụ</Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Lịch bảo dưỡng</CardTitle>
@@ -479,79 +573,7 @@ export default function VehicleProfilePage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="warranty" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Thông tin bảo hành</CardTitle>
-                <CardDescription>
-                  Chi tiết bảo hành và chính sách
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h4 className="font-semibold">Bảo hành chính</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Thời hạn:</span>
-                          <span className="text-sm font-medium">3 năm</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Km giới hạn:</span>
-                          <span className="text-sm font-medium">100,000 km</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Trạng thái:</span>
-                          <Badge variant="default">Còn hiệu lực</Badge>
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="space-y-4">
-                      <h4 className="font-semibold">Bảo hành pin</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Thời hạn:</span>
-                          <span className="text-sm font-medium">8 năm</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Km giới hạn:</span>
-                          <span className="text-sm font-medium">160,000 km</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Trạng thái:</span>
-                          <Badge variant="default">Còn hiệu lực</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border rounded-lg p-4">
-                    <h4 className="font-semibold mb-2">Dịch vụ bảo hành</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        <span>Thay thế linh kiện miễn phí</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        <span>Bảo dưỡng định kỳ miễn phí</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        <span>Hỗ trợ kỹ thuật 24/7</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        <span>Dịch vụ tận nhà</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>

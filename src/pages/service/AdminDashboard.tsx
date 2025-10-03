@@ -1,29 +1,28 @@
-import React from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  BarChart3, 
-  Users, 
-  DollarSign, 
-  TrendingUp, 
-  Car, 
-  Wrench, 
-  AlertTriangle, 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import {
+  AlertTriangle,
+  BarChart3,
+  Calendar,
+  Car,
   CheckCircle2,
   Clock,
-  Settings,
-  UserPlus,
+  DollarSign,
   FileText,
-  Calendar
+  Settings,
+  TrendingUp,
+  UserPlus,
+  Users,
+  Wrench
 } from 'lucide-react';
 
 export default function AdminDashboard() {
   // Get user from localStorage (demo)
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = { email: 'admin@service.com', role: 'admin', userType: 'service' };
 
   // Mock data for admin
   const dashboardStats = {
@@ -123,7 +122,7 @@ export default function AdminDashboard() {
     <DashboardLayout title="Dashboard Quản Trị Viên" user={user}>
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="bg-gradient-primary rounded-2xl p-6 text-white">
+        <div className="bg-primary text-primary-foreground rounded-2xl p-6">
           <h2 className="text-2xl font-bold mb-2">Tổng quan hệ thống</h2>
           <p className="text-white/80">
             Quản lý toàn bộ hoạt động của trung tâm bảo dưỡng xe điện.
@@ -214,7 +213,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarImage src={`/avatars/${staff.id}.png`} />
-                      <AvatarFallback className="bg-gradient-primary text-white">
+                      <AvatarFallback className="bg-primary text-primary-foreground">
                         {staff.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
@@ -226,7 +225,7 @@ export default function AdminDashboard() {
                       ⭐ {staff.customerRating}
                     </Badge>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span>Công việc hoàn thành:</span>
@@ -263,11 +262,11 @@ export default function AdminDashboard() {
                       {alert.type === 'info' && <Settings className="w-4 h-4 text-primary" />}
                       {alert.type === 'success' && <CheckCircle2 className="w-4 h-4 text-accent" />}
                       <Badge variant={
-                        alert.priority === 'high' ? 'destructive' : 
-                        alert.priority === 'normal' ? 'secondary' : 'outline'
+                        alert.priority === 'high' ? 'destructive' :
+                          alert.priority === 'normal' ? 'secondary' : 'outline'
                       }>
-                        {alert.priority === 'high' ? 'Khẩn cấp' : 
-                         alert.priority === 'normal' ? 'Thông thường' : 'Thấp'}
+                        {alert.priority === 'high' ? 'Khẩn cấp' :
+                          alert.priority === 'normal' ? 'Thông thường' : 'Thấp'}
                       </Badge>
                     </div>
                     <span className="text-xs text-muted-foreground">{alert.time}</span>
@@ -298,9 +297,9 @@ export default function AdminDashboard() {
                         <span>{(item.revenue / 1000000).toFixed(0)}M VND</span>
                         <span>{((item.revenue / Math.max(...revenueData.map(r => r.revenue))) * 100).toFixed(0)}%</span>
                       </div>
-                      <Progress 
-                        value={(item.revenue / Math.max(...revenueData.map(r => r.revenue))) * 100} 
-                        className="h-2" 
+                      <Progress
+                        value={(item.revenue / Math.max(...revenueData.map(r => r.revenue))) * 100}
+                        className="h-2"
                       />
                     </div>
                   </div>

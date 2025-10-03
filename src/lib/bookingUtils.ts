@@ -24,228 +24,38 @@ export interface Booking {
   createdAt: string;
 }
 
-// Mock data for available time slots
-export const availableTimeSlots: TimeSlot[] = [
-  // Ngày 16/09/2025
-  {
-    id: 'slot_2025_09_16_08_00',
-    time: '08:00',
-    date: '2025-09-16',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 1
-  },
-  {
-    id: 'slot_2025_09_16_09_00',
-    time: '09:00',
-    date: '2025-09-16',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: false,
-    maxCapacity: 3,
-    currentBookings: 3
-  },
-  {
-    id: 'slot_2025_09_16_10_00',
-    time: '10:00',
-    date: '2025-09-16',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  {
-    id: 'slot_2025_09_16_11_00',
-    time: '11:00',
-    date: '2025-09-16',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 1
-  },
-  {
-    id: 'slot_2025_09_16_13_00',
-    time: '13:00',
-    date: '2025-09-16',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  {
-    id: 'slot_2025_09_16_14_00',
-    time: '14:00',
-    date: '2025-09-16',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: false,
-    maxCapacity: 3,
-    currentBookings: 3
-  },
-  {
-    id: 'slot_2025_09_16_15_00',
-    time: '15:00',
-    date: '2025-09-16',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 2
-  },
-  {
-    id: 'slot_2025_09_16_16_00',
-    time: '16:00',
-    date: '2025-09-16',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  // Ngày 17/09/2025
-  {
-    id: 'slot_2025_09_17_08_00',
-    time: '08:00',
-    date: '2025-09-17',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  {
-    id: 'slot_2025_09_17_09_00',
-    time: '09:00',
-    date: '2025-09-17',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 1
-  },
-  {
-    id: 'slot_2025_09_17_10_00',
-    time: '10:00',
-    date: '2025-09-17',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: false,
-    maxCapacity: 3,
-    currentBookings: 3
-  },
-  {
-    id: 'slot_2025_09_17_11_00',
-    time: '11:00',
-    date: '2025-09-17',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  {
-    id: 'slot_2025_09_17_13_00',
-    time: '13:00',
-    date: '2025-09-17',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 1
-  },
-  {
-    id: 'slot_2025_09_17_14_00',
-    time: '14:00',
-    date: '2025-09-17',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  {
-    id: 'slot_2025_09_17_15_00',
-    time: '15:00',
-    date: '2025-09-17',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: false,
-    maxCapacity: 3,
-    currentBookings: 3
-  },
-  {
-    id: 'slot_2025_09_17_16_00',
-    time: '16:00',
-    date: '2025-09-17',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  // Ngày 18/09/2025
-  {
-    id: 'slot_2025_09_18_08_00',
-    time: '08:00',
-    date: '2025-09-18',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  {
-    id: 'slot_2025_09_18_09_00',
-    time: '09:00',
-    date: '2025-09-18',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  {
-    id: 'slot_2025_09_18_10_00',
-    time: '10:00',
-    date: '2025-09-18',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  {
-    id: 'slot_2025_09_18_11_00',
-    time: '11:00',
-    date: '2025-09-18',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  {
-    id: 'slot_2025_09_18_13_00',
-    time: '13:00',
-    date: '2025-09-18',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  {
-    id: 'slot_2025_09_18_14_00',
-    time: '14:00',
-    date: '2025-09-18',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  {
-    id: 'slot_2025_09_18_15_00',
-    time: '15:00',
-    date: '2025-09-18',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
-  },
-  {
-    id: 'slot_2025_09_18_16_00',
-    time: '16:00',
-    date: '2025-09-18',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    isAvailable: true,
-    maxCapacity: 3,
-    currentBookings: 0
+// Generate time slots for September 2025
+const generateTimeSlotsForSeptember = (): TimeSlot[] => {
+  const slots: TimeSlot[] = [];
+  const times = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'];
+  const center = 'Trung tâm bảo dưỡng Hà Nội';
+
+  // Generate slots for each day in September 2025
+  for (let day = 1; day <= 30; day++) {
+    const date = `2025-09-${day.toString().padStart(2, '0')}`;
+
+    times.forEach(time => {
+      // Random availability (80% chance of being available)
+      const isAvailable = Math.random() > 0.2;
+      const currentBookings = isAvailable ? Math.floor(Math.random() * 3) : 3;
+
+      slots.push({
+        id: `slot_2025_09_${day.toString().padStart(2, '0')}_${time.replace(':', '_')}`,
+        time,
+        date,
+        center,
+        isAvailable,
+        maxCapacity: 3,
+        currentBookings
+      });
+    });
   }
-];
+
+  return slots;
+};
+
+// Mock data for available time slots
+export const availableTimeSlots: TimeSlot[] = generateTimeSlotsForSeptember();
 
 // Get available time slots for a specific date
 export const getAvailableTimeSlots = (date: string, center: string = 'Trung tâm bảo dưỡng Hà Nội'): TimeSlot[] => {

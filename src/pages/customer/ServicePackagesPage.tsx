@@ -3,10 +3,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
-  ArrowLeft,
   Bell,
   Calendar,
   CheckCircle2,
@@ -21,9 +21,15 @@ import { useNavigate } from 'react-router-dom';
 export default function ServicePackagesPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = { email: 'customer@example.com', role: 'customer', userType: 'customer' };
 
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
+  const vehicles = [
+    { id: 'vf8', name: 'VinFast VF8', plate: '30A-12345' },
+    { id: 'vf9', name: 'VinFast VF9', plate: '29B-67890' },
+    { id: 'vfe34', name: 'VinFast VF e34', plate: '51C-11111' }
+  ];
 
   const packages = [
     {
@@ -69,6 +75,10 @@ export default function ServicePackagesPage() {
   ];
 
   const handlePurchase = (packageId: string) => {
+    if (!selectedVehicleId) {
+      toast({ title: 'Chọn xe trước', description: 'Vui lòng chọn xe để gán gói dịch vụ.', variant: 'destructive' });
+      return;
+    }
     const pkg = packages.find(p => p.id === packageId);
     if (pkg) {
       const paymentItems = [{
@@ -83,7 +93,8 @@ export default function ServicePackagesPage() {
       navigate('/customer/payment', {
         state: {
           items: paymentItems,
-          from: 'packages'
+          from: 'packages',
+          vehicleId: selectedVehicleId
         }
       });
     }
@@ -97,16 +108,22 @@ export default function ServicePackagesPage() {
   };
 
   return (
-    <DashboardLayout title="Gói dịch vụ" user={user}>
+    <DashboardLayout title="" user={user}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/customer')}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h2 className="text-2xl font-bold">Gói dịch vụ bảo dưỡng</h2>
-            <p className="text-muted-foreground">Quản lý và mua gói dịch vụ định kỳ</p>
+          <div className="ml-auto flex items-center gap-3">
+            <Select value={selectedVehicleId} onValueChange={setSelectedVehicleId}>
+              <SelectTrigger id="vehicle" className="w-56">
+                <SelectValue placeholder={vehicles.length ? 'Chọn xe để gán gói' : 'Chưa có xe nào'} />
+              </SelectTrigger>
+              <SelectContent>
+                {vehicles.map(v => (
+                  <SelectItem key={v.id} value={v.id}>{v.name} • {v.plate}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={() => navigate('/customer/vehicles')}>Quản lý xe</Button>
           </div>
         </div>
 
@@ -175,7 +192,7 @@ export default function ServicePackagesPage() {
               )}>
                 {pkg.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-gradient-primary">
+                    <Badge className="bg-primary text-primary-foreground">
                       <Star className="w-3 h-3 mr-1" />
                       Phổ biến nhất
                     </Badge>

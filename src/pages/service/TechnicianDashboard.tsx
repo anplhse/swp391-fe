@@ -1,70 +1,66 @@
-import React from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Wrench, 
-  Clock, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Car, 
-  Battery, 
-  Settings,
-  PlayCircle,
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
   PauseCircle,
-  StopCircle
+  PlayCircle,
+  Settings,
+  Wrench
 } from 'lucide-react';
 
 export default function TechnicianDashboard() {
   // Get user from localStorage (demo)
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = { email: 'technician@service.com', role: 'technician', userType: 'service' };
 
-  // Mock data for technician
+  // Mock assigned tasks
   const currentTasks = [
     {
-      id: 1,
-      customer: 'Nguyễn Văn A',
-      vehicle: 'VinFast VF8 - 30A-123.45',
+      id: 'BK2025001',
+      vehicle: 'VinFast VF8 - 30A-12345',
       service: 'Bảo dưỡng định kỳ',
-      startTime: '09:00',
-      estimatedDuration: 120, // minutes
-      progress: 75,
-      status: 'in-progress',
-      priority: 'normal'
+      status: 'confirmed' as const,
+      estimatedDuration: '2-3 giờ',
+      notes: 'Xe có tiếng ồn lạ ở bánh trước',
+      date: '2025-09-15',
+      time: '09:00'
     }
-  ];
+  ].map((b: any) => ({
+    id: b.id,
+    customer: b.customerName || 'Khách hàng',
+    vehicle: `${b.vehicle?.name} - ${b.vehicle?.plate}`,
+    service: b.service?.name,
+    startTime: b.time,
+    estimatedDuration: (b.estimatedDuration?.match(/\d+/)?.[0] ? parseInt(b.estimatedDuration.match(/\d+/)[0]) * 60 : 120),
+    progress: b.status === 'in_progress' ? 50 : 0,
+    status: b.status === 'in_progress' ? 'in-progress' : 'assigned',
+    priority: 'normal'
+  }));
 
   const pendingTasks = [
     {
-      id: 2,
-      customer: 'Lê Thị C',
-      vehicle: 'Tesla Model 3 - 29B-567.89',
+      id: 'BK2025002',
+      customer: 'Trần Thị B',
+      vehicle: 'VinFast VF9 - 29B-67890',
       service: 'Kiểm tra pin',
       scheduledTime: '14:00',
-      estimatedDuration: 90,
+      estimatedDuration: 120,
       priority: 'normal'
-    },
-    {
-      id: 3,
-      customer: 'Phạm Văn D',
-      vehicle: 'Hyundai Ioniq 5 - 51C-999.11',
-      service: 'Sửa chữa khẩn cấp',
-      scheduledTime: '16:30',
-      estimatedDuration: 180,
-      priority: 'high'
     }
   ];
 
   const completedToday = [
     {
-      id: 4,
-      customer: 'Hoàng Thị E',
-      vehicle: 'BMW iX3 - 77D-888.22',
-      service: 'Kiểm tra tổng quát',
-      completedTime: '08:30',
-      duration: 60
+      id: 'BK2025003',
+      customer: 'Lê Văn C',
+      vehicle: 'VinFast VF e34 - 51C-11111',
+      service: 'Kiểm tra an toàn',
+      completedTime: '10:30',
+      duration: 90
     }
   ];
 
@@ -79,7 +75,7 @@ export default function TechnicianDashboard() {
     <DashboardLayout title="Dashboard Kỹ Thuật Viên" user={user}>
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="bg-gradient-primary rounded-2xl p-6 text-white">
+        <div className="bg-primary text-primary-foreground rounded-2xl p-6">
           <h2 className="text-2xl font-bold mb-2">Chào buổi sáng!</h2>
           <p className="text-white/80">
             Bạn có {currentTasks.length} công việc đang thực hiện và {pendingTasks.length} công việc chờ xử lý.
@@ -297,11 +293,11 @@ export default function TechnicianDashboard() {
                       <p className="text-sm text-muted-foreground">{tool.location}</p>
                     </div>
                     <Badge variant={
-                      tool.status === 'available' ? 'default' : 
-                      tool.status === 'in-use' ? 'warning' : 'destructive'
+                      tool.status === 'available' ? 'default' :
+                        tool.status === 'in-use' ? 'warning' : 'destructive'
                     }>
-                      {tool.status === 'available' ? 'Sẵn sàng' : 
-                       tool.status === 'in-use' ? 'Đang dùng' : 'Bảo trì'}
+                      {tool.status === 'available' ? 'Sẵn sàng' :
+                        tool.status === 'in-use' ? 'Đang dùng' : 'Bảo trì'}
                     </Badge>
                   </div>
                 ))}

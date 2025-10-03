@@ -6,7 +6,6 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertCircle,
-  ArrowLeft,
   Calendar,
   Car,
   CheckCircle2,
@@ -23,18 +22,19 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 interface BookingData {
   id: string;
-  service: {
+  services: Array<{
     id: string;
     name: string;
     description: string;
-    price: string;
+    price: number;
     duration: string;
-  };
+  }>;
   vehicle: {
     id: string;
     name: string;
     plate: string;
     model: string;
+    year?: string;
   };
   date: string;
   time: string;
@@ -44,6 +44,8 @@ interface BookingData {
   notes?: string;
   createdAt: string;
   estimatedDuration: string;
+  paymentStatus?: string;
+  totalAmount?: number;
 }
 
 export default function BookingStatusPage() {
@@ -55,18 +57,19 @@ export default function BookingStatusPage() {
   // Mock data - in real app, this would come from location state or API
   const bookingData: BookingData = location.state?.bookingData || {
     id: 'BK2025001',
-    service: {
+    services: [{
       id: 'maintenance',
       name: 'Bảo dưỡng định kỳ',
       description: 'Kiểm tra tổng quát hệ thống xe điện',
-      price: '2,500,000 VND',
+      price: 2500000,
       duration: '2-3 giờ'
-    },
+    }],
     vehicle: {
       id: '1',
       name: 'VinFast VF8',
       plate: '30A-123.45',
-      model: 'VF8 Plus'
+      model: 'VF8 Plus',
+      year: '2024'
     },
     date: '2025-01-15',
     time: '09:00',
@@ -74,7 +77,9 @@ export default function BookingStatusPage() {
     center: 'Trung tâm bảo dưỡng Hà Nội',
     notes: 'Xe có tiếng ồn lạ ở bánh trước',
     createdAt: '2025-01-10T10:30:00Z',
-    estimatedDuration: '2-3 giờ'
+    estimatedDuration: '2-3 giờ',
+    paymentStatus: 'pending',
+    totalAmount: 0
   };
 
   const getStatusInfo = (status: string) => {
@@ -144,14 +149,14 @@ export default function BookingStatusPage() {
       return;
     }
 
-    const paymentItems = [{
-      id: bookingData.service.id,
-      name: bookingData.service.name,
+    const paymentItems = bookingData.services.map(service => ({
+      id: service.id,
+      name: service.name,
       type: 'service' as const,
-      price: parseInt(bookingData.service.price.replace(/[^\d]/g, '')),
+      price: service.price,
       quantity: 1,
-      description: bookingData.service.description
-    }];
+      description: service.description
+    }));
 
     navigate('/customer/payment', {
       state: {
@@ -184,18 +189,10 @@ export default function BookingStatusPage() {
   };
 
   return (
-    <DashboardLayout title="Trạng thái đặt lịch" user={user}>
+    <DashboardLayout title="" user={user}>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/customer')}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h2 className="text-2xl font-bold">Trạng thái đặt lịch</h2>
-            <p className="text-muted-foreground">Mã đặt lịch: {bookingData.id}</p>
-          </div>
-        </div>
+        <div className="flex items-center gap-4"></div>
 
         {/* Status Overview */}
         <Card>
@@ -236,19 +233,30 @@ export default function BookingStatusPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Wrench className="w-5 h-5 text-muted-foreground" />
-                  <div>
-                    <h3 className="font-semibold">{bookingData.service.name}</h3>
-                    <p className="text-sm text-muted-foreground">{bookingData.service.description}</p>
+                {bookingData.services.map((service, index) => (
+                  <div key={service.id} className="flex items-center gap-3">
+                    <Wrench className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <h3 className="font-semibold">{service.name}</h3>
+                      <p className="text-sm text-muted-foreground">{service.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND'
+                        }).format(service.price)} • {service.duration}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ))}
 
                 <div className="flex items-center gap-3">
                   <Car className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <h3 className="font-semibold">{bookingData.vehicle.name}</h3>
-                    <p className="text-sm text-muted-foreground">{bookingData.vehicle.plate} • {bookingData.vehicle.model}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {bookingData.vehicle.plate} • {bookingData.vehicle.model}
+                      {bookingData.vehicle.year && ` • ${bookingData.vehicle.year}`}
+                    </p>
                   </div>
                 </div>
 
@@ -296,8 +304,21 @@ export default function BookingStatusPage() {
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 <div className="text-center p-4 border rounded-lg">
-                  <h3 className="font-semibold text-lg">{bookingData.service.price}</h3>
-                  <p className="text-sm text-muted-foreground">Chi phí dịch vụ</p>
+                  <h3 className="font-semibold text-lg">
+                    {bookingData.totalAmount && bookingData.totalAmount > 0
+                      ? new Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND'
+                      }).format(bookingData.totalAmount)
+                      : 'Chưa tính phí'
+                    }
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {bookingData.totalAmount && bookingData.totalAmount > 0
+                      ? 'Tổng chi phí dịch vụ'
+                      : 'Sẽ tính phí sau khi hoàn thành'
+                    }
+                  </p>
                 </div>
 
                 <div className="space-y-2">

@@ -25,13 +25,13 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
-import { Bell, Calendar, Car, History, LayoutDashboard, LogOut, Package, Settings, User } from 'lucide-react';
+import { BarChart3, Bell, Calendar, Car, ClipboardList, DollarSign, FileText, History, LayoutDashboard, LogOut, Package, Settings, User, Users, Wrench } from 'lucide-react';
 import { ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  title: string;
+  title?: string;
   user: {
     email: string;
     role: string;
@@ -45,7 +45,8 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
   const { toast } = useToast();
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
+    // In real app, this would clear user session
+    console.log('User logged out');
     toast({
       title: "Đăng xuất thành công",
       description: "Hẹn gặp lại bạn!",
@@ -78,6 +79,45 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
     </SidebarMenuItem>
   );
 
+  const menuItems = (() => {
+    switch (user.role) {
+      case 'staff':
+        return [
+          { to: '/service/staff', icon: LayoutDashboard, label: 'Dashboard' },
+          { to: '/service/customers', icon: Users, label: 'Quản lý khách hàng' },
+          { to: '/service/vehicles', icon: Car, label: 'Quản lý xe' },
+          { to: '/service/appointments', icon: Calendar, label: 'Quản lý lịch hẹn' },
+          { to: '/service/services', icon: Wrench, label: 'Quản lý dịch vụ' },
+          { to: '/service/maintenance', icon: Settings, label: 'Quy trình bảo dưỡng' },
+          { to: '/service/parts', icon: Package, label: 'Quản lý phụ tùng' },
+        ];
+      case 'technician':
+        return [
+          { to: '/service/technician', icon: LayoutDashboard, label: 'Dashboard' },
+          { to: '/service/assigned-tasks', icon: ClipboardList, label: 'Công việc được giao' },
+          { to: '/service/maintenance-process', icon: Settings, label: 'Quy trình bảo dưỡng' },
+          { to: '/service/vehicle-status', icon: Car, label: 'Trạng thái xe' },
+        ];
+      case 'admin':
+        return [
+          { to: '/service/admin', icon: LayoutDashboard, label: 'Dashboard' },
+          { to: '/service/personnel', icon: Users, label: 'Quản lý nhân sự' },
+          { to: '/service/finance', icon: DollarSign, label: 'Quản lý tài chính' },
+          { to: '/service/reports', icon: BarChart3, label: 'Báo cáo & thống kê' },
+          { to: '/service/quotations', icon: FileText, label: 'Báo giá & hóa đơn' },
+        ];
+      default:
+        return [
+          { to: '/customer', icon: LayoutDashboard, label: 'Dashboard' },
+          { to: '/customer/booking', icon: Calendar, label: 'Đặt lịch' },
+          { to: '/customer/bookings', icon: History, label: 'Quản lý lịch hẹn' },
+          { to: '/customer/vehicles', icon: Car, label: 'Xe của tôi' },
+          { to: '/customer/packages', icon: Package, label: 'Gói dịch vụ' },
+          { to: '/customer/history', icon: History, label: 'Lịch sử dịch vụ' },
+        ];
+    }
+  })();
+
   return (
     <SidebarProvider>
       <Sidebar className="bg-sidebar text-sidebar-foreground" collapsible="offcanvas" variant="sidebar">
@@ -91,12 +131,9 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
             <SidebarGroupLabel>Điều hướng</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <LinkItem to="/customer" icon={LayoutDashboard} label="Dashboard" />
-                <LinkItem to="/customer/booking" icon={Calendar} label="Đặt lịch" />
-                <LinkItem to="/customer/bookings" icon={History} label="Quản lý lịch hẹn" />
-                <LinkItem to="/customer/vehicles" icon={Car} label="Xe của tôi" />
-                <LinkItem to="/customer/packages" icon={Package} label="Gói dịch vụ" />
-                <LinkItem to="/customer/history" icon={History} label="Lịch sử dịch vụ" />
+                {menuItems.map((item, idx) => (
+                  <LinkItem key={idx} to={item.to} icon={item.icon as unknown as React.ComponentType<unknown>} label={item.label} />
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -115,7 +152,7 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
           <div className="px-4 h-14 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <SidebarTrigger />
-              <h1 className="text-lg font-semibold">{title}</h1>
+              {title && <h1 className="text-lg font-semibold">{title}</h1>}
               <span className="text-sm text-muted-foreground hidden md:inline">{getRoleDisplayName(user.role)}</span>
             </div>
             <div className="flex items-center gap-3">
@@ -128,7 +165,7 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                     <Avatar className="h-9 w-9">
                       <AvatarImage src="/avatars/01.png" alt={user.email} />
-                      <AvatarFallback className="bg-gradient-primary text-white">
+                      <AvatarFallback className="bg-primary text-primary-foreground">
                         {user.email.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>

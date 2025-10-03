@@ -1,8 +1,7 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -18,14 +17,10 @@ export default function Login() {
     };
 
     const account = demoAccounts[email as keyof typeof demoAccounts];
-    
+
     if (account && account.password === password) {
-      // Store user info in localStorage for demo
-      localStorage.setItem('user', JSON.stringify({
-        email,
-        role: account.role,
-        userType: account.userType
-      }));
+      // In real app, this would store user session
+      console.log('User logged in:', { email, role: account.role, userType: account.userType });
 
       toast({
         title: "Đăng nhập thành công!",
@@ -33,10 +28,10 @@ export default function Login() {
       });
 
       // Redirect based on user type and role
-      if (userType === 'customer') {
+      if (account.userType === 'customer') {
         navigate('/customer');
       } else {
-        navigate(`/service/${role}`);
+        navigate(`/service/${account.role}`);
       }
     } else {
       toast({
@@ -48,7 +43,7 @@ export default function Login() {
   };
 
   return (
-    <AuthLayout 
+    <AuthLayout
       title="Đăng nhập"
       subtitle="Chào mừng trở lại! Vui lòng đăng nhập vào tài khoản của bạn."
     >

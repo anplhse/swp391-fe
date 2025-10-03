@@ -39,14 +39,85 @@ interface BookingRecord {
 }
 
 export default function BookingsPage() {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = { email: 'customer@example.com', role: 'customer', userType: 'customer' };
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<'all' | BookingStatus>('all');
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('bookings') || '[]');
-    if (Array.isArray(stored)) setBookings(stored);
+    // Mock data
+    const mockBookings: BookingRecord[] = [
+      {
+        id: 'BK2025001',
+        service: {
+          id: 'maintenance',
+          name: 'Bảo dưỡng định kỳ',
+          price: '2,500,000 VND',
+          duration: '2-3 giờ',
+          description: 'Kiểm tra tổng quát hệ thống xe điện'
+        },
+        vehicle: {
+          id: 'vf8',
+          name: 'VinFast VF8',
+          plate: '30A-12345',
+          model: 'VF8 Plus'
+        },
+        date: '2025-09-15',
+        time: '09:00',
+        status: 'pending',
+        center: 'Trung tâm bảo dưỡng Hà Nội',
+        notes: 'Xe có tiếng ồn lạ ở bánh trước',
+        createdAt: '2025-01-10T10:30:00Z',
+        estimatedDuration: '2-3 giờ'
+      },
+      {
+        id: 'BK2025002',
+        service: {
+          id: 'battery',
+          name: 'Kiểm tra pin',
+          price: '1,800,000 VND',
+          duration: '1-2 giờ',
+          description: 'Chẩn đoán và bảo dưỡng hệ thống pin'
+        },
+        vehicle: {
+          id: 'vf9',
+          name: 'VinFast VF9',
+          plate: '29B-67890',
+          model: 'VF9 Plus'
+        },
+        date: '2025-09-16',
+        time: '14:00',
+        status: 'confirmed',
+        center: 'Trung tâm bảo dưỡng Hà Nội',
+        notes: 'Pin sạc chậm',
+        createdAt: '2025-01-11T14:20:00Z',
+        estimatedDuration: '1-2 giờ'
+      },
+      {
+        id: 'BK2025003',
+        service: {
+          id: 'inspection',
+          name: 'Kiểm tra an toàn',
+          price: '1,200,000 VND',
+          duration: '1-2 giờ',
+          description: 'Kiểm tra hệ thống phanh và an toàn'
+        },
+        vehicle: {
+          id: 'vfe34',
+          name: 'VinFast VF e34',
+          plate: '51C-11111',
+          model: 'VF e34'
+        },
+        date: '2025-09-17',
+        time: '10:30',
+        status: 'completed',
+        center: 'Trung tâm bảo dưỡng Hà Nội',
+        notes: 'Kiểm tra hệ thống phanh',
+        createdAt: '2025-01-12T09:15:00Z',
+        estimatedDuration: '1-2 giờ'
+      }
+    ];
+    setBookings(mockBookings);
   }, []);
 
   const filtered = useMemo(() => {
@@ -76,7 +147,7 @@ export default function BookingsPage() {
   };
 
   return (
-    <DashboardLayout title="Quản lý lịch hẹn" user={user}>
+    <DashboardLayout title="" user={user}>
       <div className="space-y-6">
         <Card>
           <CardHeader>

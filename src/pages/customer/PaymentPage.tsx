@@ -9,7 +9,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import {
-  ArrowLeft,
   Building2,
   Car,
   CheckCircle2,
@@ -46,7 +45,7 @@ export default function PaymentPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = { email: 'customer@example.com', role: 'customer', userType: 'customer' };
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
   const [cardNumber, setCardNumber] = useState('');
@@ -145,7 +144,13 @@ export default function PaymentPage() {
         title: "Thanh toán thành công!",
         description: "Đơn hàng của bạn đã được xử lý",
       });
-      navigate('/customer');
+      // If purchase originated from packages, attach package to the selected vehicle
+      if (location.state?.from === 'packages' && location.state?.items?.length) {
+        const vehicleId: string | undefined = location.state?.vehicleId;
+        // In real app, this would save to API
+        console.log('Payment completed for vehicle:', vehicleId);
+      }
+      navigate('/customer/vehicles');
     }, 3000);
   };
 
@@ -178,18 +183,10 @@ export default function PaymentPage() {
   };
 
   return (
-    <DashboardLayout title="Thanh toán" user={user}>
+    <DashboardLayout title="" user={user}>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h2 className="text-2xl font-bold">Thanh toán</h2>
-            <p className="text-muted-foreground">Hoàn tất thanh toán cho đơn hàng của bạn</p>
-          </div>
-        </div>
+        <div className="flex items-center gap-4"></div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Payment Form */}
@@ -204,7 +201,7 @@ export default function PaymentPage() {
                 <div className="space-y-4">
                   {paymentItems.map((item) => (
                     <div key={item.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                      <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
                         {getItemIcon(item.type)}
                       </div>
                       <div className="flex-1">

@@ -8,10 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { setRegisteredVehicles } from '@/lib/sessionStore';
 import { cn } from '@/lib/utils';
 import {
   AlertCircle,
-  ArrowLeft,
   Calendar,
   Car,
   CheckCircle2,
@@ -43,7 +43,7 @@ interface Vehicle {
 export default function VehicleManagementPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = { email: 'customer@example.com', role: 'customer', userType: 'customer' };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -125,7 +125,16 @@ export default function VehicleManagementPage() {
       nextService: newVehicle.nextService || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     };
 
-    setVehicles([...vehicles, vehicle]);
+    const nextList = [...vehicles, vehicle];
+    setVehicles(nextList);
+    // Update in-memory session for booking page
+    setRegisteredVehicles(nextList.map(v => ({
+      id: v.name.toLowerCase().includes('vf8') ? 'vf8' : v.name.toLowerCase().includes('vf9') ? 'vf9' : v.name.toLowerCase().includes('e34') ? 'vfe34' : 'vf5',
+      name: v.name,
+      type: v.name.toLowerCase().includes('vf9') || v.name.toLowerCase().includes('vf8') ? 'SUV' : v.name.toLowerCase().includes('e34') ? 'Sedan' : 'Hatchback',
+      plate: v.plate,
+      year: String(v.year)
+    })));
     setNewVehicle({
       name: '',
       plate: '',
@@ -145,6 +154,8 @@ export default function VehicleManagementPage() {
       title: "Thêm xe thành công!",
       description: `Đã thêm ${vehicle.name} vào danh sách`,
     });
+
+    // No auto-navigation; user will manually go to booking
   };
 
   const handleEditVehicle = (vehicle: Vehicle) => {
@@ -179,26 +190,29 @@ export default function VehicleManagementPage() {
     navigate(`/customer/vehicle/${vehicleId}`);
   };
 
+  const handleBackToBooking = () => {
+    const minimalVehicles = vehicles.map(v => ({
+      id: v.name.toLowerCase().includes('vf8') ? 'vf8' : v.name.toLowerCase().includes('vf9') ? 'vf9' : v.name.toLowerCase().includes('e34') ? 'vfe34' : 'vf5',
+      name: v.name,
+      type: v.name.toLowerCase().includes('vf9') || v.name.toLowerCase().includes('vf8') ? 'SUV' : v.name.toLowerCase().includes('e34') ? 'Sedan' : 'Hatchback',
+      plate: v.plate,
+      year: String(v.year)
+    }));
+    navigate('/customer/booking', { state: { vehicles: minimalVehicles } });
+  };
+
   return (
-    <DashboardLayout title="Quản lý xe" user={user}>
+    <DashboardLayout user={user}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/customer')}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h2 className="text-2xl font-bold">Quản lý xe</h2>
-            <p className="text-muted-foreground">Thêm, sửa và quản lý thông tin xe của bạn</p>
-          </div>
-        </div>
+        <div className="flex items-center gap-4"></div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
                   <Car className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -212,7 +226,7 @@ export default function VehicleManagementPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
                   <CheckCircle2 className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -226,7 +240,7 @@ export default function VehicleManagementPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
                   <AlertCircle className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -240,7 +254,7 @@ export default function VehicleManagementPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
                   <Calendar className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -384,6 +398,8 @@ export default function VehicleManagementPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+
         </div>
 
         {/* Vehicle List */}

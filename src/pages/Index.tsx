@@ -5,70 +5,160 @@ const Index = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center space-y-8">
-        {/* Logo */}
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-secondary rounded-3xl mb-8">
-          <svg className="w-10 h-10 text-primary" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
-          </svg>
-        </div>
-
-        {/* Hero Content */}
-        <div className="space-y-4">
-          <h1 className="text-5xl font-bold text-foreground mb-4">EV Service Center</h1>
-        </div>
-
-        {/* Call to Action */}
-        <div className="space-y-4">
-          <Button
-            onClick={() => navigate('/login')}
-            variant="default"
-            size="lg"
-            className="text-lg px-8 py-6"
-          >
-            Đăng nhập hệ thống
-          </Button>
-
-          <p className="text-muted-foreground text-sm">
-            Dành cho khách hàng và nhân viên trung tâm dịch vụ
-          </p>
-        </div>
-
-        {/* Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-4xl">
-          <div className="rounded-xl p-6 text-center bg-card border shadow">
-            <div className="w-12 h-12 bg-secondary rounded-lg mx-auto mb-4 flex items-center justify-center">
-              <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      {/* Header */}
+      <header className="w-full border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center">
+              <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Portal Khách Hàng</h3>
-            <p className="text-muted-foreground text-sm">Đặt lịch, theo dõi xe và thanh toán dễ dàng</p>
+            <span className="font-semibold">EV Service Center</span>
           </div>
-
-          <div className="rounded-xl p-6 text-center bg-card border shadow">
-            <div className="w-12 h-12 bg-secondary rounded-lg mx-auto mb-4 flex items-center justify-center">
-              <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Quản Lý Dịch Vụ</h3>
-            <p className="text-muted-foreground text-sm">Hệ thống quản lý toàn diện cho trung tâm</p>
-          </div>
-
-          <div className="rounded-xl p-6 text-center bg-card border shadow">
-            <div className="w-12 h-12 bg-secondary rounded-lg mx-auto mb-4 flex items-center justify-center">
-              <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Chuyên Biệt EV</h3>
-            <p className="text-muted-foreground text-sm">Tối ưu hóa cho xe điện và công nghệ mới</p>
+          <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
+            <a href="/about" className="hover:text-foreground">Giới thiệu</a>
+            <a href="/services" className="hover:text-foreground">Dịch vụ</a>
+            <a href="/pricing" className="hover:text-foreground">Bảng giá</a>
+            <a href="/blog" className="hover:text-foreground">Blog</a>
+            <a href="/contact" className="hover:text-foreground">Liên hệ</a>
+          </nav>
+          <div className="flex items-center gap-3">
+            <Button onClick={() => navigate('/login')} className="px-4">Đăng nhập</Button>
+            <Button variant="outline" disabled className="px-4">Đăng ký (sắp có)</Button>
           </div>
         </div>
-      </div>
+      </header>
+
+      {/* Hero image centered with top padding */}
+      <section className="mx-auto max-w-6xl px-4 pt-6 md:pt-8">
+        <img
+          src="/a.jpg"
+          alt="Hình minh họa trung tâm dịch vụ"
+          className="w-full h-[42vh] md:h-[65vh] object-cover rounded-xl border bg-card shadow"
+          width="1280"
+          height="720"
+          loading="lazy"
+        />
+      </section>
+
+      {/* Remove About section per request */}
+
+      {/* Services */}
+      <section id="features" className="bg-muted/30">
+        <div className="mx-auto max-w-[90rem] px-4 py-16 md:py-20">
+          <h2 className="text-2xl md:text-3xl font-semibold text-center mb-10">Dịch vụ nổi bật</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-4 gap-8">
+            <div className="rounded-2xl p-6 bg-card border shadow">
+              <img src="/f.jpg" alt="Đặt lịch" className="w-full h-40 md:h-44 object-cover rounded-xl mb-5" width="640" height="224" loading="lazy" />
+              <h3 className="text-xl font-semibold mb-2">Đặt lịch</h3>
+              <p className="text-base text-muted-foreground">Đặt lịch online, hiển thị khung giờ trống theo thời gian thực.</p>
+            </div>
+            <div className="rounded-2xl p-6 bg-card border shadow">
+              <img src="/e.jpg" alt="Tiếp nhận xe" className="w-full h-40 md:h-44 object-cover rounded-xl mb-5" width="640" height="224" loading="lazy" />
+              <h3 className="text-xl font-semibold mb-2">Tiếp nhận xe</h3>
+              <p className="text-base text-muted-foreground">Tiếp nhận yêu cầu, tạo phiếu, checklist EV minh bạch.</p>
+            </div>
+            <div className="rounded-2xl p-6 bg-card border shadow">
+              <img src="/d.jpg" alt="Theo dõi tiến độ" className="w-full h-40 md:h-44 object-cover rounded-xl mb-5" width="640" height="224" loading="lazy" />
+              <h3 className="text-xl font-semibold mb-2">Theo dõi tiến độ sửa chữa</h3>
+              <p className="text-base text-muted-foreground">Trạng thái chờ → đang làm → hoàn tất theo thời gian thực.</p>
+            </div>
+            <div className="rounded-2xl p-6 bg-card border shadow">
+              <img src="/c.jpg" alt="Quản lý xe của khách" className="w-full h-40 md:h-44 object-cover rounded-xl mb-5" width="640" height="224" loading="lazy" />
+              <h3 className="text-xl font-semibold mb-2">Quản lý xe của khách</h3>
+              <p className="text-base text-muted-foreground">Hồ sơ khách, thông tin xe, lịch sử bảo dưỡng.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Bỏ mục Giải pháp theo yêu cầu */}
+
+      {/* Remove Pricing section per request */}
+
+      {/* Feedbacks from customers */}
+      <section id="feedbacks">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <h2 className="text-2xl md:text-3xl font-semibold text-center mb-8">Đánh giá</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            <div className="rounded-2xl p-7 bg-card border shadow">
+              <div className="flex items-center gap-3 mb-3">
+                <img src="/c.jpg" alt="Anh Minh" className="w-12 h-12 rounded-full object-cover" width="48" height="48" loading="lazy" />
+                <div>
+                  <div className="font-semibold">Anh Minh</div>
+                  <div className="text-xs text-muted-foreground">Chủ gara EV</div>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">Theo dõi tiến độ rõ ràng, khách hàng của tôi rất hài lòng.</p>
+            </div>
+            <div className="rounded-2xl p-7 bg-card border shadow">
+              <div className="flex items-center gap-3 mb-3">
+                <img src="/d.jpg" alt="Bích Trâm" className="w-12 h-12 rounded-full object-cover" width="48" height="48" loading="lazy" />
+                <div>
+                  <div className="font-semibold">Bích Trâm</div>
+                  <div className="text-xs text-muted-foreground">Khách hàng</div>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">Đặt lịch nhanh, có nhắc lịch bảo dưỡng nên mình không bỏ sót.</p>
+            </div>
+            <div className="rounded-2xl p-7 bg-card border shadow">
+              <div className="flex items-center gap-3 mb-3">
+                <img src="/e.jpg" alt="Cường Kỹ thuật" className="w-12 h-12 rounded-full object-cover" width="48" height="48" loading="lazy" />
+                <div>
+                  <div className="font-semibold">Cường Kỹ thuật</div>
+                  <div className="text-xs text-muted-foreground">Technician</div>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">Checklist EV rõ ràng, phân công công việc rất mượt.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer (multi-column like carCRM) */}
+      <footer id="contact" className="border-t bg-card/50">
+        <div className="mx-auto max-w-6xl px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
+                  <svg className="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
+                  </svg>
+                </div>
+                <span className="font-semibold">EV Service Center</span>
+              </div>
+              <p className="text-sm text-muted-foreground">Nền tảng quản lý gara ô tô toàn diện.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Thông tin</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="/about" className="hover:text-foreground">Giới thiệu</a></li>
+                <li><a href="/pricing" className="hover:text-foreground">Bảng giá</a></li>
+                <li><a href="/blog" className="hover:text-foreground">Blog</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Chức năng</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="/services" className="hover:text-foreground">Đặt lịch</a></li>
+                <li><a href="/services" className="hover:text-foreground">Tiếp nhận xe</a></li>
+                <li><a href="/services" className="hover:text-foreground">Theo dõi tiến độ sửa chữa</a></li>
+                <li><a href="/services" className="hover:text-foreground">Quản lý xe của khách</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Liên hệ</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="/contact" className="hover:text-foreground">Form liên hệ</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-8 border-t pt-4 text-xs text-muted-foreground">© {new Date().getFullYear()} EV Service Center</div>
+        </div>
+      </footer>
     </div>
   );
 };

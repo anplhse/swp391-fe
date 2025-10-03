@@ -1,120 +1,116 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Calendar,
-  Clock,
-  Plus
-} from 'lucide-react';
-import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function CustomerDashboard() {
   const navigate = useNavigate();
-  // Get user from localStorage (demo)
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-  // Types
-  interface BookingServiceInfo {
-    id?: string | number;
-    name: string;
-    price?: number;
-  }
-
-  type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
-
-  interface Booking {
-    id?: string | number;
-    date: string; // YYYY-MM-DD
-    time: string; // HH:mm
-    status?: BookingStatus;
-    service?: BookingServiceInfo;
-  }
-
-  // Get bookings from localStorage
-  const bookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]');
-  const [statusFilter, setStatusFilter] = useState<'all' | BookingStatus>('all');
-  const filteredRecent = useMemo(() => {
-    const recent = bookings.slice(-5).reverse();
-    if (statusFilter === 'all') return recent;
-    return recent.filter(b => (b.status || 'pending') === statusFilter);
-  }, [bookings, statusFilter]);
 
   return (
-    <DashboardLayout title="Dashboard Khách Hàng" user={user}>
-      <div className="space-y-6">
-        {/* Quick Actions removed per request */}
-
-        {/* Toolbar */}
-        <div className="flex items-center justify-between pb-4">
-          <div className="text-sm text-muted-foreground">Khách hàng / Dashboard</div>
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      {/* Header (logged-in view mirrors landing) */}
+      <header className="w-full border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | BookingStatus)}>
-              <SelectTrigger className="h-8 w-[160px]">
-                <SelectValue placeholder="Trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="pending">Chờ xác nhận</SelectItem>
-                <SelectItem value="confirmed">Đã xác nhận</SelectItem>
-                <SelectItem value="completed">Hoàn thành</SelectItem>
-                <SelectItem value="cancelled">Đã hủy</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center">
+              <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55 0 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
+              </svg>
+            </div>
+            <span className="font-semibold">EV Service Center</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="secondary" onClick={() => navigate('/customer/bookings')}>Quản lý lịch hẹn</Button>
+            <Button variant="outline" onClick={() => navigate('/')}>Đăng xuất</Button>
           </div>
         </div>
+      </header>
 
-        {/* Recent bookings only */}
+      {/* Hero image centered like landing */}
+      <section className="mx-auto max-w-6xl px-4 pt-6 md:pt-8">
+        <img
+          src="/a.jpg"
+          alt="Hình minh họa trung tâm dịch vụ"
+          className="w-full h-[42vh] md:h-[65vh] object-cover rounded-xl border bg-card shadow"
+          width="1280"
+          height="720"
+          loading="lazy"
+        />
+      </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              Lịch gần đây
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {bookings.length === 0 ? (
-              <div className="space-y-3">
-                {/* Mock data khi chưa có booking */}
-                <div className="flex items-center justify-between border rounded-lg p-3 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    <span>2025-09-16 - 09:00</span>
-                  </div>
-                  <span className="capitalize">Bảo dưỡng định kỳ</span>
-                </div>
-                <div className="flex items-center justify-between border rounded-lg p-3 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    <span>2025-09-17 - 13:00</span>
-                  </div>
-                  <span className="capitalize">Kiểm tra pin</span>
-                </div>
-                <div className="text-center pt-4">
-                  <Button variant="outline" onClick={() => navigate('/customer/booking')}>
-                    <Plus className="w-4 h-4 mr-2" /> Đặt lịch thật
-                  </Button>
+      {/* Services (mirror landing) */}
+      <section id="features" className="bg-muted/30">
+        <div className="mx-auto max-w-[90rem] px-4 py-16 md:py-20">
+          <h2 className="text-2xl md:text-3xl font-semibold text-center mb-10">Dịch vụ nổi bật</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-4 gap-8">
+            <div className="rounded-2xl p-6 bg-card border shadow">
+              <img src="/f.jpg" alt="Đặt lịch" className="w-full h-40 md:h-44 object-cover rounded-xl mb-5" width="640" height="224" loading="lazy" />
+              <h3 className="text-xl font-semibold mb-2">Đặt lịch</h3>
+              <p className="text-base text-muted-foreground">Đặt lịch online, hiển thị khung giờ trống theo thời gian thực.</p>
+            </div>
+            <div className="rounded-2xl p-6 bg-card border shadow">
+              <img src="/e.jpg" alt="Tiếp nhận xe" className="w-full h-40 md:h-44 object-cover rounded-xl mb-5" width="640" height="224" loading="lazy" />
+              <h3 className="text-xl font-semibold mb-2">Tiếp nhận xe</h3>
+              <p className="text-base text-muted-foreground">Tiếp nhận yêu cầu, tạo phiếu, checklist EV minh bạch.</p>
+            </div>
+            <div className="rounded-2xl p-6 bg-card border shadow">
+              <img src="/d.jpg" alt="Theo dõi tiến độ" className="w-full h-40 md:h-44 object-cover rounded-xl mb-5" width="640" height="224" loading="lazy" />
+              <h3 className="text-xl font-semibold mb-2">Theo dõi tiến độ sửa chữa</h3>
+              <p className="text-base text-muted-foreground">Trạng thái chờ → đang làm → hoàn tất theo thời gian thực.</p>
+            </div>
+            <div className="rounded-2xl p-6 bg-card border shadow">
+              <img src="/c.jpg" alt="Quản lý xe của khách" className="w-full h-40 md:h-44 object-cover rounded-xl mb-5" width="640" height="224" loading="lazy" />
+              <h3 className="text-xl font-semibold mb-2">Quản lý xe của khách</h3>
+              <p className="text-base text-muted-foreground">Hồ sơ khách, thông tin xe, lịch sử bảo dưỡng.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Reviews (mirror landing) */}
+      <section id="feedbacks">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <h2 className="text-2xl md:text-3xl font-semibold text-center mb-8">Đánh giá</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            <div className="rounded-2xl p-7 bg-card border shadow">
+              <div className="flex items-center gap-3 mb-3">
+                <img src="/c.jpg" alt="Anh Minh" className="w-12 h-12 rounded-full object-cover" width="48" height="48" loading="lazy" />
+                <div>
+                  <div className="font-semibold">Anh Minh</div>
+                  <div className="text-xs text-muted-foreground">Chủ gara EV</div>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredRecent.map((b: Booking) => (
-                  <div key={b.id} className="flex items-center justify-between border rounded-lg p-3 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="w-4 h-4" />
-                      <span>{b.date} - {b.time}</span>
-                    </div>
-                    <span className="capitalize">{b.service?.name}</span>
-                  </div>
-                ))}
+              <p className="text-sm text-muted-foreground">Theo dõi tiến độ rõ ràng, khách hàng của tôi rất hài lòng.</p>
+            </div>
+            <div className="rounded-2xl p-7 bg-card border shadow">
+              <div className="flex items-center gap-3 mb-3">
+                <img src="/d.jpg" alt="Bích Trâm" className="w-12 h-12 rounded-full object-cover" width="48" height="48" loading="lazy" />
+                <div>
+                  <div className="font-semibold">Bích Trâm</div>
+                  <div className="text-xs text-muted-foreground">Khách hàng</div>
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <p className="text-sm text-muted-foreground">Đặt lịch nhanh, có nhắc lịch bảo dưỡng nên mình không bỏ sót.</p>
+            </div>
+            <div className="rounded-2xl p-7 bg-card border shadow">
+              <div className="flex items-center gap-3 mb-3">
+                <img src="/e.jpg" alt="Cường Kỹ thuật" className="w-12 h-12 rounded-full object-cover" width="48" height="48" loading="lazy" />
+                <div>
+                  <div className="font-semibold">Cường Kỹ thuật</div>
+                  <div className="text-xs text-muted-foreground">Technician</div>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">Checklist EV rõ ràng, phân công công việc rất mượt.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      </div>
-    </DashboardLayout>
+      {/* Footer */}
+      <footer className="border-t bg-card/50">
+        <div className="mx-auto max-w-6xl px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} EV Service Center</p>
+          <div className="flex items-center gap-3" />
+        </div>
+      </footer>
+    </div>
   );
 }

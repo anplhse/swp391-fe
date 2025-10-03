@@ -1,49 +1,113 @@
-import React from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Users, 
-  Calendar, 
-  MessageSquare, 
-  Car, 
-  Clock,
-  Phone,
-  Mail,
-  CheckCircle2,
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
   AlertCircle,
-  Plus
+  ArrowRight,
+  Calendar,
+  Clock,
+  Mail,
+  MessageSquare,
+  Phone,
+  Users
 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { z } from 'zod';
+
+type BookingStatus = 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+
+interface StaffBookingRecord {
+  id: string;
+  service: { id: string; name: string; price: string; duration: string; description: string };
+  vehicle: { id: string; name: string; plate: string; model: string };
+  date: string;
+  time: string;
+  status: BookingStatus;
+  center: string;
+  notes?: string;
+  createdAt: string;
+  estimatedDuration: string;
+  customerName?: string;
+  customerPhone?: string;
+  technician?: string;
+}
 
 export default function StaffDashboard() {
-  // Get user from localStorage (demo)
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = { email: 'staff@service.com', role: 'staff', userType: 'service' };
+  const navigate = useNavigate();
 
-  // Mock data for staff
-  const todayAppointments = [
-    {
-      id: 1,
-      customer: 'Nguyễn Văn A',
-      phone: '0901234567',
-      vehicle: 'VinFast VF8 - 30A-123.45',
-      service: 'Bảo dưỡng định kỳ',
-      time: '09:00',
-      status: 'confirmed',
-      technician: 'Trần Văn B'
-    },
-    {
-      id: 2,
-      customer: 'Lê Thị C',
-      phone: '0912345678',
-      vehicle: 'Tesla Model 3 - 29B-567.89',
-      service: 'Kiểm tra pin',
-      time: '14:00',
-      status: 'waiting',
-      technician: 'Chưa phân công'
-    }
-  ];
+  const [bookings, setBookings] = useState<StaffBookingRecord[]>([]);
+
+  useEffect(() => {
+    // Mock data
+    const today = new Date().toISOString().split('T')[0];
+    const mockBookings: StaffBookingRecord[] = [
+      {
+        id: 'BK2025001',
+        service: {
+          id: 'maintenance',
+          name: 'Bảo dưỡng định kỳ',
+          price: '2,500,000 VND',
+          duration: '2-3 giờ',
+          description: 'Kiểm tra tổng quát hệ thống xe điện'
+        },
+        vehicle: {
+          id: 'vf8',
+          name: 'VinFast VF8',
+          plate: '30A-12345',
+          model: 'VF8 Plus'
+        },
+        date: today, // Sử dụng ngày hôm nay
+        time: '09:00',
+        status: 'pending',
+        center: 'Trung tâm bảo dưỡng Hà Nội',
+        notes: 'Xe có tiếng ồn lạ ở bánh trước',
+        createdAt: '2025-01-10T10:30:00Z',
+        estimatedDuration: '2-3 giờ',
+        customerName: 'Nguyễn Văn A',
+        customerPhone: '0901234567'
+      },
+      {
+        id: 'BK2025002',
+        service: {
+          id: 'repair',
+          name: 'Sửa chữa hệ thống phanh',
+          price: '1,800,000 VND',
+          duration: '1-2 giờ',
+          description: 'Kiểm tra và sửa chữa hệ thống phanh'
+        },
+        vehicle: {
+          id: 'vf9',
+          name: 'VinFast VF9',
+          plate: '29B-67890',
+          model: 'VF9 Plus'
+        },
+        date: today, // Sử dụng ngày hôm nay
+        time: '14:00',
+        status: 'confirmed',
+        center: 'Trung tâm bảo dưỡng Hà Nội',
+        notes: 'Phanh có tiếng kêu khi dừng',
+        createdAt: '2025-01-09T15:20:00Z',
+        estimatedDuration: '1-2 giờ',
+        customerName: 'Lê Thị B',
+        customerPhone: '0912345678',
+        technician: 'Trần Văn C'
+      }
+    ];
+    setBookings(mockBookings);
+  }, []);
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayAppointmentsRaw = useMemo(() => bookings.filter(b => b.date === todayStr), [bookings, todayStr]);
 
   const recentCustomers = [
     {
@@ -64,28 +128,40 @@ export default function StaffDashboard() {
     }
   ];
 
-  const pendingRequests = [
-    {
-      id: 1,
-      customer: 'Phạm Văn D',
-      service: 'Bảo dưỡng khẩn cấp',
-      requestTime: '2025-09-15 10:30',
-      priority: 'high'
-    },
-    {
-      id: 2,
-      customer: 'Hoàng Thị E',
-      service: 'Kiểm tra tổng quát',
-      requestTime: '2025-09-15 11:15',
+  const pendingRequests: Array<{ id: string; customer: string; service: string; requestTime: string; priority: 'high' | 'normal' }> = bookings
+    .filter(b => b.status === 'pending')
+    .slice(0, 5)
+    .map(b => ({
+      id: b.id,
+      customer: b.customerName || 'Khách hàng',
+      service: b.service?.name,
+      requestTime: new Date(b.createdAt).toLocaleString('vi-VN'),
       priority: 'normal'
-    }
-  ];
+    }));
+
+  // Filter form (React Hook Form + Zod) for dashboard lists
+  const filterSchema = z.object({ status: z.enum(['all', 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled']), search: z.string().optional() });
+  type FilterForm = z.infer<typeof filterSchema>;
+  const filterForm = useForm<FilterForm>({ resolver: zodResolver(filterSchema), defaultValues: { status: 'all', search: '' } });
+  const filters = filterForm.watch();
+
+  const todayAppointments = useMemo(() => {
+    const term = (filters.search || '').toLowerCase().trim();
+    return todayAppointmentsRaw
+      .filter(a => filters.status === 'all' ? true : a.status === filters.status)
+      .filter(a => term ? (
+        (a.customerName || '').toLowerCase().includes(term) ||
+        (a.vehicle?.plate || '').toLowerCase().includes(term) ||
+        (a.service?.name || '').toLowerCase().includes(term)
+      ) : true);
+  }, [todayAppointmentsRaw, filters]);
+
 
   return (
     <DashboardLayout title="Dashboard Nhân Viên" user={user}>
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="bg-gradient-primary rounded-2xl p-6 text-white">
+        <div className="bg-primary text-primary-foreground rounded-2xl p-6">
           <h2 className="text-2xl font-bold mb-2">Chào buổi sáng!</h2>
           <p className="text-white/80">Hôm nay bạn có {todayAppointments.length} cuộc hẹn và {pendingRequests.length} yêu cầu đang chờ xử lý.</p>
         </div>
@@ -147,98 +223,150 @@ export default function StaffDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Today's Appointments */}
+          {/* Today's Appointments (Table + Filter Form) */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Lịch hẹn hôm nay
-              </CardTitle>
-              <CardDescription>
-                Quản lý các cuộc hẹn trong ngày
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {todayAppointments.map((appointment) => (
-                <div key={appointment.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">{appointment.time}</span>
-                    </div>
-                    <Badge variant={appointment.status === 'confirmed' ? 'default' : 'secondary'}>
-                      {appointment.status === 'confirmed' ? 'Đã xác nhận' : 'Chờ xác nhận'}
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">{appointment.customer}</h3>
-                    <p className="text-sm text-muted-foreground">{appointment.service}</p>
-                    <p className="text-sm text-muted-foreground">{appointment.vehicle}</p>
-                    <p className="text-sm">Kỹ thuật viên: <span className="font-medium">{appointment.technician}</span></p>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      <Phone className="w-4 h-4 mr-2" />
-                      Gọi
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Nhắn tin
-                    </Button>
-                    {appointment.status === 'waiting' && (
-                      <Button size="sm" variant="electric">
-                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                        Xác nhận
-                      </Button>
-                    )}
-                  </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Lịch hẹn hôm nay
+                  </CardTitle>
+                  <CardDescription>
+                    Tổng quan các cuộc hẹn trong ngày
+                  </CardDescription>
                 </div>
-              ))}
+                <Button variant="outline" size="sm" onClick={() => navigate('/service/appointments')}>
+                  Xem tất cả
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+              <div className="pt-2">
+                <Form {...filterForm}>
+                  <form className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <FormField control={filterForm.control} name="search" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tìm kiếm</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Khách hàng / biển số / dịch vụ" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+                    <FormField control={filterForm.control} name="status" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Trạng thái</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="all">Tất cả</SelectItem>
+                            <SelectItem value="pending">Chờ xác nhận</SelectItem>
+                            <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                            <SelectItem value="in_progress">Đang thực hiện</SelectItem>
+                            <SelectItem value="completed">Hoàn thành</SelectItem>
+                            <SelectItem value="cancelled">Đã hủy</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                  </form>
+                </Form>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {todayAppointments.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Không có lịch hẹn nào hôm nay</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Giờ</TableHead>
+                      <TableHead>Dịch vụ</TableHead>
+                      <TableHead>Khách/Xe</TableHead>
+                      <TableHead>Kỹ thuật viên</TableHead>
+                      <TableHead>Trạng thái</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {todayAppointments.slice(0, 5).map((appointment) => (
+                      <TableRow key={appointment.id}>
+                        <TableCell className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-muted-foreground" />
+                          {appointment.time}
+                        </TableCell>
+                        <TableCell>{appointment.service?.name}</TableCell>
+                        <TableCell>{appointment.customerName} • {appointment.vehicle?.plate}</TableCell>
+                        <TableCell>{appointment.technician || '—'}</TableCell>
+                        <TableCell>
+                          <Badge variant={appointment.status === 'confirmed' ? 'default' : appointment.status === 'pending' ? 'secondary' : appointment.status === 'in_progress' ? 'outline' : appointment.status === 'completed' ? 'default' : 'destructive'}>
+                            {appointment.status === 'confirmed' ? 'Đã xác nhận' : appointment.status === 'pending' ? 'Chờ xác nhận' : appointment.status === 'in_progress' ? 'Đang thực hiện' : appointment.status === 'completed' ? 'Hoàn thành' : 'Đã hủy'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
 
-          {/* Pending Requests */}
+          {/* Pending Requests (Table overview) */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5" />
-                Yêu cầu đang chờ
-              </CardTitle>
-              <CardDescription>
-                Các yêu cầu dịch vụ mới từ khách hàng
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {pendingRequests.map((request) => (
-                <div key={request.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">{request.customer}</h3>
-                    <Badge variant={request.priority === 'high' ? 'destructive' : 'secondary'}>
-                      {request.priority === 'high' ? 'Khẩn cấp' : 'Thường'}
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">{request.service}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Yêu cầu lúc: {new Date(request.requestTime).toLocaleString('vi-VN')}
-                    </p>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="electric">
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Chấp nhận
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Liên hệ
-                    </Button>
-                  </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5" />
+                    Yêu cầu đang chờ
+                  </CardTitle>
+                  <CardDescription>
+                    Các yêu cầu dịch vụ mới từ khách hàng
+                  </CardDescription>
                 </div>
-              ))}
+                <Button variant="outline" size="sm" onClick={() => navigate('/service/appointments')}>
+                  Xem tất cả
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {pendingRequests.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Không có yêu cầu nào đang chờ</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Khách hàng</TableHead>
+                      <TableHead>Dịch vụ</TableHead>
+                      <TableHead>Thời gian yêu cầu</TableHead>
+                      <TableHead>Ưu tiên</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingRequests.slice(0, 5).map((request) => (
+                      <TableRow key={request.id}>
+                        <TableCell className="font-medium">{request.customer}</TableCell>
+                        <TableCell>{request.service}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{new Date(request.requestTime).toLocaleString('vi-VN')}</TableCell>
+                        <TableCell>
+                          <Badge variant={request.priority === 'high' ? 'destructive' : 'secondary'}>
+                            {request.priority === 'high' ? 'Khẩn cấp' : 'Thường'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -246,22 +374,30 @@ export default function StaffDashboard() {
         {/* Recent Customers */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Khách hàng gần đây
-            </CardTitle>
-            <CardDescription>
-              Danh sách khách hàng đã sử dụng dịch vụ
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Khách hàng gần đây
+                </CardTitle>
+                <CardDescription>
+                  Danh sách khách hàng đã sử dụng dịch vụ
+                </CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => navigate('/service/customers')}>
+                Xem tất cả
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentCustomers.map((customer) => (
+              {recentCustomers.slice(0, 3).map((customer) => (
                 <div key={customer.id} className="flex items-center justify-between border-b pb-4 last:border-0">
                   <div className="flex items-center gap-4">
                     <Avatar>
                       <AvatarImage src={`/avatars/${customer.id}.png`} />
-                      <AvatarFallback className="bg-gradient-primary text-white">
+                      <AvatarFallback className="bg-primary text-primary-foreground">
                         {customer.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
@@ -287,6 +423,13 @@ export default function StaffDashboard() {
                   </div>
                 </div>
               ))}
+              {recentCustomers.length > 3 && (
+                <div className="text-center pt-2">
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/service/customers')}>
+                    +{recentCustomers.length - 3} khách hàng khác
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

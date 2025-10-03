@@ -1,34 +1,32 @@
-import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  History, 
-  ArrowLeft,
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertCircle,
+  Calendar,
   CheckCircle2,
   Clock,
-  AlertCircle,
-  Wrench,
-  Search,
-  Filter,
+  CreditCard,
   Download,
   Eye,
-  Calendar,
+  Filter,
+  History,
   MapPin,
-  CreditCard
+  Search,
+  Wrench
 } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
 
 export default function ServiceHistoryPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  
+  const user = { email: 'customer@example.com', role: 'customer', userType: 'customer' };
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -114,7 +112,7 @@ export default function ServiceHistoryPage() {
 
   const filteredHistory = serviceHistory.filter(item => {
     const matchesSearch = item.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.id.toLowerCase().includes(searchTerm.toLowerCase());
+      item.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -138,25 +136,17 @@ export default function ServiceHistoryPage() {
   };
 
   return (
-    <DashboardLayout title="Lịch sử dịch vụ" user={user}>
+    <DashboardLayout title="" user={user}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/customer')}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h2 className="text-2xl font-bold">Lịch sử dịch vụ</h2>
-            <p className="text-muted-foreground">Theo dõi tình trạng và lịch sử bảo dưỡng xe</p>
-          </div>
-        </div>
+        <div className="flex items-center gap-4"></div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
                   <CheckCircle2 className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -170,7 +160,7 @@ export default function ServiceHistoryPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
                   <CreditCard className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -184,7 +174,7 @@ export default function ServiceHistoryPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
                   <Clock className="w-5 h-5 text-white" />
                 </div>
                 <div>

@@ -15,7 +15,7 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent/10 hover:text-accent",
         link: "text-primary underline-offset-4 hover:underline",
-        electric: "bg-gradient-primary text-primary-foreground hover:shadow-lg glow-electric hover:scale-105 transition-bounce",
+        electric: "bg-primary text-primary-foreground hover:bg-primary/90 transition-transform",
         success: "bg-accent text-accent-foreground hover:bg-accent/90 hover:scale-105 transition-bounce",
         warning: "bg-warning text-warning-foreground hover:bg-warning/90 hover:scale-105 transition-bounce",
         glass: "glass text-primary backdrop-blur-xl border-primary/30 hover:bg-white/20 hover:border-primary/50",
@@ -49,3 +49,4 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 Button.displayName = "Button";
 
 export { Button, buttonVariants };
+
