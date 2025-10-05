@@ -1,11 +1,12 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Car, CheckCircle, Clock, Settings, User, Wrench } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface MaintenanceTask {
@@ -32,6 +33,8 @@ interface MaintenanceTask {
 export default function MaintenanceProcessPage() {
   const [tasks, setTasks] = useState<MaintenanceTask[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTask, setSelectedTask] = useState<MaintenanceTask | null>(null);
 
   useEffect(() => {
     // Mock data
@@ -47,139 +50,58 @@ export default function MaintenanceProcessPage() {
         startTime: '2024-01-25T09:00:00',
         estimatedEndTime: '2024-01-25T11:00:00',
         steps: [
-          {
-            id: '1-1',
-            name: 'Kiểm tra tổng thể',
-            description: 'Kiểm tra bên ngoài và bên trong xe',
-            status: 'completed',
-            duration: 15
-          },
-          {
-            id: '1-2',
-            name: 'Kiểm tra hệ thống pin',
-            description: 'Kiểm tra tình trạng pin và hệ thống sạc',
-            status: 'in_progress',
-            duration: 30
-          },
-          {
-            id: '1-3',
-            name: 'Kiểm tra động cơ',
-            description: 'Kiểm tra động cơ điện và hệ thống truyền động',
-            status: 'pending',
-            duration: 20
-          },
-          {
-            id: '1-4',
-            name: 'Kiểm tra hệ thống điện',
-            description: 'Kiểm tra hệ thống điện cao áp và phụ kiện',
-            status: 'pending',
-            duration: 25
-          }
-        ],
-        notes: 'Xe trong tình trạng tốt, cần thay dầu phanh'
+          { id: '1', name: 'Kiểm tra động cơ', description: 'Kiểm tra tổng thể động cơ', status: 'completed', duration: 30 },
+          { id: '2', name: 'Thay dầu', description: 'Thay dầu động cơ', status: 'in_progress', duration: 20 },
+          { id: '3', name: 'Kiểm tra phanh', description: 'Kiểm tra hệ thống phanh', status: 'pending', duration: 25 }
+        ]
       },
       {
         id: '2',
-        vehiclePlate: '29B-67890',
-        customerName: 'Trần Thị B',
-        serviceType: 'Sửa chữa hệ thống pin',
+        vehiclePlate: '51C-67890',
+        customerName: 'Lê Thị B',
+        serviceType: 'Sửa chữa hệ thống điện',
         technician: 'Kỹ thuật viên B',
         status: 'pending',
         progress: 0,
         steps: [
-          {
-            id: '2-1',
-            name: 'Chẩn đoán lỗi',
-            description: 'Sử dụng thiết bị chẩn đoán để xác định lỗi',
-            status: 'pending',
-            duration: 30
-          },
-          {
-            id: '2-2',
-            name: 'Tháo rời hệ thống pin',
-            description: 'Tháo rời và kiểm tra từng cell pin',
-            status: 'pending',
-            duration: 60
-          },
-          {
-            id: '2-3',
-            name: 'Sửa chữa/Thay thế',
-            description: 'Sửa chữa hoặc thay thế cell pin bị lỗi',
-            status: 'pending',
-            duration: 90
-          },
-          {
-            id: '2-4',
-            name: 'Lắp ráp và kiểm tra',
-            description: 'Lắp ráp lại và kiểm tra hoạt động',
-            status: 'pending',
-            duration: 45
-          }
+          { id: '1', name: 'Chẩn đoán lỗi', description: 'Kiểm tra hệ thống điện', status: 'pending', duration: 45 },
+          { id: '2', name: 'Sửa chữa', description: 'Sửa chữa các lỗi phát hiện', status: 'pending', duration: 60 },
+          { id: '3', name: 'Kiểm tra lại', description: 'Kiểm tra hoạt động sau sửa chữa', status: 'pending', duration: 15 }
         ]
       },
       {
         id: '3',
-        vehiclePlate: '51C-11111',
-        customerName: 'Lê Văn C',
-        serviceType: 'Kiểm tra hệ thống điện',
+        vehiclePlate: '29B-11111',
+        customerName: 'Trần Văn C',
+        serviceType: 'Thay thế phụ tùng',
         technician: 'Kỹ thuật viên C',
         status: 'completed',
         progress: 100,
-        startTime: '2024-01-24T10:30:00',
-        estimatedEndTime: '2024-01-24T12:00:00',
-        actualEndTime: '2024-01-24T11:45:00',
+        startTime: '2024-01-24T14:00:00',
+        actualEndTime: '2024-01-24T16:30:00',
         steps: [
-          {
-            id: '3-1',
-            name: 'Kiểm tra tổng thể',
-            description: 'Kiểm tra bên ngoài và bên trong xe',
-            status: 'completed',
-            duration: 15
-          },
-          {
-            id: '3-2',
-            name: 'Kiểm tra hệ thống pin',
-            description: 'Kiểm tra tình trạng pin và hệ thống sạc',
-            status: 'completed',
-            duration: 30
-          },
-          {
-            id: '3-3',
-            name: 'Kiểm tra động cơ',
-            description: 'Kiểm tra động cơ điện và hệ thống truyền động',
-            status: 'completed',
-            duration: 20
-          },
-          {
-            id: '3-4',
-            name: 'Kiểm tra hệ thống điện',
-            description: 'Kiểm tra hệ thống điện cao áp và phụ kiện',
-            status: 'completed',
-            duration: 25
-          }
+          { id: '1', name: 'Tháo lắp cũ', description: 'Tháo phụ tùng cũ', status: 'completed', duration: 30 },
+          { id: '2', name: 'Lắp mới', description: 'Lắp phụ tùng mới', status: 'completed', duration: 45 },
+          { id: '3', name: 'Kiểm tra', description: 'Kiểm tra hoạt động', status: 'completed', duration: 15 }
         ],
-        notes: 'Tất cả hệ thống hoạt động bình thường'
+        notes: 'Phụ tùng thay thế hoạt động tốt'
       }
     ];
     setTasks(mockTasks);
   }, []);
-
-  const filteredTasks = tasks.filter(task =>
-    statusFilter === 'all' || task.status === statusFilter
-  );
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
         return <Badge variant="secondary">Chờ xử lý</Badge>;
       case 'in_progress':
-        return <Badge variant="destructive">Đang thực hiện</Badge>;
+        return <Badge variant="default">Đang thực hiện</Badge>;
       case 'completed':
-        return <Badge className="bg-green-500">Hoàn thành</Badge>;
+        return <Badge variant="outline">Hoàn thành</Badge>;
       case 'cancelled':
-        return <Badge variant="outline">Đã hủy</Badge>;
+        return <Badge variant="destructive">Đã hủy</Badge>;
       default:
-        return <Badge variant="outline">Không xác định</Badge>;
+        return <Badge variant="secondary">Chờ xử lý</Badge>;
     }
   };
 
@@ -189,264 +111,174 @@ export default function MaintenanceProcessPage() {
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'in_progress':
         return <Clock className="w-4 h-4 text-blue-500" />;
-      case 'pending':
-        return <AlertCircle className="w-4 h-4 text-gray-400" />;
       default:
         return <AlertCircle className="w-4 h-4 text-gray-400" />;
     }
   };
 
+  const filteredTasks = tasks.filter(task => {
+    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+    const matchesSearch = searchTerm === '' ||
+      task.vehiclePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.serviceType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.technician.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+
   const handleStartTask = (taskId: string) => {
-    setTasks(prev =>
-      prev.map(task =>
-        task.id === taskId
-          ? {
-            ...task,
-            status: 'in_progress' as const,
-            startTime: new Date().toISOString(),
-            progress: 0
-          }
-          : task
-      )
-    );
+    setTasks(tasks.map(task =>
+      task.id === taskId
+        ? { ...task, status: 'in_progress' as const, startTime: new Date().toISOString() }
+        : task
+    ));
   };
 
   const handleCompleteTask = (taskId: string) => {
-    setTasks(prev =>
-      prev.map(task =>
-        task.id === taskId
-          ? {
-            ...task,
-            status: 'completed' as const,
-            progress: 100,
-            actualEndTime: new Date().toISOString()
-          }
-          : task
-      )
-    );
+    setTasks(tasks.map(task =>
+      task.id === taskId
+        ? { ...task, status: 'completed' as const, progress: 100, actualEndTime: new Date().toISOString() }
+        : task
+    ));
   };
-
-  const pendingTasks = filteredTasks.filter(task => task.status === 'pending');
-  const inProgressTasks = filteredTasks.filter(task => task.status === 'in_progress');
-  const completedTasks = filteredTasks.filter(task => task.status === 'completed');
 
   return (
     <DashboardLayout user={{ email: 'staff@service.com', role: 'staff', userType: 'service' }}>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Quy trình bảo dưỡng</h1>
-            <p className="text-muted-foreground">Theo dõi và quản lý quy trình bảo dưỡng xe</p>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Input
+                placeholder="Tìm kiếm..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-64"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="pending">Chờ xử lý</SelectItem>
+                <SelectItem value="in_progress">Đang thực hiện</SelectItem>
+                <SelectItem value="completed">Hoàn thành</SelectItem>
+                <SelectItem value="cancelled">Đã hủy</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        <div className="flex gap-4">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Lọc theo trạng thái" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="pending">Chờ xử lý</SelectItem>
-              <SelectItem value="in_progress">Đang thực hiện</SelectItem>
-              <SelectItem value="completed">Hoàn thành</SelectItem>
-              <SelectItem value="cancelled">Đã hủy</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Tabs defaultValue="in_progress" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="pending">Chờ xử lý ({pendingTasks.length})</TabsTrigger>
-            <TabsTrigger value="in_progress">Đang thực hiện ({inProgressTasks.length})</TabsTrigger>
-            <TabsTrigger value="completed">Hoàn thành ({completedTasks.length})</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pending" className="space-y-4">
-            <div className="grid gap-4">
-              {pendingTasks.map((task) => (
-                <Card key={task.id}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Settings className="w-5 h-5 text-primary" />
-                        <CardTitle className="text-lg">{task.serviceType}</CardTitle>
-                      </div>
-                      {getStatusBadge(task.status)}
-                    </div>
-                    <CardDescription>
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Car className="w-4 h-4" />
-                          {task.vehiclePlate}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <User className="w-4 h-4" />
-                          {task.customerName}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Wrench className="w-4 h-4" />
-                          {task.technician}
-                        </div>
-                      </div>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium">Các bước thực hiện:</div>
-                      {task.steps.map((step) => (
-                        <div key={step.id} className="flex items-center gap-2 text-sm">
-                          {getStepStatusIcon(step.status)}
-                          <span className={step.status === 'completed' ? 'line-through text-muted-foreground' : ''}>
-                            {step.name}
-                          </span>
-                          <span className="text-muted-foreground">({step.duration} phút)</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex gap-2 pt-2">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Dịch vụ</TableHead>
+              <TableHead>Xe</TableHead>
+              <TableHead>Khách hàng</TableHead>
+              <TableHead>Kỹ thuật viên</TableHead>
+              <TableHead>Trạng thái</TableHead>
+              <TableHead>Tiến độ</TableHead>
+              <TableHead>Thao tác</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredTasks.map((task) => (
+              <TableRow key={task.id}>
+                <TableCell className="font-medium">{task.serviceType}</TableCell>
+                <TableCell>{task.vehiclePlate}</TableCell>
+                <TableCell>{task.customerName}</TableCell>
+                <TableCell>{task.technician}</TableCell>
+                <TableCell>{getStatusBadge(task.status)}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Progress value={task.progress} className="h-2 w-20" />
+                    <span className="text-sm text-muted-foreground">{task.progress}%</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    {task.status === 'pending' && (
                       <Button size="sm" onClick={() => handleStartTask(task.id)}>
                         Bắt đầu
                       </Button>
-                      <Button variant="outline" size="sm">
-                        Chi tiết
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="in_progress" className="space-y-4">
-            <div className="grid gap-4">
-              {inProgressTasks.map((task) => (
-                <Card key={task.id}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Settings className="w-5 h-5 text-primary" />
-                        <CardTitle className="text-lg">{task.serviceType}</CardTitle>
-                      </div>
-                      {getStatusBadge(task.status)}
-                    </div>
-                    <CardDescription>
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Car className="w-4 h-4" />
-                          {task.vehiclePlate}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <User className="w-4 h-4" />
-                          {task.customerName}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Wrench className="w-4 h-4" />
-                          {task.technician}
-                        </div>
-                      </div>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span>Tiến độ</span>
-                        <span>{task.progress}%</span>
-                      </div>
-                      <Progress value={task.progress} className="w-full" />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium">Các bước thực hiện:</div>
-                      {task.steps.map((step) => (
-                        <div key={step.id} className="flex items-center gap-2 text-sm">
-                          {getStepStatusIcon(step.status)}
-                          <span className={step.status === 'completed' ? 'line-through text-muted-foreground' : ''}>
-                            {step.name}
-                          </span>
-                          <span className="text-muted-foreground">({step.duration} phút)</span>
-                        </div>
-                      ))}
-                    </div>
-                    {task.notes && (
-                      <div className="text-sm bg-muted p-2 rounded">
-                        <span className="font-medium">Ghi chú:</span> {task.notes}
-                      </div>
                     )}
-                    <div className="flex gap-2 pt-2">
+                    {task.status === 'in_progress' && (
                       <Button size="sm" onClick={() => handleCompleteTask(task.id)}>
                         Hoàn thành
                       </Button>
-                      <Button variant="outline" size="sm">
-                        Chi tiết
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="completed" className="space-y-4">
-            <div className="grid gap-4">
-              {completedTasks.map((task) => (
-                <Card key={task.id}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Settings className="w-5 h-5 text-primary" />
-                        <CardTitle className="text-lg">{task.serviceType}</CardTitle>
-                      </div>
-                      {getStatusBadge(task.status)}
-                    </div>
-                    <CardDescription>
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Car className="w-4 h-4" />
-                          {task.vehiclePlate}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <User className="w-4 h-4" />
-                          {task.customerName}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Wrench className="w-4 h-4" />
-                          {task.technician}
-                        </div>
-                      </div>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium">Các bước thực hiện:</div>
-                      {task.steps.map((step) => (
-                        <div key={step.id} className="flex items-center gap-2 text-sm">
-                          {getStepStatusIcon(step.status)}
-                          <span className={step.status === 'completed' ? 'line-through text-muted-foreground' : ''}>
-                            {step.name}
-                          </span>
-                          <span className="text-muted-foreground">({step.duration} phút)</span>
-                        </div>
-                      ))}
-                    </div>
-                    {task.notes && (
-                      <div className="text-sm bg-muted p-2 rounded">
-                        <span className="font-medium">Ghi chú:</span> {task.notes}
-                      </div>
                     )}
-                    <div className="text-sm text-muted-foreground">
-                      <span className="font-medium">Hoàn thành lúc:</span> {task.actualEndTime ? new Date(task.actualEndTime).toLocaleString('vi-VN') : 'N/A'}
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <Button variant="outline" size="sm">
-                        Chi tiết
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+                    <Button variant="outline" size="sm" onClick={() => setSelectedTask(task)}>
+                      Chi tiết
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        {/* Task Details Modal */}
+        {selectedTask && (
+          <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-bold">{selectedTask.serviceType}</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">Xe</h4>
+                    <p className="font-medium">{selectedTask.vehiclePlate}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">Khách hàng</h4>
+                    <p className="font-medium">{selectedTask.customerName}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Tiến độ</h4>
+                  <div className="flex items-center gap-2">
+                    <Progress value={selectedTask.progress} className="h-2 flex-1" />
+                    <span className="text-sm text-muted-foreground">{selectedTask.progress}%</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-3">Các bước thực hiện</h4>
+                  <div className="space-y-3">
+                    {selectedTask.steps.map((step) => (
+                      <div key={step.id} className="border rounded-lg p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          {getStepStatusIcon(step.status)}
+                          <span className="font-medium">{step.name}</span>
+                          <Badge variant={step.status === 'completed' ? 'default' : step.status === 'in_progress' ? 'secondary' : 'outline'}>
+                            {step.status === 'completed' ? 'Hoàn thành' : step.status === 'in_progress' ? 'Đang thực hiện' : 'Chờ xử lý'}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">{step.description}</p>
+                        <div className="flex items-center gap-4 text-sm">
+                          <span>Thời gian dự kiến: {step.duration} phút</span>
+                          {step.status === 'completed' && (
+                            <span className="text-green-600">✓ Đã hoàn thành</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setSelectedTask(null)}>
+                    Đóng
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </DashboardLayout>
   );

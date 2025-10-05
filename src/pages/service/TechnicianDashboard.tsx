@@ -21,25 +21,16 @@ export default function TechnicianDashboard() {
   const currentTasks = [
     {
       id: 'BK2025001',
+      customer: 'Nguyễn Văn A',
       vehicle: 'VinFast VF8 - 30A-12345',
       service: 'Bảo dưỡng định kỳ',
-      status: 'confirmed' as const,
-      estimatedDuration: '2-3 giờ',
-      notes: 'Xe có tiếng ồn lạ ở bánh trước',
-      date: '2025-09-15',
-      time: '09:00'
+      startTime: '09:00',
+      estimatedDuration: 150, // minutes
+      progress: 50,
+      status: 'in-progress' as const,
+      priority: 'normal' as const
     }
-  ].map((b: any) => ({
-    id: b.id,
-    customer: b.customerName || 'Khách hàng',
-    vehicle: `${b.vehicle?.name} - ${b.vehicle?.plate}`,
-    service: b.service?.name,
-    startTime: b.time,
-    estimatedDuration: (b.estimatedDuration?.match(/\d+/)?.[0] ? parseInt(b.estimatedDuration.match(/\d+/)[0]) * 60 : 120),
-    progress: b.status === 'in_progress' ? 50 : 0,
-    status: b.status === 'in_progress' ? 'in-progress' : 'assigned',
-    priority: 'normal'
-  }));
+  ];
 
   const pendingTasks = [
     {
