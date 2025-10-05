@@ -1,4 +1,3 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -117,14 +116,7 @@ export default function ServiceManagementPage() {
     }
   });
 
-  // Mock user data
-  const user = {
-    id: '1',
-    name: 'Nguyễn Văn A',
-    email: 'staff@example.com',
-    role: 'staff',
-    userType: 'service'
-  };
+  // Mock user data removed; layout is provided by DefaultLayout
 
   const handleAddService = () => {
     setEditingService(null);
@@ -228,171 +220,189 @@ export default function ServiceManagementPage() {
   };
 
   return (
-    <DashboardLayout user={user}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Input
-                placeholder="Tìm kiếm dịch vụ..."
-                className="w-64"
-              />
-            </div>
-            <Select>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="active">Hoạt động</SelectItem>
-                <SelectItem value="inactive">Tạm dừng</SelectItem>
-              </SelectContent>
-            </Select>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Input
+              placeholder="Tìm kiếm dịch vụ..."
+              className="w-64"
+            />
           </div>
-          <Button onClick={handleAddService}>
-            <Plus className="w-4 h-4 mr-2" />
-            Thêm dịch vụ
-          </Button>
+          <Select>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả</SelectItem>
+              <SelectItem value="active">Hoạt động</SelectItem>
+              <SelectItem value="inactive">Tạm dừng</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+        <Button onClick={handleAddService}>
+          <Plus className="w-4 h-4 mr-2" />
+          Thêm dịch vụ
+        </Button>
+      </div>
 
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tên dịch vụ</TableHead>
-              <TableHead>Loại</TableHead>
-              <TableHead>Giá</TableHead>
-              <TableHead>Thời gian</TableHead>
-              <TableHead>Xe tương thích</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead className="text-right">Thao tác</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {services.map((service) => (
-              <TableRow key={service.id}>
-                <TableCell>
-                  <div>
-                    <div className="font-medium">{service.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {service.description}
-                    </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Tên dịch vụ</TableHead>
+            <TableHead>Loại</TableHead>
+            <TableHead>Giá</TableHead>
+            <TableHead>Thời gian</TableHead>
+            <TableHead>Xe tương thích</TableHead>
+            <TableHead>Trạng thái</TableHead>
+            <TableHead className="text-right">Thao tác</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {services.map((service) => (
+            <TableRow key={service.id}>
+              <TableCell>
+                <div>
+                  <div className="font-medium">{service.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {service.description}
                   </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">
-                    {getCategoryLabel(service.category)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="font-medium">
-                  {formatPrice(service.price)}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {formatDuration(service.duration)}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {service.compatibleVehicles.map((vehicle) => (
-                      <Badge key={vehicle} variant="secondary" className="text-xs">
-                        {vehicle}
-                      </Badge>
-                    ))}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {getStatusBadge(service.status)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditService(service)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteService(service.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        {/* Add/Edit Service Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingService ? 'Chỉnh sửa dịch vụ' : 'Thêm dịch vụ mới'}
-              </DialogTitle>
-              <DialogDescription>
-                {editingService
-                  ? 'Cập nhật thông tin dịch vụ'
-                  : 'Thêm dịch vụ mới vào hệ thống'
-                }
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tên dịch vụ *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nhập tên dịch vụ" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Loại dịch vụ *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn loại dịch vụ" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {serviceCategories.map((category) => (
-                              <SelectItem key={category.value} value={category.value}>
-                                {category.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline">
+                  {getCategoryLabel(service.category)}
+                </Badge>
+              </TableCell>
+              <TableCell className="font-medium">
+                {formatPrice(service.price)}
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  {formatDuration(service.duration)}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-wrap gap-1">
+                  {service.compatibleVehicles.map((vehicle) => (
+                    <Badge key={vehicle} variant="secondary" className="text-xs">
+                      {vehicle}
+                    </Badge>
+                  ))}
+                </div>
+              </TableCell>
+              <TableCell>
+                {getStatusBadge(service.status)}
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditService(service)}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteService(service.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
 
+      {/* Add/Edit Service Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingService ? 'Chỉnh sửa dịch vụ' : 'Thêm dịch vụ mới'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingService
+                ? 'Cập nhật thông tin dịch vụ'
+                : 'Thêm dịch vụ mới vào hệ thống'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="description"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Mô tả dịch vụ *</FormLabel>
+                      <FormLabel>Tên dịch vụ *</FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder="Mô tả chi tiết dịch vụ"
-                          rows={3}
+                        <Input placeholder="Nhập tên dịch vụ" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Loại dịch vụ *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn loại dịch vụ" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {serviceCategories.map((category) => (
+                            <SelectItem key={category.value} value={category.value}>
+                              {category.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mô tả dịch vụ *</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Mô tả chi tiết dịch vụ"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Giá dịch vụ (VNĐ) *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Nhập giá dịch vụ"
                           {...field}
                         />
                       </FormControl>
@@ -400,109 +410,89 @@ export default function ServiceManagementPage() {
                     </FormItem>
                   )}
                 />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Giá dịch vụ (VNĐ) *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Nhập giá dịch vụ"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="duration"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Thời gian (phút) *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Nhập thời gian thực hiện"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
                 <FormField
                   control={form.control}
-                  name="compatibleVehicles"
+                  name="duration"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Xe tương thích *</FormLabel>
-                      <div className="grid grid-cols-2 gap-2">
-                        {vehicleTypes.map((vehicle) => (
-                          <div key={vehicle.value} className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={vehicle.value}
-                              checked={field.value.includes(vehicle.value)}
-                              onChange={() => {
-                                const newVehicles = handleVehicleTypeChange(vehicle.value, field.value);
-                                field.onChange(newVehicles);
-                              }}
-                              className="rounded"
-                            />
-                            <label htmlFor={vehicle.value} className="text-sm">
-                              {vehicle.label}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
+                      <FormLabel>Thời gian (phút) *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Nhập thời gian thực hiện"
+                          {...field}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+              </div>
 
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Trạng thái</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="active">Hoạt động</SelectItem>
-                          <SelectItem value="inactive">Tạm dừng</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="compatibleVehicles"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Xe tương thích *</FormLabel>
+                    <div className="grid grid-cols-2 gap-2">
+                      {vehicleTypes.map((vehicle) => (
+                        <div key={vehicle.value} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={vehicle.value}
+                            checked={field.value.includes(vehicle.value)}
+                            onChange={() => {
+                              const newVehicles = handleVehicleTypeChange(vehicle.value, field.value);
+                              field.onChange(newVehicles);
+                            }}
+                            className="rounded"
+                          />
+                          <label htmlFor={vehicle.value} className="text-sm">
+                            {vehicle.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Hủy
-                  </Button>
-                  <Button type="submit">
-                    {editingService ? 'Cập nhật' : 'Thêm mới'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </DashboardLayout>
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Trạng thái</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Hoạt động</SelectItem>
+                        <SelectItem value="inactive">Tạm dừng</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Hủy
+                </Button>
+                <Button type="submit">
+                  {editingService ? 'Cập nhật' : 'Thêm mới'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

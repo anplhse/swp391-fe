@@ -1,4 +1,3 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -247,18 +246,16 @@ export default function BookingPage() {
   // Nếu khách hàng chưa có xe đã đăng ký, hiển thị CTA đăng ký xe trước
   if (registeredVehicles.length === 0) {
     return (
-      <DashboardLayout title="" user={user}>
-        <div className="mx-auto max-w-2xl p-6 border rounded-xl bg-card">
-          <h2 className="text-xl font-semibold mb-2">Bạn chưa đăng ký xe</h2>
-          <p className="text-muted-foreground mb-4">Vui lòng đăng ký xe trước khi đặt lịch để chúng tôi đề xuất dịch vụ phù hợp với mẫu xe của bạn.</p>
-          <div className="flex gap-3">
-            <Button onClick={() => navigate('/customer/vehicles')}>
-              Đăng ký xe ngay
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/customer')}>Quay lại</Button>
-          </div>
+      <div className="mx-auto max-w-2xl p-6 border rounded-xl bg-card">
+        <h2 className="text-xl font-semibold mb-2">Bạn chưa đăng ký xe</h2>
+        <p className="text-muted-foreground mb-4">Vui lòng đăng ký xe trước khi đặt lịch để chúng tôi đề xuất dịch vụ phù hợp với mẫu xe của bạn.</p>
+        <div className="flex gap-3">
+          <Button onClick={() => navigate('/customer/vehicles')}>
+            Đăng ký xe ngay
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/customer')}>Quay lại</Button>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
@@ -268,326 +265,324 @@ export default function BookingPage() {
     : [];
 
   return (
-    <DashboardLayout title="" user={user}>
-      <div className="space-y-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[200px]">Thông tin</TableHead>
-                    <TableHead>Giá trị</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {/* Service Selection */}
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Wrench className="w-4 h-4" />
-                        Dịch vụ
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <FormField
-                        control={form.control}
-                        name="services"
-                        render={({ field }) => (
-                          <FormItem>
-                            <div className="space-y-3">
-                              {!watchedVehicleModel && (
-                                <div className="text-sm text-muted-foreground">Vui lòng chọn mẫu xe để xem dịch vụ phù hợp.</div>
-                              )}
-                              {watchedVehicleModel && visibleServices.map((service) => (
-                                <div
-                                  key={service.id}
-                                  className={cn(
-                                    "flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-all hover:border-primary",
-                                    field.value?.includes(service.id) && "border-primary bg-primary/5"
-                                  )}
-                                  onClick={() => {
-                                    const currentServices = field.value || [];
-                                    const isSelected = currentServices.includes(service.id);
-                                    if (isSelected) {
-                                      field.onChange(currentServices.filter(id => id !== service.id));
-                                    } else {
-                                      field.onChange([...currentServices, service.id]);
-                                    }
-                                  }}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <input
-                                      type="checkbox"
-                                      checked={field.value?.includes(service.id) || false}
-                                      onChange={() => { }}
-                                      className="w-4 h-4"
-                                    />
-                                    <div>
-                                      <div className="font-medium">{service.name}</div>
-                                      <div className="text-sm text-muted-foreground">{service.description}</div>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <Badge variant="secondary">{formatPrice(service.price)}</Badge>
-                                    <div className="text-xs text-muted-foreground mt-1">{service.duration}</div>
+    <div className="space-y-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[200px]">Thông tin</TableHead>
+                  <TableHead>Giá trị</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {/* Service Selection */}
+                <TableRow>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="w-4 h-4" />
+                      Dịch vụ
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <FormField
+                      control={form.control}
+                      name="services"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="space-y-3">
+                            {!watchedVehicleModel && (
+                              <div className="text-sm text-muted-foreground">Vui lòng chọn mẫu xe để xem dịch vụ phù hợp.</div>
+                            )}
+                            {watchedVehicleModel && visibleServices.map((service) => (
+                              <div
+                                key={service.id}
+                                className={cn(
+                                  "flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-all hover:border-primary",
+                                  field.value?.includes(service.id) && "border-primary bg-primary/5"
+                                )}
+                                onClick={() => {
+                                  const currentServices = field.value || [];
+                                  const isSelected = currentServices.includes(service.id);
+                                  if (isSelected) {
+                                    field.onChange(currentServices.filter(id => id !== service.id));
+                                  } else {
+                                    field.onChange([...currentServices, service.id]);
+                                  }
+                                }}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <input
+                                    type="checkbox"
+                                    checked={field.value?.includes(service.id) || false}
+                                    onChange={() => { }}
+                                    className="w-4 h-4"
+                                  />
+                                  <div>
+                                    <div className="font-medium">{service.name}</div>
+                                    <div className="text-sm text-muted-foreground">{service.description}</div>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Vehicle Model */}
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Car className="w-4 h-4" />
-                        Mẫu xe
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <FormField
-                        control={form.control}
-                        name="vehicleModel"
-                        render={({ field }) => (
-                          <FormItem>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Chọn mẫu xe" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {vehicleModels.map((vehicle) => (
-                                  <SelectItem key={vehicle.id} value={vehicle.id}>
-                                    <div className="flex items-center gap-2">
-                                      <span>{vehicle.name}</span>
-                                      <Badge variant="outline">{vehicle.type}</Badge>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Plate Number */}
-                  <TableRow>
-                    <TableCell className="font-medium">Biển số xe</TableCell>
-                    <TableCell>
-                      <FormField
-                        control={form.control}
-                        name="plate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input placeholder="30A-123.45" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Year */}
-                  <TableRow>
-                    <TableCell className="font-medium">Năm sản xuất</TableCell>
-                    <TableCell>
-                      <FormField
-                        control={form.control}
-                        name="year"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input placeholder="2024" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Date */}
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4" />
-                        Ngày bảo dưỡng
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <FormField
-                        control={form.control}
-                        name="date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant="outline"
-                                    className={cn(
-                                      "w-full pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      format(field.value, "dd/MM/yyyy")
-                                    ) : (
-                                      <span>Chọn ngày</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  disabled={(date) => {
-                                    const today = new Date();
-                                    today.setHours(0, 0, 0, 0);
-
-                                    // Disable past dates
-                                    if (date < today) return true;
-
-                                    // Only allow September 2025
-                                    const year = date.getFullYear();
-                                    const month = date.getMonth() + 1;
-
-                                    if (year !== 2025 || month !== 9) return true;
-
-                                    return false;
-                                  }}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Time */}
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        Giờ bảo dưỡng
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <FormField
-                        control={form.control}
-                        name="time"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <div className="grid grid-cols-2 gap-2">
-                                {availableTimeSlots.length > 0 ? (
-                                  availableTimeSlots.map((time) => (
-                                    <Button
-                                      key={time}
-                                      type="button"
-                                      variant={field.value === time ? "default" : "outline"}
-                                      className="justify-center"
-                                      onClick={() => field.onChange(time)}
-                                    >
-                                      <Clock className="w-4 h-4 mr-2" />
-                                      {time}
-                                    </Button>
-                                  ))
-                                ) : (
-                                  <div className="col-span-2 text-center py-8">
-                                    <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                                    <p className="text-sm text-muted-foreground">
-                                      {watchedDate ? "Ngày này đã hết lịch trống" : "Vui lòng chọn ngày trước"}
-                                    </p>
-                                  </div>
-                                )}
+                                <div className="text-right">
+                                  <Badge variant="secondary">{formatPrice(service.price)}</Badge>
+                                  <div className="text-xs text-muted-foreground mt-1">{service.duration}</div>
+                                </div>
                               </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TableCell>
-                  </TableRow>
+                            ))}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TableCell>
+                </TableRow>
 
-                  {/* Notes */}
-                  <TableRow>
-                    <TableCell className="font-medium">Ghi chú thêm</TableCell>
-                    <TableCell>
-                      <FormField
-                        control={form.control}
-                        name="notes"
-                        render={({ field }) => (
-                          <FormItem>
+                {/* Vehicle Model */}
+                <TableRow>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <Car className="w-4 h-4" />
+                      Mẫu xe
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <FormField
+                      control={form.control}
+                      name="vehicleModel"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
-                              <Textarea
-                                placeholder="Ví dụ: Xe có tiếng ồn lạ ở bánh trước, pin sạc chậm..."
-                                className="min-h-[100px]"
-                                {...field}
-                              />
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Chọn mẫu xe" />
+                              </SelectTrigger>
                             </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                            <SelectContent>
+                              {vehicleModels.map((vehicle) => (
+                                <SelectItem key={vehicle.id} value={vehicle.id}>
+                                  <div className="flex items-center gap-2">
+                                    <span>{vehicle.name}</span>
+                                    <Badge variant="outline">{vehicle.type}</Badge>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TableCell>
+                </TableRow>
+
+                {/* Plate Number */}
+                <TableRow>
+                  <TableCell className="font-medium">Biển số xe</TableCell>
+                  <TableCell>
+                    <FormField
+                      control={form.control}
+                      name="plate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input placeholder="30A-123.45" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TableCell>
+                </TableRow>
+
+                {/* Year */}
+                <TableRow>
+                  <TableCell className="font-medium">Năm sản xuất</TableCell>
+                  <TableCell>
+                    <FormField
+                      control={form.control}
+                      name="year"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input placeholder="2024" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TableCell>
+                </TableRow>
+
+                {/* Date */}
+                <TableRow>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <CalendarIcon className="w-4 h-4" />
+                      Ngày bảo dưỡng
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <FormField
+                      control={form.control}
+                      name="date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "dd/MM/yyyy")
+                                  ) : (
+                                    <span>Chọn ngày</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) => {
+                                  const today = new Date();
+                                  today.setHours(0, 0, 0, 0);
+
+                                  // Disable past dates
+                                  if (date < today) return true;
+
+                                  // Only allow September 2025
+                                  const year = date.getFullYear();
+                                  const month = date.getMonth() + 1;
+
+                                  if (year !== 2025 || month !== 9) return true;
+
+                                  return false;
+                                }}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TableCell>
+                </TableRow>
+
+                {/* Time */}
+                <TableRow>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      Giờ bảo dưỡng
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <FormField
+                      control={form.control}
+                      name="time"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <div className="grid grid-cols-2 gap-2">
+                              {availableTimeSlots.length > 0 ? (
+                                availableTimeSlots.map((time) => (
+                                  <Button
+                                    key={time}
+                                    type="button"
+                                    variant={field.value === time ? "default" : "outline"}
+                                    className="justify-center"
+                                    onClick={() => field.onChange(time)}
+                                  >
+                                    <Clock className="w-4 h-4 mr-2" />
+                                    {time}
+                                  </Button>
+                                ))
+                              ) : (
+                                <div className="col-span-2 text-center py-8">
+                                  <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                                  <p className="text-sm text-muted-foreground">
+                                    {watchedDate ? "Ngày này đã hết lịch trống" : "Vui lòng chọn ngày trước"}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TableCell>
+                </TableRow>
+
+                {/* Notes */}
+                <TableRow>
+                  <TableCell className="font-medium">Ghi chú thêm</TableCell>
+                  <TableCell>
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Ví dụ: Xe có tiếng ồn lạ ở bánh trước, pin sạc chậm..."
+                              className="min-h-[100px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TableCell>
+                </TableRow>
+
+                {/* Service Summary */}
+                {watchedServices.length > 0 && (
+                  <TableRow className="bg-muted/50">
+                    <TableCell className="font-bold text-lg">
+                      <div className="flex items-center gap-2">
+                        <Wrench className="w-5 h-5" />
+                        Tóm tắt dịch vụ
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-right">
+                        <div className="text-lg font-semibold">
+                          {watchedServices.length} dịch vụ đã chọn
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Chờ xác nhận từ trung tâm
+                        </div>
+                      </div>
                     </TableCell>
                   </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-                  {/* Service Summary */}
-                  {watchedServices.length > 0 && (
-                    <TableRow className="bg-muted/50">
-                      <TableCell className="font-bold text-lg">
-                        <div className="flex items-center gap-2">
-                          <Wrench className="w-5 h-5" />
-                          Tóm tắt dịch vụ
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-right">
-                          <div className="text-lg font-semibold">
-                            {watchedServices.length} dịch vụ đã chọn
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Chờ xác nhận từ trung tâm
-                          </div>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Submit Buttons */}
-            <div className="flex gap-4">
-              <Button type="button" variant="outline" className="flex-1" onClick={() => navigate('/customer')}>
-                Hủy bỏ
-              </Button>
-              <Button type="submit" variant="electric" className="flex-1">
-                Xác nhận đặt lịch
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </div>
-    </DashboardLayout>
+          {/* Submit Buttons */}
+          <div className="flex gap-4">
+            <Button type="button" variant="outline" className="flex-1" onClick={() => navigate('/customer')}>
+              Hủy bỏ
+            </Button>
+            <Button type="submit" variant="electric" className="flex-1">
+              Xác nhận đặt lịch
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }

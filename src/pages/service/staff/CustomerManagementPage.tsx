@@ -1,4 +1,3 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -164,189 +163,187 @@ export default function CustomerManagementPage() {
   };
 
   return (
-    <DashboardLayout user={{ email: 'staff@service.com', role: 'staff', userType: 'service' }}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Tìm kiếm khách hàng..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
-            />
-          </div>
-          <Button onClick={handleAddCustomer}>
-            <Plus className="w-4 h-4 mr-2" />
-            Thêm khách hàng
-          </Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            placeholder="Tìm kiếm khách hàng..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 w-64"
+          />
         </div>
-
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Khách hàng</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Số điện thoại</TableHead>
-              <TableHead>Số xe</TableHead>
-              <TableHead>Dịch vụ cuối</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead className="text-right">Thao tác</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredCustomers.map((customer) => (
-              <TableRow key={customer.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={customer.avatar} />
-                      <AvatarFallback>{customer.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">{customer.name}</div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
-                    {customer.email}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-muted-foreground" />
-                    {customer.phone}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Car className="w-4 h-4 text-muted-foreground" />
-                    {customer.vehicles} xe
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    {new Date(customer.lastService).toLocaleDateString('vi-VN')}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {getStatusBadge(customer.status)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditCustomer(customer)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteCustomer(customer.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        {/* Add/Edit Customer Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {editingCustomer ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng mới'}
-              </DialogTitle>
-              <DialogDescription>
-                {editingCustomer
-                  ? 'Cập nhật thông tin khách hàng'
-                  : 'Thêm khách hàng mới vào hệ thống'
-                }
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tên khách hàng *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nhập tên khách hàng" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email *</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="Nhập email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Số điện thoại *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nhập số điện thoại" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Trạng thái</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="active">Hoạt động</SelectItem>
-                          <SelectItem value="inactive">Không hoạt động</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Hủy
-                  </Button>
-                  <Button type="submit">
-                    {editingCustomer ? 'Cập nhật' : 'Thêm mới'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={handleAddCustomer}>
+          <Plus className="w-4 h-4 mr-2" />
+          Thêm khách hàng
+        </Button>
       </div>
-    </DashboardLayout>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Khách hàng</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Số điện thoại</TableHead>
+            <TableHead>Số xe</TableHead>
+            <TableHead>Dịch vụ cuối</TableHead>
+            <TableHead>Trạng thái</TableHead>
+            <TableHead className="text-right">Thao tác</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredCustomers.map((customer) => (
+            <TableRow key={customer.id}>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarImage src={customer.avatar} />
+                    <AvatarFallback>{customer.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-medium">{customer.name}</div>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  {customer.email}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  {customer.phone}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Car className="w-4 h-4 text-muted-foreground" />
+                  {customer.vehicles} xe
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  {new Date(customer.lastService).toLocaleDateString('vi-VN')}
+                </div>
+              </TableCell>
+              <TableCell>
+                {getStatusBadge(customer.status)}
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditCustomer(customer)}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteCustomer(customer.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      {/* Add/Edit Customer Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCustomer ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng mới'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingCustomer
+                ? 'Cập nhật thông tin khách hàng'
+                : 'Thêm khách hàng mới vào hệ thống'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tên khách hàng *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nhập tên khách hàng" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email *</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Nhập email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Số điện thoại *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nhập số điện thoại" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Trạng thái</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Hoạt động</SelectItem>
+                        <SelectItem value="inactive">Không hoạt động</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Hủy
+                </Button>
+                <Button type="submit">
+                  {editingCustomer ? 'Cập nhật' : 'Thêm mới'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

@@ -14,9 +14,7 @@ export default function AuthEventListener() {
         description: 'Vui lòng đăng nhập lại để tiếp tục.',
         variant: 'destructive',
       });
-      if (location.pathname !== '/login') {
-        navigate('/login', { replace: true });
-      }
+      navigate('/', { replace: true });
     };
 
     window.addEventListener('auth:logout', onForcedLogout);

@@ -1,5 +1,6 @@
-const API_BASE_URL = 'https://b46898d75118.ngrok-free.app/api'; // Backend API endpoint
-
+// src/lib/api.ts
+import API from '@/config/API';
+const API_BASE_URL = API.API_URL;
 export interface LoginRequest {
   userName: string;
   password: string;
@@ -41,11 +42,12 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
+    const url = this.joinUrl(this.baseURL, endpoint);
 
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
         ...options.headers,
       },
       ...options,
@@ -98,6 +100,12 @@ class ApiClient {
       console.error('API request failed:', error);
       throw error;
     }
+  }
+
+  private joinUrl(base: string, endpoint: string): string {
+    const b = base.replace(/\/+$/, '');
+    const e = endpoint.replace(/^\/+/, '');
+    return `${b}/${e}`;
   }
 
   async login(credentials: LoginRequest): Promise<LoginResponse> {
