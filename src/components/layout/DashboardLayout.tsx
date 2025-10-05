@@ -25,6 +25,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { BarChart3, Bell, Calendar, Car, ClipboardList, DollarSign, FileText, History, LayoutDashboard, LogOut, Package, Settings, User, Users, Wrench } from 'lucide-react';
 import { ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -43,16 +44,28 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { logout, user: authUser } = useAuth();
 
-  const handleLogout = () => {
-    // In real app, this would clear user session
-    console.log('User logged out');
-    toast({
-      title: "Đăng xuất thành công",
-      description: "Hẹn gặp lại bạn!",
-    });
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Đăng xuất thành công",
+        description: "Hẹn gặp lại bạn!",
+      });
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Lỗi đăng xuất",
+        description: "Có lỗi xảy ra khi đăng xuất",
+        variant: "destructive"
+      });
+    }
   };
+
+  // Use auth user if available, fallback to prop user
+  const currentUser = authUser || user;
 
   const getRoleDisplayName = (role: string) => {
     const roleNames = {
@@ -63,6 +76,20 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
     };
     return roleNames[role as keyof typeof roleNames] || role;
   };
+
+  // Get user type based on role
+  const getUserType = (role: string) => {
+    return role === 'customer' ? 'customer' : 'service';
+  };
+
+  // Type guards/helpers for display name without using any
+  type MinimalUser = { email: string; role: string };
+  type PropUser = MinimalUser & { userType: string };
+  type AuthUser = MinimalUser & { fullName?: string };
+
+  function hasFullName(u: MinimalUser | PropUser | AuthUser): u is AuthUser & { fullName: string } {
+    return 'fullName' in u && typeof (u as { fullName: unknown }).fullName === 'string' && (u as { fullName: string }).fullName.length > 0;
+  }
 
   // Helper: NavLink integrated with SidebarMenuButton to set active state
   const isActivePath = (path: string) => {
@@ -80,7 +107,7 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
   );
 
   const menuItems = (() => {
-    switch (user.role) {
+    switch (currentUser.role) {
       case 'staff':
         return [
           { to: '/service/staff', icon: LayoutDashboard, label: 'Dashboard' },
@@ -153,7 +180,7 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
             <div className="flex items-center gap-3">
               <SidebarTrigger />
               {title && <h1 className="text-lg font-semibold">{title}</h1>}
-              <span className="text-sm text-muted-foreground hidden md:inline">{getRoleDisplayName(user.role)}</span>
+              <span className="text-sm text-muted-foreground hidden md:inline">{getRoleDisplayName(currentUser.role)}</span>
             </div>
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" className="relative">
@@ -164,17 +191,17 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src="/avatars/01.png" alt={user.email} />
+                      <AvatarImage src="/avatars/01.png" alt={currentUser.email} />
                       <AvatarFallback className="bg-primary text-primary-foreground">
-                        {user.email.charAt(0).toUpperCase()}
+                        {currentUser.email.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex flex-col space-y-1 p-2">
-                    <p className="text-sm font-medium leading-none">{getRoleDisplayName(user.role)}</p>
-                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                    <p className="text-sm font-medium leading-none">{hasFullName(currentUser) ? currentUser.fullName : getRoleDisplayName(currentUser.role)}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{currentUser.email}</p>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>

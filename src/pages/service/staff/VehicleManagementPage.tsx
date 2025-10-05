@@ -1,7 +1,6 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -239,98 +238,88 @@ export default function VehicleManagementPage() {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Danh sách xe</CardTitle>
-            <CardDescription>
-              Tổng cộng {filteredVehicles.length} xe
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Biển số</TableHead>
-                  <TableHead>Thông tin xe</TableHead>
-                  <TableHead>Chủ xe</TableHead>
-                  <TableHead>Số km</TableHead>
-                  <TableHead>Dịch vụ cuối</TableHead>
-                  <TableHead>Dịch vụ tiếp</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredVehicles.map((vehicle) => (
-                  <TableRow key={vehicle.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Car className="w-4 h-4 text-primary" />
-                        <span className="font-medium">{vehicle.licensePlate}</span>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Biển số</TableHead>
+              <TableHead>Thông tin xe</TableHead>
+              <TableHead>Chủ xe</TableHead>
+              <TableHead>Số km</TableHead>
+              <TableHead>Dịch vụ cuối</TableHead>
+              <TableHead>Dịch vụ tiếp</TableHead>
+              <TableHead>Trạng thái</TableHead>
+              <TableHead className="text-right">Thao tác</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredVehicles.map((vehicle) => (
+              <TableRow key={vehicle.id}>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Car className="w-4 h-4 text-primary" />
+                    <span className="font-medium">{vehicle.licensePlate}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <div className="font-medium">{vehicle.brand} {vehicle.model}</div>
+                    <div className="text-sm text-muted-foreground">({vehicle.year})</div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <div className="font-medium">{vehicle.owner}</div>
+                    <div className="text-sm text-muted-foreground">{vehicle.ownerPhone}</div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="font-medium">{vehicle.mileage.toLocaleString()} km</span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    {new Date(vehicle.lastService).toLocaleDateString('vi-VN')}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Wrench className="w-4 h-4 text-muted-foreground" />
+                    {new Date(vehicle.nextService).toLocaleDateString('vi-VN')}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    {getStatusBadge(vehicle.status)}
+                    {vehicle.status === 'warning' && (
+                      <div className="flex items-center gap-1 text-xs text-destructive">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>Cần bảo dưỡng</span>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{vehicle.brand} {vehicle.model}</div>
-                        <div className="text-sm text-muted-foreground">({vehicle.year})</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{vehicle.owner}</div>
-                        <div className="text-sm text-muted-foreground">{vehicle.ownerPhone}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium">{vehicle.mileage.toLocaleString()} km</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        {new Date(vehicle.lastService).toLocaleDateString('vi-VN')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Wrench className="w-4 h-4 text-muted-foreground" />
-                        {new Date(vehicle.nextService).toLocaleDateString('vi-VN')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        {getStatusBadge(vehicle.status)}
-                        {vehicle.status === 'warning' && (
-                          <div className="flex items-center gap-1 text-xs text-destructive">
-                            <AlertCircle className="w-3 h-3" />
-                            <span>Cần bảo dưỡng</span>
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditVehicle(vehicle)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteVehicle(vehicle.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditVehicle(vehicle)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteVehicle(vehicle.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
         {/* Add/Edit Vehicle Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

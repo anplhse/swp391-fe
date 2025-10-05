@@ -1,7 +1,6 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -28,8 +27,20 @@ const serviceSchema = z.object({
 
 type ServiceFormData = z.infer<typeof serviceSchema>;
 
+// Service interface
+interface Service {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  duration: number;
+  compatibleVehicles: string[];
+  category: string;
+  status: 'active' | 'inactive';
+}
+
 // Mock data for services
-const mockServices = [
+const mockServices: Service[] = [
   {
     id: '1',
     name: 'Bảo dưỡng định kỳ',
@@ -90,7 +101,7 @@ const serviceCategories = [
 export default function ServiceManagementPage() {
   const [services, setServices] = useState(mockServices);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingService, setEditingService] = useState<any>(null);
+  const [editingService, setEditingService] = useState<Service | null>(null);
   const { toast } = useToast();
 
   const form = useForm<ServiceFormData>({
@@ -111,7 +122,8 @@ export default function ServiceManagementPage() {
     id: '1',
     name: 'Nguyễn Văn A',
     email: 'staff@example.com',
-    role: 'staff'
+    role: 'staff',
+    userType: 'service'
   };
 
   const handleAddService = () => {
@@ -128,7 +140,7 @@ export default function ServiceManagementPage() {
     setIsDialogOpen(true);
   };
 
-  const handleEditService = (service: any) => {
+  const handleEditService = (service: Service) => {
     setEditingService(service);
     form.reset({
       name: service.name,
@@ -243,88 +255,77 @@ export default function ServiceManagementPage() {
           </Button>
         </div>
 
-        {/* Services Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Tất cả dịch vụ</CardTitle>
-            <CardDescription>
-              Danh sách các dịch vụ hiện có trong hệ thống
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tên dịch vụ</TableHead>
-                  <TableHead>Loại</TableHead>
-                  <TableHead>Giá</TableHead>
-                  <TableHead>Thời gian</TableHead>
-                  <TableHead>Xe tương thích</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {services.map((service) => (
-                  <TableRow key={service.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{service.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {service.description}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {getCategoryLabel(service.category)}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Tên dịch vụ</TableHead>
+              <TableHead>Loại</TableHead>
+              <TableHead>Giá</TableHead>
+              <TableHead>Thời gian</TableHead>
+              <TableHead>Xe tương thích</TableHead>
+              <TableHead>Trạng thái</TableHead>
+              <TableHead className="text-right">Thao tác</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {services.map((service) => (
+              <TableRow key={service.id}>
+                <TableCell>
+                  <div>
+                    <div className="font-medium">{service.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {service.description}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">
+                    {getCategoryLabel(service.category)}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-medium">
+                  {formatPrice(service.price)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {formatDuration(service.duration)}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {service.compatibleVehicles.map((vehicle) => (
+                      <Badge key={vehicle} variant="secondary" className="text-xs">
+                        {vehicle}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {formatPrice(service.price)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {formatDuration(service.duration)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {service.compatibleVehicles.map((vehicle) => (
-                          <Badge key={vehicle} variant="secondary" className="text-xs">
-                            {vehicle}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(service.status)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditService(service)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteService(service.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {getStatusBadge(service.status)}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditService(service)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteService(service.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
         {/* Add/Edit Service Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

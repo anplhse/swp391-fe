@@ -279,7 +279,7 @@ export default function AppointmentManagementPage() {
   return (
     <DashboardLayout user={{ email: 'staff@service.com', role: 'staff', userType: 'service' }}>
       <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center justify-between mb-4">
           <Form {...filterForm}>
             <form className="flex items-center gap-3">
               <FormField name="search" control={filterForm.control} render={({ field }) => (

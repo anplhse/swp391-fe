@@ -45,7 +45,7 @@ interface FinancialData {
     paidDate?: string;
     services: string[];
   }[];
-  expenses: {
+  expenseList: {
     id: string;
     category: string;
     amount: number;
@@ -160,7 +160,7 @@ export default function FinanceManagementPage() {
           services: ['Thay thế phụ tùng']
         }
       ],
-      expenses: [
+      expenseList: [
         {
           id: '1',
           category: 'Phụ tùng',
@@ -357,7 +357,7 @@ export default function FinanceManagementPage() {
           <TabsList>
             <TabsTrigger value="transactions">Giao dịch ({financialData.transactions.length})</TabsTrigger>
             <TabsTrigger value="invoices">Hóa đơn ({financialData.invoices.length})</TabsTrigger>
-            <TabsTrigger value="expenses">Chi phí ({financialData.expenses.length})</TabsTrigger>
+            <TabsTrigger value="expenses">Chi phí ({financialData.expenseList.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="transactions" className="space-y-4">
@@ -446,7 +446,7 @@ export default function FinanceManagementPage() {
 
           <TabsContent value="expenses" className="space-y-4">
             <div className="grid gap-4">
-              {financialData.expenses.map((expense) => (
+              {financialData.expenseList.map((expense) => (
                 <Card key={expense.id}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">

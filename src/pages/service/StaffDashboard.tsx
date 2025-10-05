@@ -3,9 +3,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -232,48 +229,11 @@ export default function StaffDashboard() {
                     <Calendar className="w-5 h-5" />
                     Lịch hẹn hôm nay
                   </CardTitle>
-                  <CardDescription>
-                    Tổng quan các cuộc hẹn trong ngày
-                  </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => navigate('/service/appointments')}>
                   Xem tất cả
                   <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
-              </div>
-              <div className="pt-2">
-                <Form {...filterForm}>
-                  <form className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <FormField control={filterForm.control} name="search" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tìm kiếm</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Khách hàng / biển số / dịch vụ" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )} />
-                    <FormField control={filterForm.control} name="status" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Trạng thái</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="all">Tất cả</SelectItem>
-                            <SelectItem value="pending">Chờ xác nhận</SelectItem>
-                            <SelectItem value="confirmed">Đã xác nhận</SelectItem>
-                            <SelectItem value="in_progress">Đang thực hiện</SelectItem>
-                            <SelectItem value="completed">Hoàn thành</SelectItem>
-                            <SelectItem value="cancelled">Đã hủy</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )} />
-                  </form>
-                </Form>
               </div>
             </CardHeader>
             <CardContent>
@@ -325,9 +285,6 @@ export default function StaffDashboard() {
                     <AlertCircle className="w-5 h-5" />
                     Yêu cầu đang chờ
                   </CardTitle>
-                  <CardDescription>
-                    Các yêu cầu dịch vụ mới từ khách hàng
-                  </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => navigate('/service/appointments')}>
                   Xem tất cả
@@ -380,9 +337,6 @@ export default function StaffDashboard() {
                   <Users className="w-5 h-5" />
                   Khách hàng gần đây
                 </CardTitle>
-                <CardDescription>
-                  Danh sách khách hàng đã sử dụng dịch vụ
-                </CardDescription>
               </div>
               <Button variant="outline" size="sm" onClick={() => navigate('/service/customers')}>
                 Xem tất cả
