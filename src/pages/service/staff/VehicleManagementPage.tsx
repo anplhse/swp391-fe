@@ -1,4 +1,3 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -207,274 +206,272 @@ export default function VehicleManagementPage() {
   };
 
   return (
-    <DashboardLayout user={{ email: 'staff@service.com', role: 'staff', userType: 'service' }}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Tìm kiếm xe..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="active">Bình thường</SelectItem>
-                <SelectItem value="maintenance">Đang bảo dưỡng</SelectItem>
-                <SelectItem value="warning">Cần bảo dưỡng</SelectItem>
-              </SelectContent>
-            </Select>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Tìm kiếm xe..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-64"
+            />
           </div>
-          <Button onClick={handleAddVehicle}>
-            <Plus className="w-4 h-4 mr-2" />
-            Thêm xe mới
-          </Button>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả</SelectItem>
+              <SelectItem value="active">Bình thường</SelectItem>
+              <SelectItem value="maintenance">Đang bảo dưỡng</SelectItem>
+              <SelectItem value="warning">Cần bảo dưỡng</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Biển số</TableHead>
-              <TableHead>Thông tin xe</TableHead>
-              <TableHead>Chủ xe</TableHead>
-              <TableHead>Số km</TableHead>
-              <TableHead>Dịch vụ cuối</TableHead>
-              <TableHead>Dịch vụ tiếp</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead className="text-right">Thao tác</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredVehicles.map((vehicle) => (
-              <TableRow key={vehicle.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Car className="w-4 h-4 text-primary" />
-                    <span className="font-medium">{vehicle.licensePlate}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div>
-                    <div className="font-medium">{vehicle.brand} {vehicle.model}</div>
-                    <div className="text-sm text-muted-foreground">({vehicle.year})</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div>
-                    <div className="font-medium">{vehicle.owner}</div>
-                    <div className="text-sm text-muted-foreground">{vehicle.ownerPhone}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="font-medium">{vehicle.mileage.toLocaleString()} km</span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    {new Date(vehicle.lastService).toLocaleDateString('vi-VN')}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Wrench className="w-4 h-4 text-muted-foreground" />
-                    {new Date(vehicle.nextService).toLocaleDateString('vi-VN')}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-1">
-                    {getStatusBadge(vehicle.status)}
-                    {vehicle.status === 'warning' && (
-                      <div className="flex items-center gap-1 text-xs text-destructive">
-                        <AlertCircle className="w-3 h-3" />
-                        <span>Cần bảo dưỡng</span>
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditVehicle(vehicle)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteVehicle(vehicle.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        {/* Add/Edit Vehicle Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingVehicle ? 'Chỉnh sửa xe' : 'Thêm xe mới'}
-              </DialogTitle>
-              <DialogDescription>
-                {editingVehicle
-                  ? 'Cập nhật thông tin xe'
-                  : 'Thêm xe mới vào hệ thống'
-                }
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="licensePlate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Biển số xe *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nhập biển số xe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="brand"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Hãng xe *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nhập hãng xe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="model"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Model xe *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nhập model xe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="year"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Năm sản xuất *</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="Nhập năm sản xuất" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="owner"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tên chủ xe *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nhập tên chủ xe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="ownerPhone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Số điện thoại *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nhập số điện thoại" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="mileage"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Số km *</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="Nhập số km" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Trạng thái</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="active">Bình thường</SelectItem>
-                            <SelectItem value="maintenance">Đang bảo dưỡng</SelectItem>
-                            <SelectItem value="warning">Cần bảo dưỡng</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Hủy
-                  </Button>
-                  <Button type="submit">
-                    {editingVehicle ? 'Cập nhật' : 'Thêm mới'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={handleAddVehicle}>
+          <Plus className="w-4 h-4 mr-2" />
+          Thêm xe mới
+        </Button>
       </div>
-    </DashboardLayout>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Biển số</TableHead>
+            <TableHead>Thông tin xe</TableHead>
+            <TableHead>Chủ xe</TableHead>
+            <TableHead>Số km</TableHead>
+            <TableHead>Dịch vụ cuối</TableHead>
+            <TableHead>Dịch vụ tiếp</TableHead>
+            <TableHead>Trạng thái</TableHead>
+            <TableHead className="text-right">Thao tác</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredVehicles.map((vehicle) => (
+            <TableRow key={vehicle.id}>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Car className="w-4 h-4 text-primary" />
+                  <span className="font-medium">{vehicle.licensePlate}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div>
+                  <div className="font-medium">{vehicle.brand} {vehicle.model}</div>
+                  <div className="text-sm text-muted-foreground">({vehicle.year})</div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div>
+                  <div className="font-medium">{vehicle.owner}</div>
+                  <div className="text-sm text-muted-foreground">{vehicle.ownerPhone}</div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <span className="font-medium">{vehicle.mileage.toLocaleString()} km</span>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  {new Date(vehicle.lastService).toLocaleDateString('vi-VN')}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Wrench className="w-4 h-4 text-muted-foreground" />
+                  {new Date(vehicle.nextService).toLocaleDateString('vi-VN')}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-col gap-1">
+                  {getStatusBadge(vehicle.status)}
+                  {vehicle.status === 'warning' && (
+                    <div className="flex items-center gap-1 text-xs text-destructive">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>Cần bảo dưỡng</span>
+                    </div>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditVehicle(vehicle)}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteVehicle(vehicle.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      {/* Add/Edit Vehicle Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingVehicle ? 'Chỉnh sửa xe' : 'Thêm xe mới'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingVehicle
+                ? 'Cập nhật thông tin xe'
+                : 'Thêm xe mới vào hệ thống'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="licensePlate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Biển số xe *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nhập biển số xe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="brand"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hãng xe *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nhập hãng xe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="model"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Model xe *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nhập model xe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="year"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Năm sản xuất *</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Nhập năm sản xuất" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="owner"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tên chủ xe *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nhập tên chủ xe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="ownerPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Số điện thoại *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nhập số điện thoại" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="mileage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Số km *</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Nhập số km" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Trạng thái</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">Bình thường</SelectItem>
+                          <SelectItem value="maintenance">Đang bảo dưỡng</SelectItem>
+                          <SelectItem value="warning">Cần bảo dưỡng</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Hủy
+                </Button>
+                <Button type="submit">
+                  {editingVehicle ? 'Cập nhật' : 'Thêm mới'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

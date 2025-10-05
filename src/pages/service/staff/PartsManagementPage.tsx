@@ -1,4 +1,3 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -253,254 +252,252 @@ export default function PartsManagementPage() {
   const pendingRequests = restockRequests.filter(req => req.status === 'pending');
 
   return (
-    <DashboardLayout user={{ email: 'staff@service.com', role: 'staff', userType: 'service' }}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between mb-4">
-          <Form {...filtersForm}>
-            <form className="flex items-center gap-3">
-              <FormField name="search" control={filtersForm.control} render={({ field }) => (
-                <FormItem>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-4">
+        <Form {...filtersForm}>
+          <form className="flex items-center gap-3">
+            <FormField name="search" control={filtersForm.control} render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input className="pl-9 w-64" placeholder="Tìm kiếm..." {...field} />
+                  </div>
+                </FormControl>
+              </FormItem>
+            )} />
+            <FormField name="category" control={filtersForm.control} render={({ field }) => (
+              <FormItem>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                      <Input className="pl-9 w-64" placeholder="Tìm kiếm..." {...field} />
-                    </div>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Danh mục" />
+                    </SelectTrigger>
                   </FormControl>
-                </FormItem>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả</SelectItem>
+                    <SelectItem value="Pin">Pin</SelectItem>
+                    <SelectItem value="Động cơ">Động cơ</SelectItem>
+                    <SelectItem value="Sạc">Sạc</SelectItem>
+                    <SelectItem value="Cảm biến">Cảm biến</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )} />
+            <FormField name="status" control={filtersForm.control} render={({ field }) => (
+              <FormItem>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả</SelectItem>
+                    <SelectItem value="in_stock">Còn hàng</SelectItem>
+                    <SelectItem value="low_stock">Sắp hết</SelectItem>
+                    <SelectItem value="out_of_stock">Hết hàng</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )} />
+          </form>
+        </Form>
+        <div className="flex gap-2">
+          <Button onClick={() => { setEditingPart(null); partForm.reset({ name: '', partNumber: '', category: '', brand: '', currentStock: '0', minStock: '0', maxStock: '1', unitPrice: '0', supplier: '', location: '' }); setIsPartDialogOpen(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm phụ tùng
+          </Button>
+          <Button variant="outline" onClick={() => { setSelectedPart(null); requestForm.reset({ partId: '', requestedQuantity: '1', reason: '' }); setIsRequestDialogOpen(true); }}>
+            Tạo yêu cầu nhập
+          </Button>
+        </div>
+      </div>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Tên</TableHead>
+            <TableHead>Mã</TableHead>
+            <TableHead>Danh mục</TableHead>
+            <TableHead>Thương hiệu</TableHead>
+            <TableHead>Tồn/Max</TableHead>
+            <TableHead>Giá</TableHead>
+            <TableHead>Trạng thái</TableHead>
+            <TableHead className="text-right">Thao tác</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredParts.map(part => (
+            <TableRow key={part.id}>
+              <TableCell>{part.name}</TableCell>
+              <TableCell>{part.partNumber}</TableCell>
+              <TableCell>{part.category}</TableCell>
+              <TableCell>{part.brand}</TableCell>
+              <TableCell>{part.currentStock}/{part.maxStock}</TableCell>
+              <TableCell>{formatPrice(part.unitPrice)}</TableCell>
+              <TableCell>{getStatusBadge(part.status)}</TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="outline" onClick={() => { setEditingPart(part); partForm.reset({ name: part.name, partNumber: part.partNumber, category: part.category, brand: part.brand, currentStock: String(part.currentStock), minStock: String(part.minStock), maxStock: String(part.maxStock), unitPrice: String(part.unitPrice), supplier: part.supplier, location: part.location }); setIsPartDialogOpen(true); }}>
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setParts(prev => prev.filter(p => p.id !== part.id))}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      {/* Add/Edit Part Dialog */}
+      <Dialog open={isPartDialogOpen} onOpenChange={setIsPartDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingPart ? 'Chỉnh sửa phụ tùng' : 'Thêm phụ tùng mới'}</DialogTitle>
+            <DialogDescription>{editingPart ? 'Cập nhật thông tin phụ tùng' : 'Thêm phụ tùng mới vào kho'}</DialogDescription>
+          </DialogHeader>
+          <Form {...partForm}>
+            <form onSubmit={partForm.handleSubmit((data) => {
+              const next: Part = {
+                id: editingPart ? editingPart.id : String(parts.length + 1),
+                name: data.name,
+                partNumber: data.partNumber,
+                category: data.category,
+                brand: data.brand,
+                currentStock: Number(data.currentStock),
+                minStock: Number(data.minStock),
+                maxStock: Number(data.maxStock),
+                unitPrice: Number(data.unitPrice),
+                supplier: data.supplier,
+                lastRestocked: editingPart?.lastRestocked || new Date().toISOString().split('T')[0],
+                status: 'in_stock',
+                location: data.location,
+                description: editingPart?.description
+              };
+              setParts(prev => editingPart ? prev.map(p => p.id === editingPart.id ? next : p) : [...prev, next]);
+              setIsPartDialogOpen(false);
+              toast({ title: editingPart ? 'Cập nhật phụ tùng thành công' : 'Thêm phụ tùng thành công' });
+            })} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={partForm.control} name="name" render={({ field }) => (
+                  <FormItem><FormLabel>Tên *</FormLabel><FormControl><Input {...field} placeholder="Tên phụ tùng" /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={partForm.control} name="partNumber" render={({ field }) => (
+                  <FormItem><FormLabel>Mã *</FormLabel><FormControl><Input {...field} placeholder="Mã phụ tùng" /></FormControl><FormMessage /></FormItem>
+                )} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={partForm.control} name="category" render={({ field }) => (
+                  <FormItem><FormLabel>Danh mục *</FormLabel><FormControl><Input {...field} placeholder="Danh mục" /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={partForm.control} name="brand" render={({ field }) => (
+                  <FormItem><FormLabel>Thương hiệu *</FormLabel><FormControl><Input {...field} placeholder="Thương hiệu" /></FormControl><FormMessage /></FormItem>
+                )} />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <FormField control={partForm.control} name="currentStock" render={({ field }) => (
+                  <FormItem><FormLabel>Tồn hiện tại *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={partForm.control} name="minStock" render={({ field }) => (
+                  <FormItem><FormLabel>Tồn tối thiểu *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={partForm.control} name="maxStock" render={({ field }) => (
+                  <FormItem><FormLabel>Tồn tối đa *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={partForm.control} name="unitPrice" render={({ field }) => (
+                  <FormItem><FormLabel>Giá *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={partForm.control} name="supplier" render={({ field }) => (
+                  <FormItem><FormLabel>Nhà cung cấp *</FormLabel><FormControl><Input {...field} placeholder="Nhà cung cấp" /></FormControl><FormMessage /></FormItem>
+                )} />
+              </div>
+              <FormField control={partForm.control} name="location" render={({ field }) => (
+                <FormItem><FormLabel>Vị trí *</FormLabel><FormControl><Input {...field} placeholder="Vị trí trong kho" /></FormControl><FormMessage /></FormItem>
               )} />
-              <FormField name="category" control={filtersForm.control} render={({ field }) => (
-                <FormItem>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Danh mục" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="all">Tất cả</SelectItem>
-                      <SelectItem value="Pin">Pin</SelectItem>
-                      <SelectItem value="Động cơ">Động cơ</SelectItem>
-                      <SelectItem value="Sạc">Sạc</SelectItem>
-                      <SelectItem value="Cảm biến">Cảm biến</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
-              <FormField name="status" control={filtersForm.control} render={({ field }) => (
-                <FormItem>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="all">Tất cả</SelectItem>
-                      <SelectItem value="in_stock">Còn hàng</SelectItem>
-                      <SelectItem value="low_stock">Sắp hết</SelectItem>
-                      <SelectItem value="out_of_stock">Hết hàng</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsPartDialogOpen(false)}>Hủy</Button>
+                <Button type="submit">Lưu</Button>
+              </DialogFooter>
             </form>
           </Form>
-          <div className="flex gap-2">
-            <Button onClick={() => { setEditingPart(null); partForm.reset({ name: '', partNumber: '', category: '', brand: '', currentStock: '0', minStock: '0', maxStock: '1', unitPrice: '0', supplier: '', location: '' }); setIsPartDialogOpen(true); }}>
-              <Plus className="w-4 h-4 mr-2" />
-              Thêm phụ tùng
-            </Button>
-            <Button variant="outline" onClick={() => { setSelectedPart(null); requestForm.reset({ partId: '', requestedQuantity: '1', reason: '' }); setIsRequestDialogOpen(true); }}>
-              Tạo yêu cầu nhập
-            </Button>
-          </div>
-        </div>
+        </DialogContent>
+      </Dialog>
 
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tên</TableHead>
-              <TableHead>Mã</TableHead>
-              <TableHead>Danh mục</TableHead>
-              <TableHead>Thương hiệu</TableHead>
-              <TableHead>Tồn/Max</TableHead>
-              <TableHead>Giá</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead className="text-right">Thao tác</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredParts.map(part => (
-              <TableRow key={part.id}>
-                <TableCell>{part.name}</TableCell>
-                <TableCell>{part.partNumber}</TableCell>
-                <TableCell>{part.category}</TableCell>
-                <TableCell>{part.brand}</TableCell>
-                <TableCell>{part.currentStock}/{part.maxStock}</TableCell>
-                <TableCell>{formatPrice(part.unitPrice)}</TableCell>
-                <TableCell>{getStatusBadge(part.status)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="outline" onClick={() => { setEditingPart(part); partForm.reset({ name: part.name, partNumber: part.partNumber, category: part.category, brand: part.brand, currentStock: String(part.currentStock), minStock: String(part.minStock), maxStock: String(part.maxStock), unitPrice: String(part.unitPrice), supplier: part.supplier, location: part.location }); setIsPartDialogOpen(true); }}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setParts(prev => prev.filter(p => p.id !== part.id))}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        {/* Add/Edit Part Dialog */}
-        <Dialog open={isPartDialogOpen} onOpenChange={setIsPartDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{editingPart ? 'Chỉnh sửa phụ tùng' : 'Thêm phụ tùng mới'}</DialogTitle>
-              <DialogDescription>{editingPart ? 'Cập nhật thông tin phụ tùng' : 'Thêm phụ tùng mới vào kho'}</DialogDescription>
-            </DialogHeader>
-            <Form {...partForm}>
-              <form onSubmit={partForm.handleSubmit((data) => {
-                const next: Part = {
-                  id: editingPart ? editingPart.id : String(parts.length + 1),
-                  name: data.name,
-                  partNumber: data.partNumber,
-                  category: data.category,
-                  brand: data.brand,
-                  currentStock: Number(data.currentStock),
-                  minStock: Number(data.minStock),
-                  maxStock: Number(data.maxStock),
-                  unitPrice: Number(data.unitPrice),
-                  supplier: data.supplier,
-                  lastRestocked: editingPart?.lastRestocked || new Date().toISOString().split('T')[0],
-                  status: 'in_stock',
-                  location: data.location,
-                  description: editingPart?.description
-                };
-                setParts(prev => editingPart ? prev.map(p => p.id === editingPart.id ? next : p) : [...prev, next]);
-                setIsPartDialogOpen(false);
-                toast({ title: editingPart ? 'Cập nhật phụ tùng thành công' : 'Thêm phụ tùng thành công' });
-              })} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={partForm.control} name="name" render={({ field }) => (
-                    <FormItem><FormLabel>Tên *</FormLabel><FormControl><Input {...field} placeholder="Tên phụ tùng" /></FormControl><FormMessage /></FormItem>
-                  )} />
-                  <FormField control={partForm.control} name="partNumber" render={({ field }) => (
-                    <FormItem><FormLabel>Mã *</FormLabel><FormControl><Input {...field} placeholder="Mã phụ tùng" /></FormControl><FormMessage /></FormItem>
-                  )} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={partForm.control} name="category" render={({ field }) => (
-                    <FormItem><FormLabel>Danh mục *</FormLabel><FormControl><Input {...field} placeholder="Danh mục" /></FormControl><FormMessage /></FormItem>
-                  )} />
-                  <FormField control={partForm.control} name="brand" render={({ field }) => (
-                    <FormItem><FormLabel>Thương hiệu *</FormLabel><FormControl><Input {...field} placeholder="Thương hiệu" /></FormControl><FormMessage /></FormItem>
-                  )} />
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField control={partForm.control} name="currentStock" render={({ field }) => (
-                    <FormItem><FormLabel>Tồn hiện tại *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
-                  <FormField control={partForm.control} name="minStock" render={({ field }) => (
-                    <FormItem><FormLabel>Tồn tối thiểu *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
-                  <FormField control={partForm.control} name="maxStock" render={({ field }) => (
-                    <FormItem><FormLabel>Tồn tối đa *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={partForm.control} name="unitPrice" render={({ field }) => (
-                    <FormItem><FormLabel>Giá *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
-                  <FormField control={partForm.control} name="supplier" render={({ field }) => (
-                    <FormItem><FormLabel>Nhà cung cấp *</FormLabel><FormControl><Input {...field} placeholder="Nhà cung cấp" /></FormControl><FormMessage /></FormItem>
-                  )} />
-                </div>
-                <FormField control={partForm.control} name="location" render={({ field }) => (
-                  <FormItem><FormLabel>Vị trí *</FormLabel><FormControl><Input {...field} placeholder="Vị trí trong kho" /></FormControl><FormMessage /></FormItem>
-                )} />
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsPartDialogOpen(false)}>Hủy</Button>
-                  <Button type="submit">Lưu</Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-
-        {/* Create Restock Request Dialog */}
-        <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Tạo yêu cầu nhập kho</DialogTitle>
-              <DialogDescription>Nhập số lượng cần bổ sung và lý do</DialogDescription>
-            </DialogHeader>
-            <Form {...requestForm}>
-              <form onSubmit={requestForm.handleSubmit((data) => {
-                const part = parts.find(p => p.id === data.partId);
-                if (!part) return;
-                const req: RestockRequest = {
-                  id: String(restockRequests.length + 1),
-                  partId: part.id,
-                  partName: part.name,
-                  currentStock: part.currentStock,
-                  requestedQuantity: Number(data.requestedQuantity),
-                  reason: data.reason,
-                  status: 'pending',
-                  requestedBy: 'Nhân viên kho',
-                  requestedDate: new Date().toISOString().split('T')[0]
-                };
-                setRestockRequests(prev => [req, ...prev]);
-                setIsRequestDialogOpen(false);
-                toast({ title: 'Đã tạo yêu cầu nhập' });
-              })} className="space-y-4">
-                <FormField control={requestForm.control} name="partId" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phụ tùng *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Chọn phụ tùng" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {parts.map(p => (
-                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={requestForm.control} name="requestedQuantity" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Số lượng *</FormLabel>
+      {/* Create Restock Request Dialog */}
+      <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tạo yêu cầu nhập kho</DialogTitle>
+            <DialogDescription>Nhập số lượng cần bổ sung và lý do</DialogDescription>
+          </DialogHeader>
+          <Form {...requestForm}>
+            <form onSubmit={requestForm.handleSubmit((data) => {
+              const part = parts.find(p => p.id === data.partId);
+              if (!part) return;
+              const req: RestockRequest = {
+                id: String(restockRequests.length + 1),
+                partId: part.id,
+                partName: part.name,
+                currentStock: part.currentStock,
+                requestedQuantity: Number(data.requestedQuantity),
+                reason: data.reason,
+                status: 'pending',
+                requestedBy: 'Nhân viên kho',
+                requestedDate: new Date().toISOString().split('T')[0]
+              };
+              setRestockRequests(prev => [req, ...prev]);
+              setIsRequestDialogOpen(false);
+              toast({ title: 'Đã tạo yêu cầu nhập' });
+            })} className="space-y-4">
+              <FormField control={requestForm.control} name="partId" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phụ tùng *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn phụ tùng" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={requestForm.control} name="reason" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Lý do *</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Lý do nhập thêm" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsRequestDialogOpen(false)}>Hủy</Button>
-                  <Button type="submit">Tạo</Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </DashboardLayout>
+                    <SelectContent>
+                      {parts.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={requestForm.control} name="requestedQuantity" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Số lượng *</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={requestForm.control} name="reason" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Lý do *</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Lý do nhập thêm" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsRequestDialogOpen(false)}>Hủy</Button>
+                <Button type="submit">Tạo</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

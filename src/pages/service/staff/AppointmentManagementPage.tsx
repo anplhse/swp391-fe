@@ -1,4 +1,3 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -277,150 +276,148 @@ export default function AppointmentManagementPage() {
   };
 
   return (
-    <DashboardLayout user={{ email: 'staff@service.com', role: 'staff', userType: 'service' }}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between mb-4">
-          <Form {...filterForm}>
-            <form className="flex items-center gap-3">
-              <FormField name="search" control={filterForm.control} render={({ field }) => (
-                <FormItem>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-4">
+        <Form {...filterForm}>
+          <form className="flex items-center gap-3">
+            <FormField name="search" control={filterForm.control} render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input className="pl-9 w-64" placeholder="Tìm kiếm..." {...field} />
+                  </div>
+                </FormControl>
+              </FormItem>
+            )} />
+            <FormField name="status" control={filterForm.control} render={({ field }) => (
+              <FormItem>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                      <Input className="pl-9 w-64" placeholder="Tìm kiếm..." {...field} />
-                    </div>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
                   </FormControl>
-                </FormItem>
-              )} />
-              <FormField name="status" control={filterForm.control} render={({ field }) => (
-                <FormItem>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả</SelectItem>
+                    <SelectItem value="pending">Chờ xác nhận</SelectItem>
+                    <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                    <SelectItem value="in_progress">Đang thực hiện</SelectItem>
+                    <SelectItem value="completed">Hoàn thành</SelectItem>
+                    <SelectItem value="cancelled">Đã hủy</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )} />
+          </form>
+        </Form>
+      </div>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Ngày</TableHead>
+            <TableHead>Giờ</TableHead>
+            <TableHead>Khách/xe</TableHead>
+            <TableHead>Dịch vụ</TableHead>
+            <TableHead>KTV</TableHead>
+            <TableHead>Trạng thái</TableHead>
+            <TableHead className="text-right">Thao tác</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredAppointments.map(appointment => (
+            <TableRow key={appointment.id}>
+              <TableCell>{new Date(appointment.date).toLocaleDateString('vi-VN')}</TableCell>
+              <TableCell>{appointment.time}</TableCell>
+              <TableCell>{appointment.vehicle.name} - {appointment.vehicle.plate}</TableCell>
+              <TableCell>{appointment.services.map(s => s.name).join(', ')}</TableCell>
+              <TableCell>{appointment.technician || '—'}</TableCell>
+              <TableCell>{getStatusBadge(appointment.status)}</TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  {appointment.status === 'pending' && (
+                    <>
+                      <Button size="sm" onClick={() => handleConfirm(appointment.id)}>Xác nhận</Button>
+                      <Button size="sm" variant="outline" onClick={() => handleCancel(appointment.id)}>Hủy</Button>
+                    </>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => openEdit(appointment)}>
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      {/* Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cập nhật lịch hẹn</DialogTitle>
+            <DialogDescription>Chỉnh sửa trạng thái, kỹ thuật viên và ghi chú</DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Trạng thái</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="pending">Chờ xác nhận</SelectItem>
+                        <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                        <SelectItem value="in_progress">Đang thực hiện</SelectItem>
+                        <SelectItem value="completed">Hoàn thành</SelectItem>
+                        <SelectItem value="cancelled">Đã hủy</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="technician"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Kỹ thuật viên</FormLabel>
                     <FormControl>
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
+                      <Input placeholder="Nhập tên kỹ thuật viên" {...field} />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="all">Tất cả</SelectItem>
-                      <SelectItem value="pending">Chờ xác nhận</SelectItem>
-                      <SelectItem value="confirmed">Đã xác nhận</SelectItem>
-                      <SelectItem value="in_progress">Đang thực hiện</SelectItem>
-                      <SelectItem value="completed">Hoàn thành</SelectItem>
-                      <SelectItem value="cancelled">Đã hủy</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ghi chú</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ghi chú cho lịch hẹn" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Hủy</Button>
+                <Button type="submit">Lưu</Button>
+              </DialogFooter>
             </form>
           </Form>
-        </div>
-
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Ngày</TableHead>
-              <TableHead>Giờ</TableHead>
-              <TableHead>Khách/xe</TableHead>
-              <TableHead>Dịch vụ</TableHead>
-              <TableHead>KTV</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead className="text-right">Thao tác</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredAppointments.map(appointment => (
-              <TableRow key={appointment.id}>
-                <TableCell>{new Date(appointment.date).toLocaleDateString('vi-VN')}</TableCell>
-                <TableCell>{appointment.time}</TableCell>
-                <TableCell>{appointment.vehicle.name} - {appointment.vehicle.plate}</TableCell>
-                <TableCell>{appointment.services.map(s => s.name).join(', ')}</TableCell>
-                <TableCell>{appointment.technician || '—'}</TableCell>
-                <TableCell>{getStatusBadge(appointment.status)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    {appointment.status === 'pending' && (
-                      <>
-                        <Button size="sm" onClick={() => handleConfirm(appointment.id)}>Xác nhận</Button>
-                        <Button size="sm" variant="outline" onClick={() => handleCancel(appointment.id)}>Hủy</Button>
-                      </>
-                    )}
-                    <Button size="sm" variant="outline" onClick={() => openEdit(appointment)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        {/* Edit Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Cập nhật lịch hẹn</DialogTitle>
-              <DialogDescription>Chỉnh sửa trạng thái, kỹ thuật viên và ghi chú</DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Trạng thái</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="pending">Chờ xác nhận</SelectItem>
-                          <SelectItem value="confirmed">Đã xác nhận</SelectItem>
-                          <SelectItem value="in_progress">Đang thực hiện</SelectItem>
-                          <SelectItem value="completed">Hoàn thành</SelectItem>
-                          <SelectItem value="cancelled">Đã hủy</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="technician"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Kỹ thuật viên</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nhập tên kỹ thuật viên" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ghi chú</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ghi chú cho lịch hẹn" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Hủy</Button>
-                  <Button type="submit">Lưu</Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </DashboardLayout>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

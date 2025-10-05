@@ -1,4 +1,3 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,8 +20,6 @@ import {
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  // Get user from localStorage (demo)
-  const user = { email: 'admin@service.com', role: 'admin', userType: 'service' };
 
   // Mock data for admin
   const dashboardStats = {
@@ -119,252 +116,250 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <DashboardLayout title="Dashboard Quản Trị Viên" user={user}>
-      <div className="space-y-6">
-        {/* Welcome Section */}
-        <div className="bg-primary text-primary-foreground rounded-2xl p-6">
-          <h2 className="text-2xl font-bold mb-2">Tổng quan hệ thống</h2>
-          <p className="text-white/80">
-            Quản lý toàn bộ hoạt động của trung tâm bảo dưỡng xe điện.
-          </p>
-        </div>
+    <div className="space-y-6">
+      {/* Welcome Section */}
+      <div className="bg-primary text-primary-foreground rounded-2xl p-6">
+        <h2 className="text-2xl font-bold mb-2">Tổng quan hệ thống</h2>
+        <p className="text-white/80">
+          Quản lý toàn bộ hoạt động của trung tâm bảo dưỡng xe điện.
+        </p>
+      </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-accent/10 rounded-lg">
-                  <DollarSign className="w-5 h-5 text-accent" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold">{(parseFloat(dashboardStats.totalRevenue) / 1000000000).toFixed(1)}B VND</p>
-                  <p className="text-sm text-muted-foreground">Doanh thu</p>
-                  <div className="flex items-center gap-1 text-xs text-accent">
-                    <TrendingUp className="w-3 h-3" />
-                    +{dashboardStats.monthlyGrowth}%
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Users className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold">{dashboardStats.totalCustomers.toLocaleString()}</p>
-                  <p className="text-sm text-muted-foreground">Khách hàng</p>
-                  <p className="text-xs text-muted-foreground">{dashboardStats.activeStaff} nhân viên</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-warning/10 rounded-lg">
-                  <Wrench className="w-5 h-5 text-warning" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold">{dashboardStats.completedServices}</p>
-                  <p className="text-sm text-muted-foreground">Dịch vụ hoàn thành</p>
-                  <p className="text-xs text-muted-foreground">{dashboardStats.pendingServices} đang chờ</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-destructive/10 rounded-lg">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold">{systemAlerts.filter(a => a.priority === 'high').length}</p>
-                  <p className="text-sm text-muted-foreground">Cảnh báo</p>
-                  <p className="text-xs text-muted-foreground">Cần xử lý ngay</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Staff Performance */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Hiệu suất nhân viên
-              </CardTitle>
-              <CardDescription>
-                Đánh giá hiệu suất làm việc của đội ngũ
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {staffPerformance.map((staff) => (
-                <div key={staff.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={`/avatars/${staff.id}.png`} />
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {staff.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{staff.name}</h3>
-                      <p className="text-sm text-muted-foreground">{staff.role}</p>
-                    </div>
-                    <Badge variant="outline">
-                      ⭐ {staff.customerRating}
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Công việc hoàn thành:</span>
-                      <span className="font-medium">{staff.completedTasks}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Hiệu suất:</span>
-                      <span className="font-medium">{staff.efficiency}%</span>
-                    </div>
-                    <Progress value={staff.efficiency} className="h-2" />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* System Alerts */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" />
-                Cảnh báo hệ thống
-              </CardTitle>
-              <CardDescription>
-                Các thông báo quan trọng cần xử lý
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {systemAlerts.map((alert) => (
-                <div key={alert.id} className="border rounded-lg p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {alert.type === 'warning' && <AlertTriangle className="w-4 h-4 text-warning" />}
-                      {alert.type === 'info' && <Settings className="w-4 h-4 text-primary" />}
-                      {alert.type === 'success' && <CheckCircle2 className="w-4 h-4 text-accent" />}
-                      <Badge variant={
-                        alert.priority === 'high' ? 'destructive' :
-                          alert.priority === 'normal' ? 'secondary' : 'outline'
-                      }>
-                        {alert.priority === 'high' ? 'Khẩn cấp' :
-                          alert.priority === 'normal' ? 'Thông thường' : 'Thấp'}
-                      </Badge>
-                    </div>
-                    <span className="text-xs text-muted-foreground">{alert.time}</span>
-                  </div>
-                  <p className="text-sm">{alert.message}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Revenue Chart */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
-                Doanh thu 6 tháng gần đây
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {revenueData.map((item) => (
-                  <div key={item.month} className="flex items-center gap-4">
-                    <span className="w-8 text-sm font-medium">{item.month}</span>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span>{(item.revenue / 1000000).toFixed(0)}M VND</span>
-                        <span>{((item.revenue / Math.max(...revenueData.map(r => r.revenue))) * 100).toFixed(0)}%</span>
-                      </div>
-                      <Progress
-                        value={(item.revenue / Math.max(...revenueData.map(r => r.revenue))) * 100}
-                        className="h-2"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Hoạt động gần đây
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="border-b pb-3 last:border-0">
-                  <div className="flex items-start gap-3">
-                    <div className="p-1 rounded-full bg-primary/10">
-                      {activity.type === 'customer' && <UserPlus className="w-3 h-3 text-primary" />}
-                      {activity.type === 'service' && <Wrench className="w-3 h-3 text-accent" />}
-                      {activity.type === 'appointment' && <Calendar className="w-3 h-3 text-warning" />}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{activity.action}</p>
-                      <p className="text-xs text-muted-foreground">{activity.user}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Thao tác nhanh</CardTitle>
-            <CardDescription>Các chức năng quản trị thường dùng</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button variant="electric" className="h-20 flex-col space-y-2">
-                <UserPlus className="w-6 h-6" />
-                <span>Thêm nhân viên</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col space-y-2">
-                <Car className="w-6 h-6" />
-                <span>Quản lý xe</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col space-y-2">
-                <FileText className="w-6 h-6" />
-                <span>Báo cáo</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col space-y-2">
-                <Settings className="w-6 h-6" />
-                <span>Cài đặt</span>
-              </Button>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-accent/10 rounded-lg">
+                <DollarSign className="w-5 h-5 text-accent" />
+              </div>
+              <div>
+                <p className="text-lg font-bold">{(parseFloat(dashboardStats.totalRevenue) / 1000000000).toFixed(1)}B VND</p>
+                <p className="text-sm text-muted-foreground">Doanh thu</p>
+                <div className="flex items-center gap-1 text-xs text-accent">
+                  <TrendingUp className="w-3 h-3" />
+                  +{dashboardStats.monthlyGrowth}%
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-lg font-bold">{dashboardStats.totalCustomers.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Khách hàng</p>
+                <p className="text-xs text-muted-foreground">{dashboardStats.activeStaff} nhân viên</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-warning/10 rounded-lg">
+                <Wrench className="w-5 h-5 text-warning" />
+              </div>
+              <div>
+                <p className="text-lg font-bold">{dashboardStats.completedServices}</p>
+                <p className="text-sm text-muted-foreground">Dịch vụ hoàn thành</p>
+                <p className="text-xs text-muted-foreground">{dashboardStats.pendingServices} đang chờ</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-destructive/10 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+              </div>
+              <div>
+                <p className="text-lg font-bold">{systemAlerts.filter(a => a.priority === 'high').length}</p>
+                <p className="text-sm text-muted-foreground">Cảnh báo</p>
+                <p className="text-xs text-muted-foreground">Cần xử lý ngay</p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Staff Performance */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Hiệu suất nhân viên
+            </CardTitle>
+            <CardDescription>
+              Đánh giá hiệu suất làm việc của đội ngũ
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {staffPerformance.map((staff) => (
+              <div key={staff.id} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarImage src={`/avatars/${staff.id}.png`} />
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {staff.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{staff.name}</h3>
+                    <p className="text-sm text-muted-foreground">{staff.role}</p>
+                  </div>
+                  <Badge variant="outline">
+                    ⭐ {staff.customerRating}
+                  </Badge>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Công việc hoàn thành:</span>
+                    <span className="font-medium">{staff.completedTasks}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Hiệu suất:</span>
+                    <span className="font-medium">{staff.efficiency}%</span>
+                  </div>
+                  <Progress value={staff.efficiency} className="h-2" />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* System Alerts */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Cảnh báo hệ thống
+            </CardTitle>
+            <CardDescription>
+              Các thông báo quan trọng cần xử lý
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {systemAlerts.map((alert) => (
+              <div key={alert.id} className="border rounded-lg p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {alert.type === 'warning' && <AlertTriangle className="w-4 h-4 text-warning" />}
+                    {alert.type === 'info' && <Settings className="w-4 h-4 text-primary" />}
+                    {alert.type === 'success' && <CheckCircle2 className="w-4 h-4 text-accent" />}
+                    <Badge variant={
+                      alert.priority === 'high' ? 'destructive' :
+                        alert.priority === 'normal' ? 'secondary' : 'outline'
+                    }>
+                      {alert.priority === 'high' ? 'Khẩn cấp' :
+                        alert.priority === 'normal' ? 'Thông thường' : 'Thấp'}
+                    </Badge>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{alert.time}</span>
+                </div>
+                <p className="text-sm">{alert.message}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Revenue Chart */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Doanh thu 6 tháng gần đây
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {revenueData.map((item) => (
+                <div key={item.month} className="flex items-center gap-4">
+                  <span className="w-8 text-sm font-medium">{item.month}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span>{(item.revenue / 1000000).toFixed(0)}M VND</span>
+                      <span>{((item.revenue / Math.max(...revenueData.map(r => r.revenue))) * 100).toFixed(0)}%</span>
+                    </div>
+                    <Progress
+                      value={(item.revenue / Math.max(...revenueData.map(r => r.revenue))) * 100}
+                      className="h-2"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Hoạt động gần đây
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {recentActivity.map((activity) => (
+              <div key={activity.id} className="border-b pb-3 last:border-0">
+                <div className="flex items-start gap-3">
+                  <div className="p-1 rounded-full bg-primary/10">
+                    {activity.type === 'customer' && <UserPlus className="w-3 h-3 text-primary" />}
+                    {activity.type === 'service' && <Wrench className="w-3 h-3 text-accent" />}
+                    {activity.type === 'appointment' && <Calendar className="w-3 h-3 text-warning" />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{activity.action}</p>
+                    <p className="text-xs text-muted-foreground">{activity.user}</p>
+                    <p className="text-xs text-muted-foreground">{activity.time}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Thao tác nhanh</CardTitle>
+          <CardDescription>Các chức năng quản trị thường dùng</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button variant="electric" className="h-20 flex-col space-y-2">
+              <UserPlus className="w-6 h-6" />
+              <span>Thêm nhân viên</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col space-y-2">
+              <Car className="w-6 h-6" />
+              <span>Quản lý xe</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col space-y-2">
+              <FileText className="w-6 h-6" />
+              <span>Báo cáo</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col space-y-2">
+              <Settings className="w-6 h-6" />
+              <span>Cài đặt</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

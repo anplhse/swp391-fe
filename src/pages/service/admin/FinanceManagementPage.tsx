@@ -1,4 +1,3 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -250,7 +249,7 @@ export default function FinanceManagementPage() {
   if (!financialData) return null;
 
   return (
-    <DashboardLayout user={{ email: 'admin@service.com', role: 'admin', userType: 'service' }}>
+    <div>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
@@ -482,6 +481,6 @@ export default function FinanceManagementPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

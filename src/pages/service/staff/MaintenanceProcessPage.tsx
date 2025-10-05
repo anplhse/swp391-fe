@@ -1,4 +1,3 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -143,143 +142,141 @@ export default function MaintenanceProcessPage() {
   };
 
   return (
-    <DashboardLayout user={{ email: 'staff@service.com', role: 'staff', userType: 'service' }}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Input
-                placeholder="Tìm kiếm..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="pending">Chờ xử lý</SelectItem>
-                <SelectItem value="in_progress">Đang thực hiện</SelectItem>
-                <SelectItem value="completed">Hoàn thành</SelectItem>
-                <SelectItem value="cancelled">Đã hủy</SelectItem>
-              </SelectContent>
-            </Select>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Input
+              placeholder="Tìm kiếm..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-64"
+            />
           </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả</SelectItem>
+              <SelectItem value="pending">Chờ xử lý</SelectItem>
+              <SelectItem value="in_progress">Đang thực hiện</SelectItem>
+              <SelectItem value="completed">Hoàn thành</SelectItem>
+              <SelectItem value="cancelled">Đã hủy</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+      </div>
 
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Dịch vụ</TableHead>
-              <TableHead>Xe</TableHead>
-              <TableHead>Khách hàng</TableHead>
-              <TableHead>Kỹ thuật viên</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead>Tiến độ</TableHead>
-              <TableHead>Thao tác</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredTasks.map((task) => (
-              <TableRow key={task.id}>
-                <TableCell className="font-medium">{task.serviceType}</TableCell>
-                <TableCell>{task.vehiclePlate}</TableCell>
-                <TableCell>{task.customerName}</TableCell>
-                <TableCell>{task.technician}</TableCell>
-                <TableCell>{getStatusBadge(task.status)}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Progress value={task.progress} className="h-2 w-20" />
-                    <span className="text-sm text-muted-foreground">{task.progress}%</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    {task.status === 'pending' && (
-                      <Button size="sm" onClick={() => handleStartTask(task.id)}>
-                        Bắt đầu
-                      </Button>
-                    )}
-                    {task.status === 'in_progress' && (
-                      <Button size="sm" onClick={() => handleCompleteTask(task.id)}>
-                        Hoàn thành
-                      </Button>
-                    )}
-                    <Button variant="outline" size="sm" onClick={() => setSelectedTask(task)}>
-                      Chi tiết
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Dịch vụ</TableHead>
+            <TableHead>Xe</TableHead>
+            <TableHead>Khách hàng</TableHead>
+            <TableHead>Kỹ thuật viên</TableHead>
+            <TableHead>Trạng thái</TableHead>
+            <TableHead>Tiến độ</TableHead>
+            <TableHead>Thao tác</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredTasks.map((task) => (
+            <TableRow key={task.id}>
+              <TableCell className="font-medium">{task.serviceType}</TableCell>
+              <TableCell>{task.vehiclePlate}</TableCell>
+              <TableCell>{task.customerName}</TableCell>
+              <TableCell>{task.technician}</TableCell>
+              <TableCell>{getStatusBadge(task.status)}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Progress value={task.progress} className="h-2 w-20" />
+                  <span className="text-sm text-muted-foreground">{task.progress}%</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex gap-2">
+                  {task.status === 'pending' && (
+                    <Button size="sm" onClick={() => handleStartTask(task.id)}>
+                      Bắt đầu
                     </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        {/* Task Details Modal */}
-        {selectedTask && (
-          <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-xl font-bold">{selectedTask.serviceType}</DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground">Xe</h4>
-                    <p className="font-medium">{selectedTask.vehiclePlate}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground">Khách hàng</h4>
-                    <p className="font-medium">{selectedTask.customerName}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Tiến độ</h4>
-                  <div className="flex items-center gap-2">
-                    <Progress value={selectedTask.progress} className="h-2 flex-1" />
-                    <span className="text-sm text-muted-foreground">{selectedTask.progress}%</span>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-3">Các bước thực hiện</h4>
-                  <div className="space-y-3">
-                    {selectedTask.steps.map((step) => (
-                      <div key={step.id} className="border rounded-lg p-4">
-                        <div className="flex items-center gap-3 mb-2">
-                          {getStepStatusIcon(step.status)}
-                          <span className="font-medium">{step.name}</span>
-                          <Badge variant={step.status === 'completed' ? 'default' : step.status === 'in_progress' ? 'secondary' : 'outline'}>
-                            {step.status === 'completed' ? 'Hoàn thành' : step.status === 'in_progress' ? 'Đang thực hiện' : 'Chờ xử lý'}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">{step.description}</p>
-                        <div className="flex items-center gap-4 text-sm">
-                          <span>Thời gian dự kiến: {step.duration} phút</span>
-                          {step.status === 'completed' && (
-                            <span className="text-green-600">✓ Đã hoàn thành</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setSelectedTask(null)}>
-                    Đóng
+                  )}
+                  {task.status === 'in_progress' && (
+                    <Button size="sm" onClick={() => handleCompleteTask(task.id)}>
+                      Hoàn thành
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => setSelectedTask(task)}>
+                    Chi tiết
                   </Button>
                 </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      {/* Task Details Modal */}
+      {selectedTask && (
+        <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">{selectedTask.serviceType}</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground">Xe</h4>
+                  <p className="font-medium">{selectedTask.vehiclePlate}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground">Khách hàng</h4>
+                  <p className="font-medium">{selectedTask.customerName}</p>
+                </div>
               </div>
-            </DialogContent>
-          </Dialog>
-        )}
-      </div>
-    </DashboardLayout>
+
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground mb-2">Tiến độ</h4>
+                <div className="flex items-center gap-2">
+                  <Progress value={selectedTask.progress} className="h-2 flex-1" />
+                  <span className="text-sm text-muted-foreground">{selectedTask.progress}%</span>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground mb-3">Các bước thực hiện</h4>
+                <div className="space-y-3">
+                  {selectedTask.steps.map((step) => (
+                    <div key={step.id} className="border rounded-lg p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        {getStepStatusIcon(step.status)}
+                        <span className="font-medium">{step.name}</span>
+                        <Badge variant={step.status === 'completed' ? 'default' : step.status === 'in_progress' ? 'secondary' : 'outline'}>
+                          {step.status === 'completed' ? 'Hoàn thành' : step.status === 'in_progress' ? 'Đang thực hiện' : 'Chờ xử lý'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">{step.description}</p>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span>Thời gian dự kiến: {step.duration} phút</span>
+                        {step.status === 'completed' && (
+                          <span className="text-green-600">✓ Đã hoàn thành</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setSelectedTask(null)}>
+                  Đóng
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
   );
 }

@@ -1,4 +1,3 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -278,7 +277,7 @@ export default function PersonnelManagementPage() {
   );
 
   return (
-    <DashboardLayout user={{ email: 'admin@service.com', role: 'admin', userType: 'service' }}>
+    <div>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
@@ -480,6 +479,6 @@ export default function PersonnelManagementPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }
