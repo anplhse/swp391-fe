@@ -1,14 +1,12 @@
-import { Badge } from '@/components/ui/badge';
+import { ServiceTable } from '@/components/ServiceTable';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Clock, Edit, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -221,102 +219,15 @@ export default function ServiceManagementPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Input
-              placeholder="Tìm kiếm dịch vụ..."
-              className="w-64"
-            />
-          </div>
-          <Select>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="active">Hoạt động</SelectItem>
-              <SelectItem value="inactive">Tạm dừng</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <Button onClick={handleAddService}>
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm dịch vụ
-        </Button>
-      </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Tên dịch vụ</TableHead>
-            <TableHead>Loại</TableHead>
-            <TableHead>Giá</TableHead>
-            <TableHead>Thời gian</TableHead>
-            <TableHead>Xe tương thích</TableHead>
-            <TableHead>Trạng thái</TableHead>
-            <TableHead className="text-right">Thao tác</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {services.map((service) => (
-            <TableRow key={service.id}>
-              <TableCell>
-                <div>
-                  <div className="font-medium">{service.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {service.description}
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline">
-                  {getCategoryLabel(service.category)}
-                </Badge>
-              </TableCell>
-              <TableCell className="font-medium">
-                {formatPrice(service.price)}
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  {formatDuration(service.duration)}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-wrap gap-1">
-                  {service.compatibleVehicles.map((vehicle) => (
-                    <Badge key={vehicle} variant="secondary" className="text-xs">
-                      {vehicle}
-                    </Badge>
-                  ))}
-                </div>
-              </TableCell>
-              <TableCell>
-                {getStatusBadge(service.status)}
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex items-center justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditService(service)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteService(service.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <ServiceTable
+        services={services}
+        mode="management"
+        onEdit={handleEditService}
+        onDelete={handleDeleteService}
+        onAdd={handleAddService}
+        showActions={true}
+        showSelection={false}
+      />
 
       {/* Add/Edit Service Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

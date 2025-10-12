@@ -21,7 +21,7 @@ export default function AuthEventListener() {
     return () => {
       window.removeEventListener('auth:logout', onForcedLogout);
     };
-  }, [navigate, location.pathname]);
+  }, [navigate, location.pathname, toast]);
 
   return null;
 }

@@ -23,7 +23,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
 
         {/* Auth Card */}
         <div className="bg-card border rounded-2xl p-8 shadow">
-          <div className="mb-6">
+          <div className="mb-6 text-center">
             <h2 className="text-2xl font-bold text-foreground mb-2">{title}</h2>
             {subtitle && <p className="text-muted-foreground text-sm">{subtitle}</p>}
           </div>

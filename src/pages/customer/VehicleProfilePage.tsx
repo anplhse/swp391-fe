@@ -57,6 +57,7 @@ interface VehiclePackage {
   name: string;
   startDate: string;
   endDate: string;
+  status?: 'active' | 'expired';
 }
 
 export default function VehicleProfilePage() {
@@ -205,16 +206,6 @@ export default function VehicleProfilePage() {
     });
   };
 
-  const handleBookService = () => {
-    // Điều hướng tới đặt lịch với vehicleId đã biết
-    const modelId = vehicle.name.toLowerCase().includes('vf8') ? 'vf8' : vehicle.name.toLowerCase().includes('vf9') ? 'vf9' : vehicle.name.toLowerCase().includes('e34') ? 'vfe34' : 'vf5';
-    navigate('/customer/booking', {
-      state: {
-        vehicles: [{ id: modelId, name: vehicle.name, type: modelId === 'vfe34' ? 'Sedan' : (modelId === 'vf5' ? 'Hatchback' : 'SUV'), plate: vehicle.plate, year: String(vehicle.year) }],
-        preselectVehicleId: modelId
-      }
-    });
-  };
 
   return (
     <div className="space-y-6">
@@ -225,10 +216,6 @@ export default function VehicleProfilePage() {
           <Button variant="outline" onClick={handleEditVehicle}>
             <Edit className="w-4 h-4 mr-2" />
             Chỉnh sửa
-          </Button>
-          <Button variant="electric" onClick={handleBookService}>
-            <Wrench className="w-4 h-4 mr-2" />
-            Đặt lịch bảo dưỡng
           </Button>
         </div>
       </div>
@@ -521,10 +508,6 @@ export default function VehicleProfilePage() {
                       <span>Kiểm tra pin và hệ thống điện</span>
                     </div>
                   </div>
-                  <Button className="mt-4" onClick={handleBookService}>
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Đặt lịch ngay
-                  </Button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
