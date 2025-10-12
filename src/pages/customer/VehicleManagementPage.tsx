@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { setRegisteredVehicles } from '@/lib/sessionStore';
+import { getRegisteredVehicles, setRegisteredVehicles, type RegisteredVehicle } from '@/lib/sessionStore';
 import { cn } from '@/lib/utils';
 import {
   AlertCircle,
@@ -49,22 +49,26 @@ export default function VehicleManagementPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    {
-      id: '1',
-      name: 'VinFast VF8',
-      plate: '30A-123.45',
-      model: 'VF8 Plus',
-      year: 2024,
-      battery: 85,
-      nextService: '2025-10-15',
-      status: 'healthy',
-      mileage: 15000,
-      color: 'Trắng',
-      vin: 'VF8PLUS2024001',
-      purchaseDate: '2024-01-15'
-    }
-  ]);
+  // Chuyển đổi từ RegisteredVehicle sang Vehicle
+  const convertToVehicle = (registered: RegisteredVehicle): Vehicle => ({
+    id: registered.id,
+    name: registered.name,
+    plate: registered.plate || 'Chưa có',
+    model: registered.name,
+    year: parseInt(registered.year || '2024'),
+    battery: Math.floor(Math.random() * 30) + 70, // Random battery 70-100%
+    nextService: new Date(Date.now() + Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    status: Math.random() > 0.7 ? 'warning' : 'healthy' as const,
+    mileage: Math.floor(Math.random() * 20000) + 5000, // Random mileage 5k-25k
+    color: ['Trắng', 'Đen', 'Xám', 'Xanh'][Math.floor(Math.random() * 4)],
+    vin: registered.vin,
+    purchaseDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  });
+
+  const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
+    const registeredVehicles = getRegisteredVehicles();
+    return registeredVehicles.map(convertToVehicle);
+  });
 
   const [newVehicle, setNewVehicle] = useState({
     name: '',
@@ -126,14 +130,18 @@ export default function VehicleManagementPage() {
 
     const nextList = [...vehicles, vehicle];
     setVehicles(nextList);
+
     // Update in-memory session for booking page
-    setRegisteredVehicles(nextList.map(v => ({
-      id: v.name.toLowerCase().includes('vf8') ? 'vf8' : v.name.toLowerCase().includes('vf9') ? 'vf9' : v.name.toLowerCase().includes('e34') ? 'vfe34' : 'vf5',
-      name: v.name,
-      type: v.name.toLowerCase().includes('vf9') || v.name.toLowerCase().includes('vf8') ? 'SUV' : v.name.toLowerCase().includes('e34') ? 'Sedan' : 'Hatchback',
-      plate: v.plate,
-      year: String(v.year)
-    })));
+    const registeredVehicles = getRegisteredVehicles();
+    const newRegisteredVehicle: RegisteredVehicle = {
+      id: vehicle.id,
+      name: vehicle.name,
+      type: vehicle.name.toLowerCase().includes('vf9') || vehicle.name.toLowerCase().includes('vf8') ? 'SUV' : vehicle.name.toLowerCase().includes('e34') ? 'Sedan' : 'Hatchback',
+      vin: vehicle.vin,
+      plate: vehicle.plate,
+      year: String(vehicle.year)
+    };
+    setRegisteredVehicles([...registeredVehicles, newRegisteredVehicle]);
     setNewVehicle({
       name: '',
       plate: '',
@@ -179,6 +187,10 @@ export default function VehicleManagementPage() {
     const vehicle = vehicles.find(v => v.id === vehicleId);
     setVehicles(vehicles.filter(v => v.id !== vehicleId));
 
+    // Update in-memory session for booking page
+    const registeredVehicles = getRegisteredVehicles();
+    setRegisteredVehicles(registeredVehicles.filter(v => v.id !== vehicleId));
+
     toast({
       title: "Xóa xe thành công!",
       description: `Đã xóa ${vehicle?.name} khỏi danh sách`,
@@ -189,16 +201,22 @@ export default function VehicleManagementPage() {
     navigate(`/customer/vehicle/${vehicleId}`);
   };
 
-  const handleBackToBooking = () => {
-    const minimalVehicles = vehicles.map(v => ({
-      id: v.name.toLowerCase().includes('vf8') ? 'vf8' : v.name.toLowerCase().includes('vf9') ? 'vf9' : v.name.toLowerCase().includes('e34') ? 'vfe34' : 'vf5',
-      name: v.name,
-      type: v.name.toLowerCase().includes('vf9') || v.name.toLowerCase().includes('vf8') ? 'SUV' : v.name.toLowerCase().includes('e34') ? 'Sedan' : 'Hatchback',
-      plate: v.plate,
-      year: String(v.year)
-    }));
-    navigate('/customer/booking', { state: { vehicles: minimalVehicles } });
+  const handleBookService = (vehicle: Vehicle) => {
+    // Chuyển đến trang đặt lịch với VIN đã điền sẵn
+    navigate('/customer/booking', {
+      state: {
+        preselectVin: vehicle.vin,
+        preselectVehicle: {
+          vin: vehicle.vin,
+          brand: vehicle.name.split(' ')[0], // VinFast
+          model: vehicle.name.split(' ').slice(1).join(' '), // VF8, VF9, etc.
+          year: vehicle.year.toString(),
+          plate: vehicle.plate
+        }
+      }
+    });
   };
+
 
   return (
     <div className="space-y-6">
@@ -457,13 +475,20 @@ export default function VehicleManagementPage() {
 
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
+                  variant="default"
                   size="sm"
                   className="flex-1"
+                  onClick={() => handleBookService(vehicle)}
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Đặt lịch
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handleViewVehicleProfile(vehicle.id)}
                 >
-                  <Wrench className="w-4 h-4 mr-2" />
-                  Hồ sơ
+                  <Wrench className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="outline"

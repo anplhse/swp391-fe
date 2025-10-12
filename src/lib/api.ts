@@ -165,6 +165,80 @@ class ApiClient {
   }
 
   // Có thể thêm các API khác ở đây
+  async getVehicleByVin(vin: string): Promise<{
+    vin: string;
+    brand: string;
+    model: string;
+    year: string;
+    plate?: string;
+    type?: string;
+  }> {
+    // Mock data cho testing - sẽ thay bằng API thật sau
+    const mockVehicles: Record<string, {
+      vin: string;
+      brand: string;
+      model: string;
+      year: string;
+      plate?: string;
+      type?: string;
+    }> = {
+      'RL4A1234567890ABCD': {
+        vin: 'RL4A1234567890ABCD',
+        brand: 'VinFast',
+        model: 'VF8',
+        year: '2024',
+        plate: '30A-123.45',
+        type: 'SUV'
+      },
+      'RL4B9876543210EFGH': {
+        vin: 'RL4B9876543210EFGH',
+        brand: 'VinFast',
+        model: 'VF9',
+        year: '2023',
+        plate: '29B-678.90',
+        type: 'SUV'
+      },
+      'RL4C5555555555IJKL': {
+        vin: 'RL4C5555555555IJKL',
+        brand: 'VinFast',
+        model: 'VFe34',
+        year: '2024',
+        plate: '51C-111.11',
+        type: 'Sedan'
+      },
+      'RL4D1111111111MNOP': {
+        vin: 'RL4D1111111111MNOP',
+        brand: 'VinFast',
+        model: 'VF5',
+        year: '2023',
+        plate: '43D-222.22',
+        type: 'Hatchback'
+      },
+      'TEST123456789ABCD': {
+        vin: 'TEST123456789ABCD',
+        brand: 'VinFast',
+        model: 'VF8',
+        year: '2024',
+        plate: '30A-TEST.01',
+        type: 'SUV'
+      }
+    };
+
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const vehicle = mockVehicles[vin.toUpperCase()];
+    if (!vehicle) {
+      throw new Error('Không tìm thấy thông tin xe với mã VIN này');
+    }
+
+    return vehicle;
+
+    // Uncomment khi có API thật:
+    // return this.request(`/vehicles/vin/${encodeURIComponent(vin)}`, {
+    //   method: 'GET',
+    // });
+  }
   async getProfile(): Promise<LoginResponse['user']> {
     return this.request<LoginResponse['user']>('/auth/profile');
   }

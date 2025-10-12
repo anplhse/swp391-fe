@@ -55,7 +55,7 @@ export default function Login() {
   return (
     <AuthLayout
       title="Đăng nhập"
-      subtitle="Chào mừng trở lại! Vui lòng đăng nhập vào tài khoản của bạn."
+      subtitle=""
     >
       <LoginForm onLogin={handleLogin} isLoading={isLoggingIn || isLoading} />
     </AuthLayout>
