@@ -5,10 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { getRegisteredVehicles, setRegisteredVehicles, type RegisteredVehicle } from '@/lib/sessionStore';
-import { cn } from '@/lib/utils';
 import {
   AlertCircle,
   Calendar,
@@ -437,16 +437,10 @@ export default function VehicleManagementPage() {
                   <span>Pin:</span>
                   <span className="font-medium">{vehicle.battery}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={cn(
-                      "h-2 rounded-full transition-all",
-                      vehicle.battery > 70 ? "bg-green-500" :
-                        vehicle.battery > 30 ? "bg-yellow-500" : "bg-red-500"
-                    )}
-                    style={{ width: `${vehicle.battery}%` }}
-                  />
-                </div>
+                <Progress
+                  value={vehicle.battery}
+                  className="w-full"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">

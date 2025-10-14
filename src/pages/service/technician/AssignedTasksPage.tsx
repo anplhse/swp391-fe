@@ -229,13 +229,13 @@ export default function AssignedTasksPage() {
   const getStepStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'in_progress':
-        return <Clock className="w-4 h-4 text-blue-500" />;
+        return <Clock className="w-4 h-4 text-blue-600" />;
       case 'pending':
-        return <AlertCircle className="w-4 h-4 text-gray-400" />;
+        return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
       default:
-        return <AlertCircle className="w-4 h-4 text-gray-400" />;
+        return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
     }
   };
 

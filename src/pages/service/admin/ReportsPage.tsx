@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart3, Car, DollarSign, Download, TrendingUp, Users, Wrench } from 'lucide-react';
@@ -291,12 +292,10 @@ export default function ReportsPage() {
                       <div key={idx} className="flex justify-between items-center">
                         <div className="font-medium">{brand.brand}</div>
                         <div className="flex items-center gap-2">
-                          <div className="w-20 bg-muted rounded-full h-2">
-                            <div
-                              className="bg-primary h-2 rounded-full"
-                              style={{ width: `${(brand.count / reportData.vehicles.total) * 100}%` }}
-                            />
-                          </div>
+                          <Progress
+                            value={(brand.count / reportData.vehicles.total) * 100}
+                            className="w-20 h-2"
+                          />
                           <span className="text-sm font-medium">{brand.count}</span>
                         </div>
                       </div>
@@ -382,12 +381,10 @@ export default function ReportsPage() {
                       <div key={idx} className="flex justify-between items-center">
                         <div className="font-medium">{type.type}</div>
                         <div className="flex items-center gap-2">
-                          <div className="w-20 bg-muted rounded-full h-2">
-                            <div
-                              className="bg-primary h-2 rounded-full"
-                              style={{ width: `${(type.count / reportData.customers.total) * 100}%` }}
-                            />
-                          </div>
+                          <Progress
+                            value={(type.count / reportData.customers.total) * 100}
+                            className="w-20 h-2"
+                          />
                           <span className="text-sm font-medium">{type.count}</span>
                         </div>
                       </div>
@@ -440,12 +437,10 @@ export default function ReportsPage() {
                       <div key={idx} className="flex justify-between items-center">
                         <div className="font-medium">{type.type}</div>
                         <div className="flex items-center gap-2">
-                          <div className="w-20 bg-muted rounded-full h-2">
-                            <div
-                              className="bg-primary h-2 rounded-full"
-                              style={{ width: `${(type.count / reportData.services.total) * 100}%` }}
-                            />
-                          </div>
+                          <Progress
+                            value={(type.count / reportData.services.total) * 100}
+                            className="w-20 h-2"
+                          />
                           <span className="text-sm font-medium">{type.count}</span>
                         </div>
                       </div>

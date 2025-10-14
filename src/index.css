@@ -62,6 +62,8 @@ All colors MUST be HSL.
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 26 100% 74%; /* #feb47b */
     --sidebar-accent-foreground: 346 8% 22%;
+    --sidebar-accent-hover: 26 100% 80%; /* Lighter accent for hover */
+    --sidebar-accent-active: 14 100% 68%; /* Primary color for active */
     --sidebar-border: 15 100% 92%; /* #ffe0d6 */
     --sidebar-ring: 14 100% 68%;
     /* Charts */
@@ -120,6 +122,8 @@ All colors MUST be HSL.
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-accent-hover: 240 3.7% 20%; /* Lighter accent for hover */
+    --sidebar-accent-active: 224.3 76.3% 48%; /* Primary color for active */
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 22 90% 58%;
   }

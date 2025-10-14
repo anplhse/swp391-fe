@@ -1,13 +1,11 @@
-import { Badge } from '@/components/ui/badge';
+import { PartsTable } from '@/components/PartsTable';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertTriangle, CheckCircle, Clock, Edit, Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -52,15 +50,6 @@ export default function PartsManagementPage() {
   const [selectedPart, setSelectedPart] = useState<Part | null>(null);
   const { toast } = useToast();
 
-  // Filters with RHF + Zod
-  const filtersSchema = z.object({
-    search: z.string().optional(),
-    category: z.string().default('all'),
-    status: z.enum(['all', 'in_stock', 'low_stock', 'out_of_stock']).default('all')
-  });
-  type FiltersForm = z.infer<typeof filtersSchema>;
-  const filtersForm = useForm<FiltersForm>({ resolver: zodResolver(filtersSchema), defaultValues: { search: '', category: 'all', status: 'all' } });
-  const watchFilters = filtersForm.watch();
 
   const partSchema = z.object({
     name: z.string().min(1, 'Tên phụ tùng là bắt buộc'),
@@ -187,170 +176,50 @@ export default function PartsManagementPage() {
     setRestockRequests(mockRestockRequests);
   }, []);
 
-  const filteredParts = parts.filter(part => {
-    const term = (watchFilters.search || '').toLowerCase().trim();
-    const matchesSearch = term === '' ||
-      part.name.toLowerCase().includes(term) ||
-      part.partNumber.toLowerCase().includes(term) ||
-      part.brand.toLowerCase().includes(term);
 
-    const matchesCategory = watchFilters.category === 'all' || part.category === watchFilters.category;
-    const matchesStatus = watchFilters.status === 'all' || part.status === watchFilters.status;
-
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'in_stock':
-        return <Badge className="bg-green-500">Còn hàng</Badge>;
-      case 'low_stock':
-        return <Badge variant="destructive">Sắp hết</Badge>;
-      case 'out_of_stock':
-        return <Badge variant="outline">Hết hàng</Badge>;
-      default:
-        return <Badge variant="outline">Không xác định</Badge>;
-    }
+  const handleAddPart = () => {
+    setEditingPart(null);
+    partForm.reset({ name: '', partNumber: '', category: '', brand: '', currentStock: '0', minStock: '0', maxStock: '1', unitPrice: '0', supplier: '', location: '' });
+    setIsPartDialogOpen(true);
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'in_stock':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'low_stock':
-        return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
-      case 'out_of_stock':
-        return <AlertTriangle className="w-4 h-4 text-red-500" />;
-      default:
-        return <Clock className="w-4 h-4 text-gray-400" />;
-    }
+  const handleEditPart = (part: Part) => {
+    setEditingPart(part);
+    partForm.reset({
+      name: part.name,
+      partNumber: part.partNumber,
+      category: part.category,
+      brand: part.brand,
+      currentStock: String(part.currentStock),
+      minStock: String(part.minStock),
+      maxStock: String(part.maxStock),
+      unitPrice: String(part.unitPrice),
+      supplier: part.supplier,
+      location: part.location
+    });
+    setIsPartDialogOpen(true);
   };
 
-  const getRequestStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="secondary">Chờ duyệt</Badge>;
-      case 'approved':
-        return <Badge className="bg-green-500">Đã duyệt</Badge>;
-      case 'rejected':
-        return <Badge variant="destructive">Từ chối</Badge>;
-      case 'ordered':
-        return <Badge variant="default">Đã đặt hàng</Badge>;
-      default:
-        return <Badge variant="outline">Không xác định</Badge>;
-    }
+  const handleDeletePart = (partId: string) => {
+    setParts(prev => prev.filter(p => p.id !== partId));
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
+  const handleRequestRestock = () => {
+    setSelectedPart(null);
+    requestForm.reset({ partId: '', requestedQuantity: '1', reason: '' });
+    setIsRequestDialogOpen(true);
   };
-
-  const lowStockParts = parts.filter(part => part.status === 'low_stock' || part.status === 'out_of_stock');
-  const pendingRequests = restockRequests.filter(req => req.status === 'pending');
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <Form {...filtersForm}>
-          <form className="flex items-center gap-3">
-            <FormField name="search" control={filtersForm.control} render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <Input className="pl-9 w-64" placeholder="Tìm kiếm..." {...field} />
-                  </div>
-                </FormControl>
-              </FormItem>
-            )} />
-            <FormField name="category" control={filtersForm.control} render={({ field }) => (
-              <FormItem>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Danh mục" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="Pin">Pin</SelectItem>
-                    <SelectItem value="Động cơ">Động cơ</SelectItem>
-                    <SelectItem value="Sạc">Sạc</SelectItem>
-                    <SelectItem value="Cảm biến">Cảm biến</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )} />
-            <FormField name="status" control={filtersForm.control} render={({ field }) => (
-              <FormItem>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="in_stock">Còn hàng</SelectItem>
-                    <SelectItem value="low_stock">Sắp hết</SelectItem>
-                    <SelectItem value="out_of_stock">Hết hàng</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )} />
-          </form>
-        </Form>
-        <div className="flex gap-2">
-          <Button onClick={() => { setEditingPart(null); partForm.reset({ name: '', partNumber: '', category: '', brand: '', currentStock: '0', minStock: '0', maxStock: '1', unitPrice: '0', supplier: '', location: '' }); setIsPartDialogOpen(true); }}>
-            <Plus className="w-4 h-4 mr-2" />
-            Thêm phụ tùng
-          </Button>
-          <Button variant="outline" onClick={() => { setSelectedPart(null); requestForm.reset({ partId: '', requestedQuantity: '1', reason: '' }); setIsRequestDialogOpen(true); }}>
-            Tạo yêu cầu nhập
-          </Button>
-        </div>
-      </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Tên</TableHead>
-            <TableHead>Mã</TableHead>
-            <TableHead>Danh mục</TableHead>
-            <TableHead>Thương hiệu</TableHead>
-            <TableHead>Tồn/Max</TableHead>
-            <TableHead>Giá</TableHead>
-            <TableHead>Trạng thái</TableHead>
-            <TableHead className="text-right">Thao tác</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredParts.map(part => (
-            <TableRow key={part.id}>
-              <TableCell>{part.name}</TableCell>
-              <TableCell>{part.partNumber}</TableCell>
-              <TableCell>{part.category}</TableCell>
-              <TableCell>{part.brand}</TableCell>
-              <TableCell>{part.currentStock}/{part.maxStock}</TableCell>
-              <TableCell>{formatPrice(part.unitPrice)}</TableCell>
-              <TableCell>{getStatusBadge(part.status)}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="outline" onClick={() => { setEditingPart(part); partForm.reset({ name: part.name, partNumber: part.partNumber, category: part.category, brand: part.brand, currentStock: String(part.currentStock), minStock: String(part.minStock), maxStock: String(part.maxStock), unitPrice: String(part.unitPrice), supplier: part.supplier, location: part.location }); setIsPartDialogOpen(true); }}>
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setParts(prev => prev.filter(p => p.id !== part.id))}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <PartsTable
+        parts={parts}
+        onEdit={handleEditPart}
+        onDelete={handleDeletePart}
+        onAdd={handleAddPart}
+        onRequestRestock={handleRequestRestock}
+        showActions={true}
+      />
 
       {/* Add/Edit Part Dialog */}
       <Dialog open={isPartDialogOpen} onOpenChange={setIsPartDialogOpen}>

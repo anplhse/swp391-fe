@@ -93,6 +93,11 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
 
   // Helper: NavLink integrated with SidebarMenuButton to set active state
   const isActivePath = (path: string) => {
+    // Only exact match for dashboard paths to prevent multiple active states
+    if (path === '/customer' || path === '/service/staff' || path === '/service/technician' || path === '/service/admin') {
+      return location.pathname === path;
+    }
+    // For other paths, allow startsWith for sub-pages
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
@@ -139,7 +144,6 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
           { to: '/customer/booking', icon: Calendar, label: 'Đặt lịch' },
           { to: '/customer/bookings', icon: History, label: 'Quản lý lịch hẹn' },
           { to: '/customer/vehicles', icon: Car, label: 'Xe của tôi' },
-          { to: '/customer/packages', icon: Package, label: 'Gói dịch vụ' },
           { to: '/customer/history', icon: History, label: 'Lịch sử dịch vụ' },
         ];
     }

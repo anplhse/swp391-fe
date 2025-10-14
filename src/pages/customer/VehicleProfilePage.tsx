@@ -52,13 +52,7 @@ interface ServiceRecord {
   };
 }
 
-interface VehiclePackage {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  status?: 'active' | 'expired';
-}
+// Removed VehiclePackage type as packages tab/section is no longer displayed
 
 export default function VehicleProfilePage() {
   const navigate = useNavigate();
@@ -165,46 +159,6 @@ export default function VehicleProfilePage() {
     navigate('/customer/vehicles');
   };
 
-  // Mock packages for this vehicle
-  const packagesForThisVehicle: VehiclePackage[] = [
-    {
-      id: 'premium',
-      name: 'Gói Cao cấp',
-      startDate: '2024-01-01',
-      endDate: '2025-01-01',
-      status: 'active'
-    }
-  ];
-
-  const daysLeft = (end: string) => {
-    const diff = new Date(end).getTime() - new Date().getTime();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
-  };
-
-  const handleRenewPackage = (pkg: VehiclePackage) => {
-    const priceMap: Record<string, number> = {
-      basic: 15000000,
-      premium: 25000000,
-      vip: 40000000
-    };
-    const renewPrice = priceMap[pkg.id] ?? 0;
-    navigate('/customer/payment', {
-      state: {
-        items: [
-          {
-            id: pkg.id,
-            name: `${pkg.name} - Gia hạn`,
-            type: 'package',
-            price: renewPrice,
-            quantity: 1,
-            description: 'Gia hạn gói dịch vụ thêm 12 tháng'
-          }
-        ],
-        from: 'packages',
-        vehicleId: vehicleId
-      }
-    });
-  };
 
 
   return (
@@ -252,9 +206,7 @@ export default function VehicleProfilePage() {
                   <span>Số km:</span>
                   <span className="font-medium">{vehicle.mileage.toLocaleString()}</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: '60%' }} />
-                </div>
+                <Progress value={60} className="w-full" />
               </div>
             </div>
 
@@ -430,56 +382,6 @@ export default function VehicleProfilePage() {
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-4">
-          {/* Current Service Packages for this vehicle */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Gói dịch vụ hiện tại</CardTitle>
-              <CardDescription>Gói đang gắn với xe này</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {packagesForThisVehicle.length > 0 ? (
-                <div className="space-y-4">
-                  {packagesForThisVehicle.map((p) => (
-                    <div key={p.id} className="border rounded-lg p-4 flex items-center justify-between gap-4">
-                      <div>
-                        <h3 className="font-semibold">{p.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(p.startDate).toLocaleDateString('vi-VN')} - {new Date(p.endDate).toLocaleDateString('vi-VN')}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {daysLeft(p.endDate) > 0 ? (
-                          <Badge variant="default">Còn {daysLeft(p.endDate)} ngày</Badge>
-                        ) : (
-                          <Badge variant="secondary">Hết hạn</Badge>
-                        )}
-                        {(daysLeft(p.endDate) <= 30) && (
-                          <>
-                            <span className="text-sm text-muted-foreground hidden md:inline">
-                              {(() => {
-                                const priceMap: Record<string, number> = { basic: 15000000, premium: 25000000, vip: 40000000 };
-                                const renewPrice = priceMap[p.id] ?? 0;
-                                return `${renewPrice.toLocaleString('vi-VN')} VND`;
-                              })()}
-                            </span>
-                            <Button size="sm" onClick={() => handleRenewPackage(p)}>
-                              Gia hạn
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-start gap-3">
-                  <p className="text-sm text-muted-foreground">Chưa có gói dịch vụ nào được gắn cho xe này.</p>
-                  <Button onClick={() => navigate('/customer/packages')}>Mua gói dịch vụ</Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>Lịch bảo dưỡng</CardTitle>

@@ -1,7 +1,7 @@
-import { ServiceTable } from '@/components/ServiceTable';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,6 +12,7 @@ import { bookTimeSlot, getAvailableTimeSlots, getNextAvailableDates, isTimeSlotA
 import { getRegisteredVehicles } from '@/lib/sessionStore';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { createColumnHelper } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import {
   AlertCircle,
@@ -40,15 +41,19 @@ const bookingSchema = z.object({
 
 type BookingFormData = z.infer<typeof bookingSchema>;
 
+// Service type for React Table
 interface Service {
   id: string;
   name: string;
   description: string;
   price: number;
-  duration: string;
+  duration: number;
   compatibleVehicles: string[];
-  category: string;
+  status?: string;
 }
+
+// Column helper for React Table
+const columnHelper = createColumnHelper<Service>();
 
 interface BookingFormProps {
   services: Service[];
@@ -208,7 +213,63 @@ export function BookingForm({ services }: BookingFormProps) {
   // Lọc dịch vụ theo model từ VIN (nếu có)
   const visibleServices = useMemo(() => services.filter(s => allowedServiceIds.includes(s.id)), [services, allowedServiceIds]);
 
-  const totalPages = Math.ceil(visibleServices.length / 6);
+  // Local state for search and pagination (giống ServiceTable)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
+  // Filter services based on search query
+  const filteredServices = useMemo(() => {
+    if (!searchQuery.trim()) return visibleServices;
+    return visibleServices.filter(service =>
+      service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      service.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [visibleServices, searchQuery]);
+
+  // Paginate filtered services
+  const paginatedServices = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredServices.slice(startIndex, endIndex);
+  }, [filteredServices, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredServices.length / itemsPerPage);
+
+  // Selection handlers (giống ServiceTable)
+  const selectedServices = form.watch('services') || [];
+
+  const handleSelectAll = () => {
+    const allIds = paginatedServices.map(service => service.id);
+    const newSelection = [...new Set([...selectedServices, ...allIds])];
+    form.setValue('services', newSelection);
+  };
+
+  const handleDeselectAll = () => {
+    const currentPageIds = paginatedServices.map(service => service.id);
+    const newSelection = selectedServices.filter(id => !currentPageIds.includes(id));
+    form.setValue('services', newSelection);
+  };
+
+  const handleServiceToggle = (serviceId: string) => {
+    const isSelected = selectedServices.includes(serviceId);
+    if (isSelected) {
+      form.setValue('services', selectedServices.filter(id => id !== serviceId));
+    } else {
+      form.setValue('services', [...selectedServices, serviceId]);
+    }
+  };
+
+  const allCurrentPageSelected = paginatedServices.every(service =>
+    selectedServices.includes(service.id)
+  );
+
+  const someCurrentPageSelected = paginatedServices.some(service =>
+    selectedServices.includes(service.id)
+  );
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredServices.length);
 
   const onSubmit = async (data: BookingFormData) => {
     try {
@@ -236,21 +297,52 @@ export function BookingForm({ services }: BookingFormProps) {
         return;
       }
 
-      // Calculate total price
+      // Calculate total price and selected services
       const selectedServices = services.filter(s => data.services.includes(s.id));
       const totalPrice = selectedServices.reduce((sum, service) => sum + service.price, 0);
+      const totalDuration = selectedServices.reduce((sum, service) => sum + service.duration, 0);
+
+      // Generate booking ID
+      const bookingId = `BK${Date.now()}`;
+
+      // Create booking data
+      const bookingData = {
+        id: bookingId,
+        vehicle: {
+          vin: data.vin,
+          brand: vinData?.brand || 'N/A',
+          model: vinData?.model || 'N/A',
+          year: vinData?.year || new Date().getFullYear()
+        },
+        services: selectedServices.map(service => ({
+          id: service.id,
+          name: service.name,
+          description: service.description,
+          price: service.price,
+          duration: service.duration
+        })),
+        date: dateString,
+        time: data.selectedTimeSlot,
+        notes: data.notes || '',
+        totalAmount: totalPrice,
+        estimatedDuration: totalDuration,
+        status: 'pending' as const,
+        createdAt: new Date().toISOString()
+      };
+
+      // Save booking data to localStorage
+      localStorage.setItem('latestBooking', JSON.stringify(bookingData));
 
       // Show success message
       toast({
         title: 'Đặt lịch thành công!',
-        description: `Tổng cộng: ${new Intl.NumberFormat('vi-VN', {
-          style: 'currency',
-          currency: 'VND'
-        }).format(totalPrice)}`
+        description: 'Đang chuyển đến trang xác nhận...'
       });
 
-      // Navigate to customer dashboard
-      navigate('/customer');
+      // Navigate to confirmation page
+      navigate('/customer/booking/confirmation', {
+        state: { bookingData }
+      });
     } catch (error) {
       console.error('Booking error:', error);
       toast({
@@ -272,64 +364,274 @@ export function BookingForm({ services }: BookingFormProps) {
     <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* VIN Input Section - ở đầu trang */}
-          <div className="bg-card border rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Car className="w-5 h-5" />
-              Thông tin xe
-            </h2>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <FormField
-                  control={form.control}
-                  name="vin"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Nhập mã VIN xe (VD: RL4A1234567890ABCD)"
-                          className="w-full"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          {/* VIN Input Section - chỉ hiện khi chưa có VIN data */}
+          {!vinData && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-semibold flex items-center gap-2">
+                <Car className="w-6 h-6" />
+                Thông tin xe
+              </h2>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <FormField
+                    control={form.control}
+                    name="vin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Nhập mã VIN xe (VD: RL4A1234567890ABCD)"
+                            className="w-full"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  onClick={() => handleVinLookup(form.getValues('vin'))}
+                  disabled={isLoadingVin || !form.getValues('vin')}
+                >
+                  {isLoadingVin ? 'Đang tra cứu...' : 'Tra cứu VIN'}
+                </Button>
               </div>
-              <Button
-                type="button"
-                onClick={() => handleVinLookup(form.getValues('vin'))}
-                disabled={isLoadingVin || !form.getValues('vin')}
-              >
-                {isLoadingVin ? 'Đang tra cứu...' : 'Tra cứu VIN'}
-              </Button>
             </div>
-          </div>
+          )}
 
-          {/* Service Selection Section - chỉ hiện khi có VIN data */}
+          {/* Vehicle Info Display - chỉ hiện khi đã có VIN data */}
           {vinData && (
-            <div className="bg-card border rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Wrench className="w-5 h-5" />
+            <div className="space-y-4">
+              <h2 className="text-2xl font-semibold flex items-center gap-2">
+                <Car className="w-6 h-6" />
+                Thông tin xe
+              </h2>
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <span className="text-sm text-muted-foreground">Mã VIN:</span>
+                    <p className="font-medium">{vinData.vin}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-muted-foreground">Biển số:</span>
+                    <p className="font-medium">{vinData.plate || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-muted-foreground">Model:</span>
+                    <p className="font-medium">{vinData.model || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-muted-foreground">Năm sản xuất:</span>
+                    <p className="font-medium">{vinData.year || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-muted-foreground">Hãng xe:</span>
+                    <p className="font-medium">{vinData.brand || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-muted-foreground">Loại xe:</span>
+                    <p className="font-medium">{vinData.type || 'N/A'}</p>
+                  </div>
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setVinData(null);
+                      form.setValue('vin', '');
+                      form.setValue('services', []);
+                      setSearchQuery('');
+                      setCurrentPage(1);
+                    }}
+                  >
+                    Thay đổi VIN
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Service Selection - chỉ hiện khi có VIN data */}
+          {vinData && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-semibold flex items-center gap-2">
+                <Wrench className="w-6 h-6" />
                 Chọn dịch vụ
               </h2>
 
-              {/* Service Selection Table */}
               <FormField
                 control={form.control}
                 name="services"
                 render={({ field }) => (
                   <FormItem>
-                    <ServiceTable
-                      services={visibleServices}
-                      mode="selection"
-                      selectedServices={field.value || []}
-                      onSelectionChange={field.onChange}
-                      showActions={false}
-                      showSelection={true}
-                      itemsPerPage={6}
-                    />
+                    <div className="space-y-4">
+                      {/* Search and Controls */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <Input
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Tìm kiếm dịch vụ..."
+                            className="w-64"
+                          />
+                          {/* Đã bỏ nút Chọn tất cả / Bỏ chọn tất cả vì đã có tickbox */}
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          {selectedServices.length > 0 && (
+                            <Badge variant="secondary" className="text-sm">
+                              Đã chọn {selectedServices.length} dịch vụ
+                            </Badge>
+                          )}
+                          <span className="text-sm text-muted-foreground">
+                            Hiển thị {startIndex + 1}-{endIndex} trong {filteredServices.length} dịch vụ
+                          </span>
+                          {totalPages > 1 && (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                disabled={currentPage === 1}
+                              >
+                                Trước
+                              </Button>
+                              <span className="text-sm text-muted-foreground">
+                                Trang {currentPage} / {totalPages}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                                disabled={currentPage === totalPages}
+                              >
+                                Sau
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Services Table */}
+                      <div className="border rounded-lg">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-12">
+                                <div className="flex items-center justify-center">
+                                  <div className={cn(
+                                    "w-4 h-4 border-2 rounded flex items-center justify-center transition-colors cursor-pointer",
+                                    allCurrentPageSelected ? "bg-primary border-primary text-primary-foreground" :
+                                      someCurrentPageSelected ? "bg-primary/50 border-primary text-primary-foreground" :
+                                        "border-muted-foreground"
+                                  )}
+                                    onClick={() => {
+                                      if (allCurrentPageSelected) {
+                                        handleDeselectAll();
+                                      } else {
+                                        handleSelectAll();
+                                      }
+                                    }}
+                                  >
+                                    {allCurrentPageSelected && (
+                                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                    {someCurrentPageSelected && !allCurrentPageSelected && (
+                                      <div className="w-2 h-2 bg-primary rounded-sm" />
+                                    )}
+                                  </div>
+                                </div>
+                              </TableHead>
+                              <TableHead>Tên dịch vụ</TableHead>
+                              <TableHead>Giá</TableHead>
+                              <TableHead>Thời gian</TableHead>
+                              <TableHead>Xe tương thích</TableHead>
+                              {/* Bỏ cột Trạng thái đã chọn */}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {paginatedServices.map((service) => {
+                              const isSelected = selectedServices.includes(service.id);
+                              return (
+                                <TableRow
+                                  key={service.id}
+                                  className={cn(
+                                    "cursor-pointer hover:bg-muted/50",
+                                    isSelected ? "bg-primary/5" : ""
+                                  )}
+                                  onClick={() => handleServiceToggle(service.id)}
+                                >
+                                  <TableCell>
+                                    <div className="flex items-center justify-center">
+                                      <div className={cn(
+                                        "w-4 h-4 border-2 rounded flex items-center justify-center transition-colors",
+                                        isSelected ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground"
+                                      )}>
+                                        {isSelected && (
+                                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                          </svg>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div>
+                                      <div className="font-medium">{service.name}</div>
+                                      <div className="text-sm text-muted-foreground">
+                                        {service.description}
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="font-medium">
+                                    {new Intl.NumberFormat('vi-VN', {
+                                      style: 'currency',
+                                      currency: 'VND'
+                                    }).format(service.price)}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="w-4 h-4" />
+                                      {service.duration} phút
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex flex-wrap gap-1">
+                                      {service.compatibleVehicles.slice(0, 2).map((vehicle) => (
+                                        <Badge key={vehicle} variant="secondary" className="text-xs">
+                                          {vehicle}
+                                        </Badge>
+                                      ))}
+                                      {service.compatibleVehicles.length > 2 && (
+                                        <span className="text-xs text-muted-foreground">
+                                          +{service.compatibleVehicles.length - 2} khác
+                                        </span>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  {/* Bỏ hiển thị trạng thái đã chọn */}
+                                </TableRow>
+                              );
+                            })}
+                            {paginatedServices.length === 0 && (
+                              <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center">
+                                  Không tìm thấy dịch vụ nào.
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -337,159 +639,126 @@ export function BookingForm({ services }: BookingFormProps) {
             </div>
           )}
 
-          {/* Booking Details Section */}
+          {/* Booking Details - chỉ hiện khi có VIN data */}
           {vinData && (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[200px]">Thông tin</TableHead>
-                    <TableHead>Giá trị</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {/* Date */}
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4" />
-                        Ngày bảo dưỡng
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <FormField
-                        control={form.control}
-                        name="selectedDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant="outline"
-                                    className={cn(
-                                      "w-full justify-start text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      format(field.value, "dd/MM/yyyy")
-                                    ) : (
-                                      <span>Chọn ngày</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  disabled={(date) => {
-                                    const today = new Date();
-                                    today.setHours(0, 0, 0, 0);
-                                    return date < today || !availableDates.some(d =>
-                                      d.getTime() === date.getTime()
-                                    );
-                                  }}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TableCell>
-                  </TableRow>
+            <div className="space-y-4">
+              <h2 className="text-2xl font-semibold flex items-center gap-2">
+                <CalendarIcon className="w-6 h-6" />
+                Chi tiết đặt lịch
+              </h2>
 
-                  {/* Time Slot */}
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        Khung giờ
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <FormField
-                        control={form.control}
-                        name="selectedTimeSlot"
-                        render={({ field }) => (
-                          <FormItem>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left Column - Date & Time */}
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="selectedDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ngày bảo dưỡng</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
                             <FormControl>
-                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                {isLoadingTimeSlots ? (
-                                  <div className="col-span-full text-center py-4 text-muted-foreground">
-                                    Đang tải khung giờ...
-                                  </div>
-                                ) : availableTimeSlots.length === 0 ? (
-                                  <div className="col-span-full text-center py-4 text-muted-foreground">
-                                    <AlertCircle className="w-4 h-4 mx-auto mb-1" />
-                                    Không có khung giờ khả dụng
-                                  </div>
-                                ) : (
-                                  availableTimeSlots.map((slot) => (
-                                    <Button
-                                      key={slot}
-                                      type="button"
-                                      variant={field.value === slot ? "default" : "outline"}
-                                      size="sm"
-                                      onClick={() => field.onChange(slot)}
-                                      className="justify-start"
-                                    >
-                                      {slot}
-                                    </Button>
-                                  ))
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !field.value && "text-muted-foreground"
                                 )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "dd/MM/yyyy")
+                                ) : (
+                                  <span>Chọn ngày</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => {
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const isSameDay = (a: Date, b: Date) => (
+                                  a.getFullYear() === b.getFullYear() &&
+                                  a.getMonth() === b.getMonth() &&
+                                  a.getDate() === b.getDate()
+                                );
+                                return date < today || !availableDates.some(d => isSameDay(d, date));
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="selectedTimeSlot"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Chọn giờ</FormLabel>
+                        <FormControl>
+                          <div className="grid grid-cols-2 gap-2">
+                            {isLoadingTimeSlots ? (
+                              <div className="col-span-full text-center py-4 text-muted-foreground">
+                                Đang tải khung giờ...
                               </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TableCell>
-                  </TableRow>
+                            ) : availableTimeSlots.length === 0 ? (
+                              <div className="col-span-full text-center py-4 text-muted-foreground">
+                                <AlertCircle className="w-4 h-4 mx-auto mb-1" />
+                                Không có khung giờ khả dụng
+                              </div>
+                            ) : (
+                              availableTimeSlots.map((slot) => (
+                                <Button
+                                  key={slot}
+                                  type="button"
+                                  variant={field.value === slot ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => field.onChange(slot)}
+                                  className="justify-start"
+                                >
+                                  {slot}
+                                </Button>
+                              ))
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                  {/* Vehicle Info */}
-                  <TableRow>
-                    <TableCell className="font-medium">Biển số xe</TableCell>
-                    <TableCell>{vinData.plate || 'N/A'}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Năm sản xuất</TableCell>
-                    <TableCell>{vinData.year || 'N/A'}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Model</TableCell>
-                    <TableCell>{vinData.model || 'N/A'}</TableCell>
-                  </TableRow>
-
-                  {/* Notes */}
-                  <TableRow>
-                    <TableCell className="font-medium">Ghi chú</TableCell>
-                    <TableCell>
-                      <FormField
-                        control={form.control}
-                        name="notes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Textarea
-                                {...field}
-                                placeholder="Ghi chú thêm (tùy chọn)"
-                                className="min-h-[80px]"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+                {/* Right Column - Notes */}
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ghi chú thêm</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder="Ghi chú thêm (tùy chọn)"
+                            className="min-h-[80px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             </div>
           )}
 

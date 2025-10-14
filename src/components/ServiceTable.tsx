@@ -147,7 +147,7 @@ export function ServiceTable({
   const getStatusBadge = (status?: string) => {
     if (!status) return null;
     return status === 'active' ? (
-      <Badge variant="default" className="bg-green-100 text-green-800">Hoạt động</Badge>
+      <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-200">Hoạt động</Badge>
     ) : (
       <Badge variant="secondary">Tạm dừng</Badge>
     );

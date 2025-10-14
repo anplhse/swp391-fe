@@ -1,13 +1,11 @@
-import { Badge } from '@/components/ui/badge';
+import { AppointmentTable } from '@/components/AppointmentTable';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, CheckCircle, Clock, Edit, Search, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -58,10 +56,6 @@ export default function AppointmentManagementPage() {
     defaultValues: { status: 'pending', technician: '', notes: '' }
   });
 
-  // Filter form (RHF + Zod)
-  const filterSchema = z.object({ search: z.string().optional(), status: z.enum(['all', 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled']) });
-  type FilterForm = z.infer<typeof filterSchema>;
-  const filterForm = useForm<FilterForm>({ resolver: zodResolver(filterSchema), defaultValues: { search: '', status: 'all' } });
 
   useEffect(() => {
     // Mock data
@@ -189,53 +183,6 @@ export default function AppointmentManagementPage() {
     setAppointments(mockAppointments);
   }, []);
 
-  const watchFilters = filterForm.watch();
-  const filteredAppointments = appointments.filter(appointment => {
-    const term = (watchFilters.search || '').toLowerCase().trim();
-    const serviceNames = appointment.services.map(s => s.name).join(' ').toLowerCase();
-    const matchesSearch = term === '' ||
-      appointment.vehicle.plate.toLowerCase().includes(term) ||
-      appointment.vehicle.name.toLowerCase().includes(term) ||
-      serviceNames.includes(term);
-
-    const matchesStatus = watchFilters.status === 'all' || appointment.status === watchFilters.status;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="secondary">Chờ xác nhận</Badge>;
-      case 'confirmed':
-        return <Badge variant="default">Đã xác nhận</Badge>;
-      case 'in_progress':
-        return <Badge variant="destructive">Đang thực hiện</Badge>;
-      case 'completed':
-        return <Badge className="bg-green-500">Hoàn thành</Badge>;
-      case 'cancelled':
-        return <Badge variant="outline">Đã hủy</Badge>;
-      default:
-        return <Badge variant="outline">Không xác định</Badge>;
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Clock className="w-4 h-4" />;
-      case 'confirmed':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'in_progress':
-        return <AlertCircle className="w-4 h-4" />;
-      case 'completed':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'cancelled':
-        return <XCircle className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
-    }
-  };
 
   const handleConfirm = (id: string) => {
     setAppointments(prev =>
@@ -253,13 +200,6 @@ export default function AppointmentManagementPage() {
     );
   };
 
-  const todayAppointments = filteredAppointments.filter(apt =>
-    apt.date === new Date().toISOString().split('T')[0]
-  );
-
-  const pendingAppointments = filteredAppointments.filter(apt =>
-    apt.status === 'pending'
-  );
 
   const openEdit = (apt: Appointment) => {
     setEditing(apt);
@@ -277,80 +217,13 @@ export default function AppointmentManagementPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <Form {...filterForm}>
-          <form className="flex items-center gap-3">
-            <FormField name="search" control={filterForm.control} render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <Input className="pl-9 w-64" placeholder="Tìm kiếm..." {...field} />
-                  </div>
-                </FormControl>
-              </FormItem>
-            )} />
-            <FormField name="status" control={filterForm.control} render={({ field }) => (
-              <FormItem>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="pending">Chờ xác nhận</SelectItem>
-                    <SelectItem value="confirmed">Đã xác nhận</SelectItem>
-                    <SelectItem value="in_progress">Đang thực hiện</SelectItem>
-                    <SelectItem value="completed">Hoàn thành</SelectItem>
-                    <SelectItem value="cancelled">Đã hủy</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )} />
-          </form>
-        </Form>
-      </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Ngày</TableHead>
-            <TableHead>Giờ</TableHead>
-            <TableHead>Khách/xe</TableHead>
-            <TableHead>Dịch vụ</TableHead>
-            <TableHead>KTV</TableHead>
-            <TableHead>Trạng thái</TableHead>
-            <TableHead className="text-right">Thao tác</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredAppointments.map(appointment => (
-            <TableRow key={appointment.id}>
-              <TableCell>{new Date(appointment.date).toLocaleDateString('vi-VN')}</TableCell>
-              <TableCell>{appointment.time}</TableCell>
-              <TableCell>{appointment.vehicle.name} - {appointment.vehicle.plate}</TableCell>
-              <TableCell>{appointment.services.map(s => s.name).join(', ')}</TableCell>
-              <TableCell>{appointment.technician || '—'}</TableCell>
-              <TableCell>{getStatusBadge(appointment.status)}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  {appointment.status === 'pending' && (
-                    <>
-                      <Button size="sm" onClick={() => handleConfirm(appointment.id)}>Xác nhận</Button>
-                      <Button size="sm" variant="outline" onClick={() => handleCancel(appointment.id)}>Hủy</Button>
-                    </>
-                  )}
-                  <Button size="sm" variant="outline" onClick={() => openEdit(appointment)}>
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <AppointmentTable
+        appointments={appointments}
+        onEdit={openEdit}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        showActions={true}
+      />
       {/* Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-md">

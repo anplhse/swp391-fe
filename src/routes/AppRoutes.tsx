@@ -18,12 +18,12 @@ const Solutions = lazy(() => import("../pages/marketing/Solutions"));
 
 // Customer pages (lazy)
 const BookingPage = lazy(() => import("../pages/customer/BookingPage"));
+const BookingConfirmationPage = lazy(() => import("../pages/customer/BookingConfirmationPage"));
 const BookingStatusPage = lazy(() => import("../pages/customer/BookingStatusPage"));
 const BookingsPage = lazy(() => import("../pages/customer/BookingsPage"));
 const CustomerDashboard = lazy(() => import("../pages/customer/CustomerDashboard"));
 const PaymentPage = lazy(() => import("../pages/customer/PaymentPage"));
 const ServiceHistoryPage = lazy(() => import("../pages/customer/ServiceHistoryPage"));
-const ServicePackagesPage = lazy(() => import("../pages/customer/ServicePackagesPage"));
 const CustomerVehicleManagementPage = lazy(() => import("../pages/customer/VehicleManagementPage"));
 const VehicleProfilePage = lazy(() => import("../pages/customer/VehicleProfilePage"));
 
@@ -71,9 +71,10 @@ export default function AppRoutes() {
           {/* Customer routes */}
           <Route path="customer" element={<ProtectedRoute requiredUserType="customer"><CustomerDashboard /></ProtectedRoute>} />
           <Route path="customer/booking" element={<ProtectedRoute requiredUserType="customer"><BookingPage /></ProtectedRoute>} />
+          <Route path="customer/booking/confirmation" element={<ProtectedRoute requiredUserType="customer"><BookingConfirmationPage /></ProtectedRoute>} />
           <Route path="customer/bookings" element={<ProtectedRoute requiredUserType="customer"><BookingsPage /></ProtectedRoute>} />
           <Route path="customer/booking-status" element={<ProtectedRoute requiredUserType="customer"><BookingStatusPage /></ProtectedRoute>} />
-          <Route path="customer/packages" element={<ProtectedRoute requiredUserType="customer"><ServicePackagesPage /></ProtectedRoute>} />
+          {/* Removed customer/packages route */}
           <Route path="customer/history" element={<ProtectedRoute requiredUserType="customer"><ServiceHistoryPage /></ProtectedRoute>} />
           <Route path="customer/vehicles" element={<ProtectedRoute requiredUserType="customer"><CustomerVehicleManagementPage /></ProtectedRoute>} />
           <Route path="customer/vehicle/:vehicleId" element={<ProtectedRoute requiredUserType="customer"><VehicleProfilePage /></ProtectedRoute>} />

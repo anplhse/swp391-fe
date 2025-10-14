@@ -24,23 +24,30 @@ export interface Booking {
   createdAt: string;
 }
 
-// Generate time slots for September 2025
-const generateTimeSlotsForSeptember = (): TimeSlot[] => {
+// Generate time slots for a dynamic date range starting from a given date
+const generateTimeSlotsForRange = (start: Date, numDays: number): TimeSlot[] => {
   const slots: TimeSlot[] = [];
   const times = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'];
   const center = 'Trung tâm bảo dưỡng Hà Nội';
 
-  // Generate slots for each day in September 2025
-  for (let day = 1; day <= 30; day++) {
-    const date = `2025-09-${day.toString().padStart(2, '0')}`;
+  const startAtMidnight = new Date(start);
+  startAtMidnight.setHours(0, 0, 0, 0);
+
+  for (let i = 0; i < numDays; i++) {
+    const d = new Date(startAtMidnight);
+    d.setDate(startAtMidnight.getDate() + i);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const date = `${yyyy}-${mm}-${dd}`;
 
     times.forEach(time => {
-      // Random availability (80% chance of being available)
-      const isAvailable = Math.random() > 0.2;
-      const currentBookings = isAvailable ? Math.floor(Math.random() * 3) : 3;
+      // 85% chance available to ensure sufficient options in mock
+      const isAvailable = Math.random() > 0.15;
+      const currentBookings = isAvailable ? Math.floor(Math.random() * 2) : 2;
 
       slots.push({
-        id: `slot_2025_09_${day.toString().padStart(2, '0')}_${time.replace(':', '_')}`,
+        id: `slot_${yyyy}_${mm}_${dd}_${time.replace(':', '_')}`,
         time,
         date,
         center,
@@ -54,8 +61,8 @@ const generateTimeSlotsForSeptember = (): TimeSlot[] => {
   return slots;
 };
 
-// Mock data for available time slots
-export const availableTimeSlots: TimeSlot[] = generateTimeSlotsForSeptember();
+// Mock data for available time slots: next 60 days from today (covers 10/2025)
+export const availableTimeSlots: TimeSlot[] = generateTimeSlotsForRange(new Date(), 60);
 
 // Get available time slots for a specific date
 export const getAvailableTimeSlots = (date: string, center: string = 'Trung tâm bảo dưỡng Hà Nội'): TimeSlot[] => {
