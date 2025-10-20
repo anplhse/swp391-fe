@@ -142,9 +142,8 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
         return [
           { to: '/customer', icon: LayoutDashboard, label: 'Dashboard' },
           { to: '/customer/booking', icon: Calendar, label: 'Đặt lịch' },
-          { to: '/customer/bookings', icon: History, label: 'Quản lý lịch hẹn' },
+          { to: '/customer/bookings', icon: History, label: 'Quản lý dịch vụ' },
           { to: '/customer/vehicles', icon: Car, label: 'Xe của tôi' },
-          { to: '/customer/history', icon: History, label: 'Lịch sử dịch vụ' },
         ];
     }
   })();
