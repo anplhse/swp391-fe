@@ -88,7 +88,11 @@ export function BookingForm({ services }: BookingFormProps) {
     year: string;
     plate?: string;
     type?: string;
-  } | null>(null);
+  } | null>(() => {
+    // Load vinData from localStorage on mount
+    const savedVinData = localStorage.getItem('bookingVinData');
+    return savedVinData ? JSON.parse(savedVinData) : null;
+  });
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [isLoadingTimeSlots, setIsLoadingTimeSlots] = useState(false);
@@ -160,7 +164,7 @@ export function BookingForm({ services }: BookingFormProps) {
     }
   }, [form, toast]);
 
-  // Pre-fill VIN if navigated from vehicle profile
+  // Pre-fill VIN if navigated from vehicle profile or edit mode
   useEffect(() => {
     if (location.state?.preselectVin) {
       form.setValue('vin', location.state.preselectVin);
@@ -180,7 +184,66 @@ export function BookingForm({ services }: BookingFormProps) {
         form.setValue('model', vehicle.model || '');
       }
     }
+
+    // Pre-fill form data if in edit mode
+    if (location.state?.editMode && location.state?.existingBooking) {
+      const booking = location.state.existingBooking;
+
+      // Pre-fill VIN and vehicle data
+      if (booking.vehicle) {
+        form.setValue('vin', booking.vehicle.vin);
+        setVinData({
+          vin: booking.vehicle.vin,
+          brand: booking.vehicle.brand || '',
+          model: booking.vehicle.model || '',
+          year: booking.vehicle.year?.toString() || '',
+          plate: '',
+          type: 'electric'
+        });
+        form.setValue('plate', '');
+        form.setValue('year', booking.vehicle.year?.toString() || '');
+        form.setValue('model', booking.vehicle.model || '');
+      }
+
+      // Pre-fill selected services
+      if (booking.services && booking.services.length > 0) {
+        const serviceIds = booking.services.map(service => service.id);
+        form.setValue('services', serviceIds);
+      }
+
+      // Pre-fill selected date and time
+      if (booking.date) {
+        form.setValue('selectedDate', new Date(booking.date));
+      }
+      if (booking.time) {
+        form.setValue('selectedTimeSlot', booking.time);
+      }
+
+      // Pre-fill notes
+      if (booking.notes) {
+        form.setValue('notes', booking.notes);
+      }
+    }
   }, [location.state, form]);
+
+  // Pre-fill form fields when vinData is loaded from localStorage
+  useEffect(() => {
+    if (vinData && !location.state?.preselectVin && !location.state?.editMode) {
+      form.setValue('vin', vinData.vin);
+      form.setValue('plate', vinData.plate || '');
+      form.setValue('year', vinData.year || '');
+      form.setValue('model', vinData.model || '');
+    }
+  }, [vinData, form, location.state]);
+
+  // Save vinData to localStorage whenever it changes
+  useEffect(() => {
+    if (vinData) {
+      localStorage.setItem('bookingVinData', JSON.stringify(vinData));
+    } else {
+      localStorage.removeItem('bookingVinData');
+    }
+  }, [vinData]);
 
   // Load available dates on mount
   useEffect(() => {
@@ -344,7 +407,8 @@ export function BookingForm({ services }: BookingFormProps) {
         description: 'Đang chuyển đến trang xác nhận...'
       });
 
-      // Navigate to confirmation page
+      // Clear localStorage and navigate to confirmation page
+      localStorage.removeItem('bookingVinData');
       navigate('/customer/booking/confirmation', {
         state: { bookingData }
       });
@@ -365,8 +429,41 @@ export function BookingForm({ services }: BookingFormProps) {
     }).format(price);
   };
 
+  const isEditMode = location.state?.editMode;
+
+  // Dynamic title and description based on VIN status and edit mode
+  const getPageContent = () => {
+    if (isEditMode) {
+      return {
+        title: 'Chỉnh sửa lịch hẹn',
+        description: 'Cập nhật thông tin lịch hẹn của bạn'
+      };
+    }
+
+    if (!vinData) {
+      return {
+        title: 'Đặt lịch bảo dưỡng',
+        description: 'Điền thông tin để đặt lịch bảo dưỡng xe'
+      };
+    }
+
+    return {
+      title: 'Chọn dịch vụ và thời gian',
+      description: `Xe: ${vinData.brand} ${vinData.model} (${vinData.year}) - VIN: ${vinData.vin}`
+    };
+  };
+
+  const pageContent = getPageContent();
+
   return (
     <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold">{pageContent.title}</h1>
+        <p className="text-muted-foreground mt-2">
+          {pageContent.description}
+        </p>
+      </div>
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* VIN Input Section - chỉ hiện khi chưa có VIN data */}
@@ -771,7 +868,7 @@ export function BookingForm({ services }: BookingFormProps) {
           {vinData && (
             <div className="flex justify-end">
               <Button type="submit" size="lg">
-                Đặt lịch bảo dưỡng
+                {isEditMode ? 'Cập nhật lịch hẹn' : 'Đặt lịch bảo dưỡng'}
               </Button>
             </div>
           )}
