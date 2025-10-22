@@ -89,9 +89,16 @@ export function BookingForm({ services }: BookingFormProps) {
     plate?: string;
     type?: string;
   } | null>(() => {
-    // Load vinData from localStorage on mount
-    const savedVinData = localStorage.getItem('bookingVinData');
-    return savedVinData ? JSON.parse(savedVinData) : null;
+    // Load vinData from localStorage on mount with error handling
+    try {
+      const savedVinData = localStorage.getItem('bookingVinData');
+      return savedVinData ? JSON.parse(savedVinData) : null;
+    } catch (error) {
+      console.warn('Failed to parse vinData from localStorage:', error);
+      // Clear corrupted data
+      localStorage.removeItem('bookingVinData');
+      return null;
+    }
   });
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
@@ -197,10 +204,10 @@ export function BookingForm({ services }: BookingFormProps) {
           brand: booking.vehicle.brand || '',
           model: booking.vehicle.model || '',
           year: booking.vehicle.year?.toString() || '',
-          plate: '',
+          plate: booking.vehicle.plate || '',
           type: 'electric'
         });
-        form.setValue('plate', '');
+        form.setValue('plate', booking.vehicle.plate || '');
         form.setValue('year', booking.vehicle.year?.toString() || '');
         form.setValue('model', booking.vehicle.model || '');
       }
