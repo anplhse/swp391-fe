@@ -15,6 +15,9 @@ interface Part {
   partNumber: string;
   category: string;
   brand: string;
+  compatibleModel: string;
+  initialQuantity: number;
+  usedQuantity: number;
   currentStock: number;
   minStock: number;
   maxStock: number;
@@ -31,7 +34,6 @@ interface PartsTableProps {
   onEdit: (part: Part) => void;
   onDelete: (partId: string) => void;
   onAdd: () => void;
-  onRequestRestock: () => void;
   showActions?: boolean;
 }
 
@@ -48,7 +50,6 @@ export function PartsTable({
   onEdit,
   onDelete,
   onAdd,
-  onRequestRestock,
   showActions = true
 }: PartsTableProps) {
   const filtersForm = useForm<FiltersForm>({
@@ -149,9 +150,6 @@ export function PartsTable({
               <Plus className="w-4 h-4 mr-2" />
               Thêm phụ tùng
             </Button>
-            <Button variant="outline" onClick={onRequestRestock}>
-              Tạo yêu cầu nhập
-            </Button>
           </div>
         )}
       </div>
@@ -165,7 +163,8 @@ export function PartsTable({
               <TableHead>Mã</TableHead>
               <TableHead>Danh mục</TableHead>
               <TableHead>Thương hiệu</TableHead>
-              <TableHead>Tồn/Max</TableHead>
+              <TableHead>Model xe</TableHead>
+              <TableHead>Tồn/Đã dùng/Tổng</TableHead>
               <TableHead>Giá</TableHead>
               <TableHead>Trạng thái</TableHead>
               {showActions && <TableHead className="text-right">Thao tác</TableHead>}
@@ -185,7 +184,23 @@ export function PartsTable({
                   <TableCell>{part.partNumber}</TableCell>
                   <TableCell>{part.category}</TableCell>
                   <TableCell>{part.brand}</TableCell>
-                  <TableCell>{part.currentStock}/{part.maxStock}</TableCell>
+                  <TableCell>
+                    {part.compatibleModel ? (
+                      <Badge variant="secondary" className="text-xs">
+                        {part.compatibleModel}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      <div className="font-medium text-green-600">{part.currentStock}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Đã dùng: {part.usedQuantity} / Tổng: {part.initialQuantity}
+                      </div>
+                    </div>
+                  </TableCell>
                   <TableCell>{formatPrice(part.unitPrice)}</TableCell>
                   <TableCell>{getStatusBadge(part.status)}</TableCell>
                   {showActions && (

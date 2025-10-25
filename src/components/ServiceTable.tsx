@@ -14,6 +14,7 @@ interface Service {
   price: number;
   duration: number | string;
   compatibleVehicles: string[];
+  relatedParts: Record<string, string[]>; // Model -> Parts mapping
   category: string;
   status?: 'active' | 'inactive';
 }
@@ -36,6 +37,7 @@ interface ServiceTableProps {
   totalPages?: number;
   onPageChange?: (page: number) => void;
   itemsPerPage?: number;
+  selectedModel?: string; // Model xe được chọn để hiển thị phụ tùng
 }
 
 const serviceCategories = [
@@ -63,12 +65,13 @@ export function ServiceTable({
   currentPage = 1,
   totalPages = 1,
   onPageChange,
-  itemsPerPage = 10
+  itemsPerPage = 10,
+  selectedModel
 }: ServiceTableProps) {
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
   const [localStatusFilter, setLocalStatusFilter] = useState(statusFilter);
 
-  // Filter services based on search query and status
+  // Filter services based on search query, status, and selected model
   const filteredServices = useMemo(() => {
     let filtered = services;
 
@@ -86,8 +89,15 @@ export function ServiceTable({
       filtered = filtered.filter(service => service.status === localStatusFilter);
     }
 
+    // Model filter - only show services compatible with selected model
+    if (selectedModel && selectedModel !== 'all') {
+      filtered = filtered.filter(service =>
+        service.compatibleVehicles.includes(selectedModel)
+      );
+    }
+
     return filtered;
-  }, [services, localSearchQuery, localStatusFilter, mode]);
+  }, [services, localSearchQuery, localStatusFilter, selectedModel, mode]);
 
   // Paginate filtered services
   const paginatedServices = useMemo(() => {
@@ -297,7 +307,7 @@ export function ServiceTable({
               {mode === 'management' && <TableHead>Loại</TableHead>}
               <TableHead>Giá</TableHead>
               <TableHead>Thời gian</TableHead>
-              {mode === 'management' && <TableHead>Xe tương thích</TableHead>}
+              {mode === 'management' && <TableHead>Phụ tùng liên quan</TableHead>}
               {mode === 'management' && <TableHead>Trạng thái</TableHead>}
               {showSelection && <TableHead>Trạng thái</TableHead>}
               {showActions && <TableHead className="text-right">Thao tác</TableHead>}
@@ -358,11 +368,66 @@ export function ServiceTable({
                   {mode === 'management' && (
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {service.compatibleVehicles.map((vehicle) => (
-                          <Badge key={vehicle} variant="secondary" className="text-xs">
-                            {vehicle}
-                          </Badge>
-                        ))}
+                        {(() => {
+                          if (!selectedModel) {
+                            return (
+                              <span className="text-xs text-muted-foreground">
+                                Chọn model xe để xem phụ tùng
+                              </span>
+                            );
+                          }
+
+                          if (selectedModel === 'all') {
+                            // Hiển thị tất cả phụ tùng của tất cả model
+                            const allParts = Object.values(service.relatedParts || {}).flat();
+                            if (allParts.length === 0) {
+                              return (
+                                <span className="text-xs text-muted-foreground">
+                                  Không có phụ tùng nào
+                                </span>
+                              );
+                            }
+
+                            return (
+                              <>
+                                {allParts.slice(0, 3).map((part, index) => (
+                                  <Badge key={`${part}-${index}`} variant="secondary" className="text-xs">
+                                    {part}
+                                  </Badge>
+                                ))}
+                                {allParts.length > 3 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    +{allParts.length - 3} khác
+                                  </span>
+                                )}
+                              </>
+                            );
+                          }
+
+                          const modelParts = service.relatedParts?.[selectedModel];
+                          if (!modelParts || modelParts.length === 0) {
+                            return (
+                              <span className="text-xs text-muted-foreground">
+                                Không có phụ tùng cho {selectedModel}
+                              </span>
+                            );
+                          }
+
+                          return (
+                            <>
+                              {modelParts.slice(0, 2).map((part) => (
+                                <Badge key={part} variant="secondary" className="text-xs">
+                                  {part}
+                                </Badge>
+                              ))}
+                              {modelParts.length > 2 && (
+                                <span className="text-xs text-muted-foreground">
+                                  +{modelParts.length - 2} khác
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </TableCell>
                   )}

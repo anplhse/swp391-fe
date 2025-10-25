@@ -49,6 +49,7 @@ interface Service {
   price: number;
   duration: number;
   compatibleVehicles: string[];
+  relatedParts: Record<string, string[]>; // Model -> Parts mapping
   category?: string;
   status?: string;
 }
@@ -273,20 +274,15 @@ export function BookingForm({ services }: BookingFormProps) {
     }
   }, [selectedDate, loadTimeSlots]);
 
-  // Filter services based on vehicle model from VIN
-  const allowedServiceIds = useMemo(() => {
-    if (!vinData?.model) return services.map(s => s.id);
+  // Lọc dịch vụ theo model xe từ VIN
+  const visibleServices = useMemo(() => {
+    if (!vinData?.model) return [];
 
-    return services
-      .filter(service =>
-        service.compatibleVehicles.includes(vinData.model) ||
-        service.compatibleVehicles.includes('All')
-      )
-      .map(s => s.id);
+    return services.filter(service =>
+      service.compatibleVehicles.includes(vinData.model) ||
+      service.compatibleVehicles.includes('All')
+    );
   }, [services, vinData?.model]);
-
-  // Lọc dịch vụ theo model từ VIN (nếu có)
-  const visibleServices = useMemo(() => services.filter(s => allowedServiceIds.includes(s.id)), [services, allowedServiceIds]);
 
   // Local state for search and pagination (giống ServiceTable)
   const [searchQuery, setSearchQuery] = useState('');
@@ -662,7 +658,7 @@ export function BookingForm({ services }: BookingFormProps) {
                               <TableHead>Tên dịch vụ</TableHead>
                               <TableHead>Giá</TableHead>
                               <TableHead>Thời gian</TableHead>
-                              <TableHead>Xe tương thích</TableHead>
+                              <TableHead>Phụ tùng liên quan</TableHead>
                               {/* Bỏ cột Trạng thái đã chọn */}
                             </TableRow>
                           </TableHeader>
@@ -714,16 +710,30 @@ export function BookingForm({ services }: BookingFormProps) {
                                   </TableCell>
                                   <TableCell>
                                     <div className="flex flex-wrap gap-1">
-                                      {service.compatibleVehicles.slice(0, 2).map((vehicle) => (
-                                        <Badge key={vehicle} variant="secondary" className="text-xs">
-                                          {vehicle}
-                                        </Badge>
-                                      ))}
-                                      {service.compatibleVehicles.length > 2 && (
-                                        <span className="text-xs text-muted-foreground">
-                                          +{service.compatibleVehicles.length - 2} khác
-                                        </span>
-                                      )}
+                                      {(() => {
+                                        const modelParts = vinData?.model ? service.relatedParts?.[vinData.model] : null;
+                                        if (!modelParts || modelParts.length === 0) {
+                                          return (
+                                            <span className="text-xs text-muted-foreground">
+                                              Không có phụ tùng
+                                            </span>
+                                          );
+                                        }
+                                        return (
+                                          <>
+                                            {modelParts.slice(0, 2).map((part) => (
+                                              <Badge key={part} variant="secondary" className="text-xs">
+                                                {part}
+                                              </Badge>
+                                            ))}
+                                            {modelParts.length > 2 && (
+                                              <span className="text-xs text-muted-foreground">
+                                                +{modelParts.length - 2} khác
+                                              </span>
+                                            )}
+                                          </>
+                                        );
+                                      })()}
                                     </div>
                                   </TableCell>
                                   {/* Bỏ hiển thị trạng thái đã chọn */}

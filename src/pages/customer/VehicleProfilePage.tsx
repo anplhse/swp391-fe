@@ -1,9 +1,13 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   AlertCircle,
   Battery,
@@ -19,7 +23,18 @@ import {
   Settings,
   Wrench
 } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
+import { z } from 'zod';
+
+// Schema validation cho form edit xe
+const vehicleEditSchema = z.object({
+  battery: z.number().min(0, 'Pin không thể âm').max(100, 'Pin không thể vượt quá 100%'),
+  mileage: z.number().min(0, 'Số km không thể âm')
+});
+
+type VehicleEditFormData = z.infer<typeof vehicleEditSchema>;
 
 interface Vehicle {
   id: string;
@@ -59,6 +74,41 @@ export default function VehicleProfilePage() {
   const { vehicleId } = useParams();
   const { toast } = useToast();
   const user = { email: 'customer@example.com', role: 'customer', userType: 'customer' };
+
+  // State cho dialog edit
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [vehicleData, setVehicleData] = useState<Vehicle | null>(null);
+
+  // Form cho edit xe
+  const form = useForm<VehicleEditFormData>({
+    resolver: zodResolver(vehicleEditSchema),
+    defaultValues: {
+      battery: 0,
+      mileage: 0
+    }
+  });
+
+  // Handlers
+  const handleEditClick = () => {
+    setVehicleData(vehicle);
+    form.reset({
+      battery: vehicle.battery,
+      mileage: vehicle.mileage
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = (data: VehicleEditFormData) => {
+    // Trong thực tế, đây sẽ là API call
+    console.log('Updating vehicle data:', data);
+
+    toast({
+      title: "Cập nhật thành công",
+      description: "Thông tin xe đã được cập nhật."
+    });
+
+    setIsEditDialogOpen(false);
+  };
 
   // Mock data - in real app, this would be fetched based on vehicleId
   const vehicle: Vehicle = {
@@ -167,7 +217,7 @@ export default function VehicleProfilePage() {
       <div className="flex items-center gap-4">
         <div className="flex-1" />
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleEditVehicle}>
+          <Button variant="outline" onClick={handleEditClick}>
             <Edit className="w-4 h-4 mr-2" />
             Chỉnh sửa
           </Button>
@@ -458,6 +508,108 @@ export default function VehicleProfilePage() {
 
 
       </Tabs>
+
+      {/* Edit Vehicle Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Chỉnh sửa thông tin xe</DialogTitle>
+            <DialogDescription>
+              Chỉ có thể chỉnh sửa thông tin pin và số km. Các thông tin khác liên quan đến VIN không thể thay đổi.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleEditSubmit)} className="space-y-4">
+              {/* Thông tin khóa cứng - chỉ hiển thị */}
+              <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                <h4 className="text-sm font-medium text-muted-foreground">Thông tin không thể thay đổi</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Tên xe:</span>
+                    <p className="font-medium">{vehicleData?.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Biển số:</span>
+                    <p className="font-medium">{vehicleData?.plate}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Model:</span>
+                    <p className="font-medium">{vehicleData?.model}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Năm:</span>
+                    <p className="font-medium">{vehicleData?.year}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Màu sắc:</span>
+                    <p className="font-medium">{vehicleData?.color}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Số VIN:</span>
+                    <p className="font-medium text-xs">{vehicleData?.vin}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Thông tin có thể chỉnh sửa */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium">Thông tin có thể chỉnh sửa</h4>
+
+                <FormField
+                  control={form.control}
+                  name="battery"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mức pin (%)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          placeholder="Nhập mức pin"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="mileage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Số km đã đi</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="Nhập số km"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Hủy
+                </Button>
+                <Button type="submit">
+                  Cập nhật
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
