@@ -16,7 +16,7 @@ export interface LoginResponse {
     email: string;
     fullName: string;
     phoneNumber: string;
-    role: string;
+    roleDisplayName: string; // Backend trả về roleDisplayName thay vì role
     status: string;
     createdAt: string;
     lastLogin: string;
@@ -91,8 +91,19 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        const text = await response.text().catch(() => '');
+        let message = `HTTP error! status: ${response.status}`;
+        let parsed: unknown = undefined;
+        try { parsed = text ? JSON.parse(text) : undefined; } catch (e) { /* ignore invalid json */ }
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          'message' in parsed &&
+          typeof (parsed as { message?: unknown }).message === 'string'
+        ) {
+          message = (parsed as { message: string }).message;
+        }
+        throw new Error(message);
       }
 
       return await response.json();
@@ -164,7 +175,7 @@ class ApiClient {
     });
   }
 
-  // Có thể thêm các API khác ở đây
+  // Vehicle APIs
   async getVehicleByVin(vin: string): Promise<{
     vin: string;
     brand: string;
@@ -173,72 +184,58 @@ class ApiClient {
     plate?: string;
     type?: string;
   }> {
-    // Mock data cho testing - sẽ thay bằng API thật sau
-    const mockVehicles: Record<string, {
-      vin: string;
-      brand: string;
-      model: string;
-      year: string;
-      plate?: string;
-      type?: string;
-    }> = {
-      'RL4A1234567890ABCD': {
-        vin: 'RL4A1234567890ABCD',
-        brand: 'VinFast',
-        model: 'VF8',
-        year: '2024',
-        plate: '30A-123.45',
-        type: 'SUV'
-      },
-      'RL4B9876543210EFGH': {
-        vin: 'RL4B9876543210EFGH',
-        brand: 'VinFast',
-        model: 'VF9',
-        year: '2023',
-        plate: '29B-678.90',
-        type: 'SUV'
-      },
-      'RL4C5555555555IJKL': {
-        vin: 'RL4C5555555555IJKL',
-        brand: 'VinFast',
-        model: 'VFe34',
-        year: '2024',
-        plate: '51C-111.11',
-        type: 'Sedan'
-      },
-      'RL4D1111111111MNOP': {
-        vin: 'RL4D1111111111MNOP',
-        brand: 'VinFast',
-        model: 'VF5',
-        year: '2023',
-        plate: '43D-222.22',
-        type: 'Hatchback'
-      },
-      'TEST123456789ABCD': {
-        vin: 'TEST123456789ABCD',
-        brand: 'VinFast',
-        model: 'VF8',
-        year: '2024',
-        plate: '30A-TEST.01',
-        type: 'SUV'
-      }
-    };
-
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const vehicle = mockVehicles[vin.toUpperCase()];
-    if (!vehicle) {
-      throw new Error('Không tìm thấy thông tin xe với mã VIN này');
-    }
-
-    return vehicle;
-
-    // Uncomment khi có API thật:
-    // return this.request(`/vehicles/vin/${encodeURIComponent(vin)}`, {
-    //   method: 'GET',
-    // });
+    return this.request(`/vehicles/vin/${encodeURIComponent(vin)}`, {
+      method: 'GET',
+    });
   }
+
+  async addVehicle(vehicleData: {
+    vin: string;
+    name: string;
+    plateNumber: string;
+    year: string;
+    color: string;
+    distanceTraveledKm: number;
+    purchasedAt: string;
+    vehicleModelId: number;
+  }): Promise<{ id?: number }> {
+    return this.request<{ id?: number }>('/vehicles', {
+      method: 'POST',
+      body: JSON.stringify(vehicleData),
+    });
+  }
+
+  async getVehiclesByUserId(userId: number): Promise<Array<{
+    vin: string;
+    name: string | null;
+    plateNumber: string;
+    year: string | null;
+    color: string;
+    distanceTraveledKm: number;
+    purchasedAt: string;
+    createdAt: string;
+    entityStatus: string;
+    userId: number;
+    username: string;
+    modelId: number;
+    modelName: string;
+  }>> {
+    return this.request(`/vehicles/user/${userId}`, {
+      method: 'GET',
+    });
+  }
+
+  async getVehicleModels(): Promise<Array<{
+    id: number;
+    brandName: string;
+    modelName: string;
+    status: string;
+  }>> {
+    return this.request('/vehicle-models', {
+      method: 'GET',
+    });
+  }
+
   async getProfile(): Promise<LoginResponse['user']> {
     return this.request<LoginResponse['user']>('/auth/profile');
   }

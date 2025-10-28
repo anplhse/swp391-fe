@@ -170,7 +170,7 @@ export function VehicleTable({
                         <span className="font-medium">{vehicle.model}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium">{vehicle.year}</span>
+                        <span className="font-medium">{Number.isFinite(vehicle.year) ? vehicle.year : ''}</span>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -178,7 +178,7 @@ export function VehicleTable({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium">{vehicle.mileage.toLocaleString()} km</span>
+                        <span className="font-medium">{Number.isFinite(vehicle.mileage) ? vehicle.mileage.toLocaleString() : '0'} km</span>
                       </TableCell>
                       <TableCell>
                         <span className="font-medium">{vehicle.color}</span>
@@ -219,7 +219,7 @@ export function VehicleTable({
                           <span className="text-sm text-muted-foreground">{vehicle.ownerPhone || ''}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{vehicle.mileage.toLocaleString()} km</TableCell>
+                      <TableCell>{Number.isFinite(vehicle.mileage) ? vehicle.mileage.toLocaleString() : '0'} km</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span className="text-sm">{vehicle.lastService ? new Date(vehicle.lastService).toLocaleDateString('vi-VN') : '—'}</span>

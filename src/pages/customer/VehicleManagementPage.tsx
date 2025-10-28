@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { getRegisteredVehicles, setRegisteredVehicles, type RegisteredVehicle } from '@/lib/sessionStore';
+import { apiClient } from '@/lib/api';
+import { authService } from '@/lib/auth';
 import {
   Plus
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface Vehicle {
@@ -39,26 +40,8 @@ export default function VehicleManagementPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
 
-  // Chuyển đổi từ RegisteredVehicle sang Vehicle
-  const convertToVehicle = (registered: RegisteredVehicle): Vehicle => ({
-    id: registered.id,
-    name: registered.name,
-    plate: registered.plate || 'Chưa có',
-    model: registered.name,
-    year: parseInt(registered.year || '2024'),
-    battery: Math.floor(Math.random() * 30) + 70, // Random battery 70-100%
-    nextService: new Date(Date.now() + Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    status: Math.random() > 0.7 ? 'warning' : 'healthy' as const,
-    mileage: Math.floor(Math.random() * 20000) + 5000, // Random mileage 5k-25k
-    color: ['Trắng', 'Đen', 'Xám', 'Xanh'][Math.floor(Math.random() * 4)],
-    vin: registered.vin,
-    purchaseDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  });
 
-  const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
-    const registeredVehicles = getRegisteredVehicles();
-    return registeredVehicles.map(convertToVehicle);
-  });
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 
   const [newVehicle, setNewVehicle] = useState({
     name: '',
@@ -74,11 +57,30 @@ export default function VehicleManagementPage() {
     purchaseDate: ''
   });
 
-  const vehicleModels = [
-    { id: 'vf8', name: 'VinFast VF8', type: 'SUV' },
-    { id: 'vf9', name: 'VinFast VF9', type: 'SUV' },
-    { id: 'vfe34', name: 'VinFast VFE34', type: 'Sedan' }
-  ];
+  const [vehicleModels, setVehicleModels] = useState<Array<{ id: number; brandName: string; modelName: string; yearIntroduce?: string }>>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [modelsError, setModelsError] = useState<string | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setModelsLoading(true);
+        setModelsError(null);
+        const models = await apiClient.getVehicleModels();
+        if (mounted) {
+          setVehicleModels(models.filter((m) => m.status === 'ACTIVE'));
+        }
+      } catch (e) {
+        console.error('Failed to load vehicle models', e);
+        if (mounted) setModelsError('Không tải được danh sách model');
+      } finally {
+        if (mounted) setModelsLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -93,60 +95,156 @@ export default function VehicleManagementPage() {
     }
   };
 
-  const handleAddVehicle = () => {
-    if (!newVehicle.name || !newVehicle.plate || !newVehicle.model) {
+  useEffect(() => {
+    const loadUserVehicles = async () => {
+      try {
+        const currentUser = authService.getAuthState().user;
+        if (!currentUser) return;
+        const apiVehicles = await apiClient.getVehiclesByUserId(currentUser.id);
+        const mapped: Vehicle[] = apiVehicles.map(v => {
+          const rawYear = v.year;
+          const parsedYear = (typeof rawYear === 'string' || typeof rawYear === 'number')
+            ? parseInt(String(rawYear))
+            : NaN;
+          const safeYear = Number.isFinite(parsedYear)
+            ? parsedYear
+            : new Date(v.createdAt).getFullYear();
+
+          return {
+            id: v.vin,
+            name: v.name ?? `${v.modelName}`,
+            plate: v.plateNumber,
+            model: v.modelName,
+            year: safeYear,
+            battery: 0,
+            nextService: '',
+            status: v.entityStatus === 'ACTIVE' ? 'healthy' : 'warning',
+            mileage: Math.max(0, Math.round(v.distanceTraveledKm)),
+            color: v.color || '-',
+            vin: v.vin,
+            purchaseDate: v.purchasedAt.split('T')[0],
+          };
+        });
+        setVehicles(mapped);
+      } catch (e) {
+        console.error('Failed to load user vehicles', e);
+      }
+    };
+    loadUserVehicles();
+  }, []);
+
+  const formatLocalIsoMillis = (date: Date) => {
+    const pad = (n: number, w = 2) => n.toString().padStart(w, '0');
+    const y = date.getFullYear();
+    const m = pad(date.getMonth() + 1);
+    const d = pad(date.getDate());
+    const hh = pad(date.getHours());
+    const mm = pad(date.getMinutes());
+    const ss = pad(date.getSeconds());
+    const ms = pad(date.getMilliseconds(), 3);
+    return `${y}-${m}-${d}T${hh}:${mm}:${ss}.${ms}`;
+  };
+
+  const handleAddVehicle = async () => {
+    if (!newVehicle.name || !newVehicle.plate || !newVehicle.model || !newVehicle.vin || !selectedModelId) {
       toast({
         title: "Thông tin chưa đầy đủ",
-        description: "Vui lòng điền đầy đủ thông tin xe",
+        description: "Vui lòng chọn model và điền đầy đủ thông tin (bao gồm VIN)",
         variant: "destructive",
       });
       return;
     }
 
-    const vehicle: Vehicle = {
-      id: Date.now().toString(),
-      ...newVehicle,
-      battery: Math.floor(Math.random() * 30) + 70,
-      mileage: Math.floor(Math.random() * 20000) + 5000,
-      nextService: new Date(Date.now() + Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      status: 'healthy'
-    };
+    try {
+      // Get current user ID from auth service
+      const user = authService.getAuthState().user;
+      if (!user) {
+        toast({
+          title: "Lỗi xác thực",
+          description: "Vui lòng đăng nhập lại",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    setVehicles([...vehicles, vehicle]);
+      // Prefer selectedModelId; fallback by name
+      const selectedModel = selectedModelId
+        ? vehicleModels.find((m) => m.id === selectedModelId)
+        : vehicleModels.find(m => m.modelName === newVehicle.model);
+      const modelId = selectedModel!.id;
 
-    // Thêm vào sessionStore
-    const registeredVehicle: RegisteredVehicle = {
-      id: vehicle.id,
-      name: vehicle.name,
-      plate: vehicle.plate,
-      year: vehicle.year.toString(),
-      vin: vehicle.vin,
-      type: 'electric'
-    };
+      // Call API to add vehicle
+      const nowLocal = formatLocalIsoMillis(new Date());
+      const purchasedAtLocal = newVehicle.purchaseDate
+        ? formatLocalIsoMillis(new Date(newVehicle.purchaseDate))
+        : nowLocal;
+      const distanceKm = Number(newVehicle.mileage) || 0;
+      const vehicleData = {
+        vin: newVehicle.vin,
+        name: newVehicle.name,
+        plateNumber: newVehicle.plate,
+        year: String(newVehicle.year),
+        color: newVehicle.color || 'Trắng',
+        distanceTraveledKm: distanceKm,
+        purchasedAt: purchasedAtLocal,
+        createdAt: nowLocal,
+        entityStatus: 'ACTIVE',
+        userId: user.id,
+        username: user.fullName,
+        vehicleModelId: modelId,
+        modelName: selectedModel?.modelName,
+      };
 
-    const currentVehicles = getRegisteredVehicles();
-    setRegisteredVehicles([...currentVehicles, registeredVehicle]);
+      const response = await apiClient.addVehicle(vehicleData);
 
-    setNewVehicle({
-      name: '',
-      plate: '',
-      model: '',
-      year: new Date().getFullYear(),
-      battery: 100,
-      nextService: '',
-      status: 'healthy',
-      mileage: 0,
-      color: '',
-      vin: '',
-      purchaseDate: ''
-    });
+      // Create vehicle object for local state
+      const vehicle: Vehicle = {
+        id: response.id?.toString() || Date.now().toString(),
+        name: newVehicle.name,
+        plate: newVehicle.plate,
+        model: newVehicle.model,
+        year: newVehicle.year,
+        battery: 0,
+        mileage: distanceKm,
+        nextService: '',
+        status: 'healthy',
+        color: newVehicle.color || 'Trắng',
+        vin: newVehicle.vin,
+        purchaseDate: purchasedAtLocal.split('T')[0]
+      };
 
-    setIsAddDialogOpen(false);
+      setVehicles([...vehicles, vehicle]);
 
-    toast({
-      title: "Thêm xe thành công!",
-      description: `Đã thêm ${vehicle.name} vào danh sách`,
-    });
+      // Không dùng sessionStore nữa
+
+      setNewVehicle({
+        name: '',
+        plate: '',
+        model: '',
+        year: new Date().getFullYear(),
+        battery: 100,
+        nextService: '',
+        status: 'healthy',
+        mileage: 0,
+        color: '',
+        vin: '',
+        purchaseDate: ''
+      });
+
+      setIsAddDialogOpen(false);
+
+      toast({
+        title: "Thêm xe thành công!",
+        description: `Đã thêm ${vehicle.name} vào danh sách`,
+      });
+    } catch (error) {
+      console.error('Error adding vehicle:', error);
+      toast({
+        title: "Thêm xe thất bại",
+        description: "Có lỗi xảy ra khi thêm xe. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEditVehicle = (vehicle: Vehicle) => {
@@ -161,21 +259,7 @@ export default function VehicleManagementPage() {
       v.id === editingVehicle.id ? editingVehicle : v
     ));
 
-    // Cập nhật sessionStore
-    const currentVehicles = getRegisteredVehicles();
-    const updatedVehicles = currentVehicles.map(v =>
-      v.id === editingVehicle.id
-        ? {
-          id: editingVehicle.id,
-          name: editingVehicle.name,
-          plate: editingVehicle.plate,
-          year: editingVehicle.year.toString(),
-          vin: editingVehicle.vin,
-          type: 'electric'
-        }
-        : v
-    );
-    setRegisteredVehicles(updatedVehicles);
+    // Không cập nhật sessionStore
 
     setIsEditDialogOpen(false);
     setEditingVehicle(null);
@@ -190,9 +274,7 @@ export default function VehicleManagementPage() {
     const vehicle = vehicles.find(v => v.id === vehicleId);
     setVehicles(vehicles.filter(v => v.id !== vehicleId));
 
-    // Xóa khỏi sessionStore
-    const currentVehicles = getRegisteredVehicles();
-    setRegisteredVehicles(currentVehicles.filter(v => v.id !== vehicleId));
+    // Không dùng sessionStore
 
     toast({
       title: "Xóa xe thành công!",
@@ -276,14 +358,29 @@ export default function VehicleManagementPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="model">Model</Label>
-              <Select value={newVehicle.model} onValueChange={(value) => setNewVehicle({ ...newVehicle, model: value })}>
+              <Select
+                value={selectedModelId ? String(selectedModelId) : ''}
+                onValueChange={(value) => {
+                  const idNum = Number(value);
+                  setSelectedModelId(idNum);
+                  const m = vehicleModels.find(v => v.id === idNum);
+                  setNewVehicle({
+                    ...newVehicle,
+                    model: m ? m.modelName : '',
+                    year: m?.yearIntroduce ? parseInt(m.yearIntroduce) : newVehicle.year,
+                  });
+                }}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn model" />
+                  <SelectValue placeholder={modelsLoading ? 'Đang tải model...' : (modelsError || 'Chọn model')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {vehicleModels.map((model) => (
-                    <SelectItem key={model.id} value={model.name}>
-                      {model.name}
+                  {modelsLoading && (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">Đang tải...</div>
+                  )}
+                  {!modelsLoading && vehicleModels.map((model) => (
+                    <SelectItem key={model.id} value={String(model.id)}>
+                      {model.brandName} {model.modelName}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -295,9 +392,7 @@ export default function VehicleManagementPage() {
                 id="year"
                 type="number"
                 value={newVehicle.year}
-                onChange={(e) => setNewVehicle({ ...newVehicle, year: parseInt(e.target.value) })}
-                min="2020"
-                max="2025"
+                disabled
               />
             </div>
             <div className="space-y-2">
@@ -327,6 +422,20 @@ export default function VehicleManagementPage() {
                 onChange={(e) => setNewVehicle({ ...newVehicle, purchaseDate: e.target.value })}
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="mileage">Số km đã đi</Label>
+            <Input
+              id="mileage"
+              type="number"
+              min={0}
+              value={newVehicle.mileage}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setNewVehicle({ ...newVehicle, mileage: isNaN(val) || val < 0 ? 0 : val });
+              }}
+              placeholder="VD: 15000"
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>

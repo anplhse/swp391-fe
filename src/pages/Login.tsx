@@ -11,16 +11,6 @@ export default function Login() {
   const { login, isLoading } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const mapBackendRoleToRoute = (backendRole: string): string => {
-    const map: Record<string, string> = {
-      'STAFF': 'staff',
-      'TECHNICIAN': 'technician',
-      'ADMIN': 'admin',
-      'CUSTOMER': 'customer',
-    };
-    return map[backendRole] || backendRole.toLowerCase();
-  };
-
   const handleLogin = async (email: string, password: string) => {
     setIsLoggingIn(true);
 
@@ -32,12 +22,12 @@ export default function Login() {
         description: `Chào mừng ${response.user.fullName}`,
       });
 
-      // Redirect based on backend role
-      const mapped = mapBackendRoleToRoute(response.user.role);
-      if (mapped === 'customer') {
+      // Redirect based on mapped role (already mapped by auth.ts)
+      const userRole = response.user.role;
+      if (userRole === 'customer') {
         navigate('/customer');
       } else {
-        navigate(`/service/${mapped}`);
+        navigate(`/service/${userRole}`);
       }
     } catch (error) {
       const err = error as { message?: string };
