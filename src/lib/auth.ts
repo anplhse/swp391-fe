@@ -5,7 +5,8 @@ export interface User {
   email: string;
   fullName: string;
   phoneNumber: string;
-  role: string;
+  role: string; // Mapped role for frontend use
+  roleDisplayName: string; // Original roleDisplayName from backend
   status: string;
   createdAt: string;
   lastLogin: string;
@@ -56,7 +57,7 @@ class AuthService {
         // Chuẩn hóa role từ backend sang frontend khi load lại
         const user = {
           ...rawUser,
-          role: this.mapRole(rawUser.role),
+          role: this.mapRole(rawUser.roleDisplayName || rawUser.role), // Map từ roleDisplayName nếu có
         };
         this.authState = {
           user,
@@ -87,7 +88,8 @@ class AuthService {
     // Lưu user với role đã chuẩn hóa để F5 không lệch role
     const normalizedUser = {
       ...authData.user,
-      role: this.mapRole(authData.user.role),
+      role: this.mapRole(authData.user.roleDisplayName), // Map từ roleDisplayName
+      roleDisplayName: authData.user.roleDisplayName, // Lưu nguyên roleDisplayName gốc
     };
     localStorage.setItem('user', JSON.stringify(normalizedUser));
   }
@@ -113,17 +115,18 @@ class AuthService {
     return { ...this.authState };
   }
 
-  async login(credentials: LoginRequest): Promise<LoginResponse> {
+  async login(credentials: LoginRequest): Promise<LoginResponse & { user: { role: string } }> {
     this.authState.isLoading = true;
     this.notifyListeners();
 
     try {
       const response = await apiClient.login(credentials);
 
-      // Map role từ backend sang frontend
+      // Map role từ backend sang frontend (từ roleDisplayName)
       const mappedUser = {
         ...response.user,
-        role: this.mapRole(response.user.role),
+        role: this.mapRole(response.user.roleDisplayName), // Map từ roleDisplayName
+        roleDisplayName: response.user.roleDisplayName,
       };
 
       this.authState = {
@@ -137,33 +140,11 @@ class AuthService {
       this.saveToStorage(response);
       this.notifyListeners();
 
-      return response;
+      return {
+        ...response,
+        user: mappedUser,
+      };
     } catch (error) {
-      console.warn('API login failed, using mock data:', error);
-
-      // Fallback to mock data when API fails
-      const mockResponse = this.getMockLoginResponse(credentials.userName);
-
-      if (mockResponse) {
-        const mappedUser = {
-          ...mockResponse.user,
-          role: this.mapRole(mockResponse.user.role),
-        };
-
-        this.authState = {
-          user: mappedUser,
-          accessToken: mockResponse.accessToken,
-          refreshToken: mockResponse.refreshToken,
-          isAuthenticated: true,
-          isLoading: false,
-        };
-
-        this.saveToStorage(mockResponse);
-        this.notifyListeners();
-
-        return mockResponse;
-      }
-
       this.authState.isLoading = false;
       this.notifyListeners();
       throw error;
@@ -204,94 +185,38 @@ class AuthService {
   };
 
   private mapRole(backendRole: string): string {
+    // Map backend roleDisplayName (from database display_name) to frontend role
     const roleMap: { [key: string]: string } = {
+      // From database 'name' column (uppercase)
       'STAFF': 'staff',
       'TECHNICIAN': 'technician',
       'ADMIN': 'admin',
       'CUSTOMER': 'customer',
-    };
-    return roleMap[backendRole] || backendRole.toLowerCase();
-  }
-
-  private getMockLoginResponse(userName: string): LoginResponse | null {
-    // Mock data cho testing khi API bị hỏng
-    const mockUsers: Record<string, LoginResponse> = {
-      'admin@evservice.com': {
-        user: {
-          id: 1,
-          email: 'admin@evservice.com',
-          fullName: 'Nguyễn Văn Admin',
-          phoneNumber: '0901234567',
-          role: 'ADMIN',
-          status: 'ACTIVE',
-          createdAt: '2024-01-01T00:00:00Z',
-          lastLogin: new Date().toISOString(),
-        },
-        accessToken: 'mock-access-token-admin',
-        refreshToken: 'mock-refresh-token-admin',
-        expiresIn: 3600,
-        tokenType: 'Bearer',
-        requiresVerification: false,
-        message: null,
-      },
-      'staff@evservice.com': {
-        user: {
-          id: 2,
-          email: 'staff@evservice.com',
-          fullName: 'Trần Thị Staff',
-          phoneNumber: '0901234568',
-          role: 'STAFF',
-          status: 'ACTIVE',
-          createdAt: '2024-01-01T00:00:00Z',
-          lastLogin: new Date().toISOString(),
-        },
-        accessToken: 'mock-access-token-staff',
-        refreshToken: 'mock-refresh-token-staff',
-        expiresIn: 3600,
-        tokenType: 'Bearer',
-        requiresVerification: false,
-        message: null,
-      },
-      'technician@evservice.com': {
-        user: {
-          id: 3,
-          email: 'technician@evservice.com',
-          fullName: 'Lê Văn Technician',
-          phoneNumber: '0901234569',
-          role: 'TECHNICIAN',
-          status: 'ACTIVE',
-          createdAt: '2024-01-01T00:00:00Z',
-          lastLogin: new Date().toISOString(),
-        },
-        accessToken: 'mock-access-token-technician',
-        refreshToken: 'mock-refresh-token-technician',
-        expiresIn: 3600,
-        tokenType: 'Bearer',
-        requiresVerification: false,
-        message: null,
-      },
-      'customer@evservice.com': {
-        user: {
-          id: 4,
-          email: 'customer@evservice.com',
-          fullName: 'Phạm Thị Customer',
-          phoneNumber: '0901234570',
-          role: 'CUSTOMER',
-          status: 'ACTIVE',
-          createdAt: '2024-01-01T00:00:00Z',
-          lastLogin: new Date().toISOString(),
-        },
-        accessToken: 'mock-access-token-customer',
-        refreshToken: 'mock-refresh-token-customer',
-        expiresIn: 3600,
-        tokenType: 'Bearer',
-        requiresVerification: false,
-        message: null,
-      },
+      // From database 'display_name' column (capitalized)
+      'Staff Employee': 'staff',
+      'Technician Employee': 'technician',
+      'Admin': 'admin',
+      'Customer': 'customer',
+      // Fallback for other variations
+      'Staff': 'staff',
+      'Technician': 'technician',
     };
 
-    return mockUsers[userName] || null;
+    // Try exact match first
+    if (roleMap[backendRole]) {
+      return roleMap[backendRole];
+    }
+
+    // Try uppercase version
+    const normalizedRole = backendRole.toUpperCase();
+    if (roleMap[normalizedRole]) {
+      return roleMap[normalizedRole];
+    }
+
+    // Default fallback
+    return backendRole.toLowerCase();
   }
+
 
   async refreshAccessToken(): Promise<boolean> {
     try {
