@@ -49,6 +49,7 @@ export default function VehicleManagementPage() {
     model: '',
     year: new Date().getFullYear(),
     battery: 100,
+    batteryDegradation: 100,
     nextService: '',
     status: 'healthy' as const,
     mileage: 0,
@@ -174,25 +175,21 @@ export default function VehicleManagementPage() {
       const modelId = selectedModel!.id;
 
       // Call API to add vehicle
-      const nowLocal = formatLocalIsoMillis(new Date());
-      const purchasedAtLocal = newVehicle.purchaseDate
-        ? formatLocalIsoMillis(new Date(newVehicle.purchaseDate))
-        : nowLocal;
+      const purchasedAtIsoZ = newVehicle.purchaseDate
+        ? new Date(newVehicle.purchaseDate).toISOString()
+        : new Date().toISOString();
       const distanceKm = Number(newVehicle.mileage) || 0;
+      const degradation = Math.max(0, Math.min(100, Number(newVehicle.batteryDegradation) || 0));
       const vehicleData = {
         vin: newVehicle.vin,
         name: newVehicle.name,
         plateNumber: newVehicle.plate,
         color: newVehicle.color || 'Trắng',
         distanceTraveledKm: distanceKm,
-        batteryDegradation: 100, // Default 100% (new vehicle)
-        purchasedAt: purchasedAtLocal,
-        createdAt: nowLocal,
-        entityStatus: 'ACTIVE',
+        batteryDegradation: degradation,
+        purchasedAt: purchasedAtIsoZ,
         userId: user.id,
-        username: user.fullName,
-        modelId: modelId,
-        modelName: selectedModel?.modelName || '',
+        vehicleModelId: modelId,
       };
 
       const response = await apiClient.addVehicle(vehicleData);
@@ -204,13 +201,13 @@ export default function VehicleManagementPage() {
         plate: newVehicle.plate,
         model: newVehicle.model,
         year: newVehicle.year,
-        battery: 0,
+        battery: Math.max(0, 100 - degradation),
         mileage: distanceKm,
         nextService: '',
         status: 'healthy',
         color: newVehicle.color || 'Trắng',
         vin: newVehicle.vin,
-        purchaseDate: purchasedAtLocal.split('T')[0]
+        purchaseDate: purchasedAtIsoZ.split('T')[0]
       };
 
       setVehicles([...vehicles, vehicle]);
@@ -223,6 +220,7 @@ export default function VehicleManagementPage() {
         model: '',
         year: new Date().getFullYear(),
         battery: 100,
+        batteryDegradation: 100,
         nextService: '',
         status: 'healthy',
         mileage: 0,
@@ -283,7 +281,10 @@ export default function VehicleManagementPage() {
   };
 
   const handleViewVehicle = (vehicleId: string) => {
-    navigate(`/customer/vehicle/${vehicleId}`);
+    const found = vehicles.find(v => v.id === vehicleId);
+    navigate(`/customer/vehicle/${vehicleId}`, {
+      state: found ? { vehicle: found } : undefined,
+    });
   };
 
   const handleBookService = (vehicle: Vehicle) => {
@@ -420,12 +421,30 @@ export default function VehicleManagementPage() {
               id="mileage"
               type="number"
               min={0}
+              step={0.1}
               value={newVehicle.mileage}
               onChange={(e) => {
                 const val = Number(e.target.value);
                 setNewVehicle({ ...newVehicle, mileage: isNaN(val) || val < 0 ? 0 : val });
               }}
               placeholder="VD: 15000"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="batteryDegradation">% pin chai</Label>
+            <Input
+              id="batteryDegradation"
+              type="number"
+              min={0}
+              max={100}
+              step={0.1}
+              value={newVehicle.batteryDegradation}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                const safe = Math.max(0, Math.min(100, isNaN(val) ? 0 : val));
+                setNewVehicle({ ...newVehicle, batteryDegradation: safe });
+              }}
+              placeholder="0 - 100"
             />
           </div>
           <DialogFooter>
