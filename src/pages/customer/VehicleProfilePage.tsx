@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   AlertCircle,
@@ -19,13 +20,14 @@ import {
   Download,
   Edit,
   History,
+  Trash2,
   MapPin,
   Settings,
   Wrench
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { z } from 'zod';
 
 // Schema validation cho form edit xe
@@ -41,10 +43,8 @@ interface Vehicle {
   name: string;
   plate: string;
   model: string;
-  year: number;
   battery: number;
   nextService: string;
-  status: 'healthy' | 'warning' | 'critical';
   mileage: number;
   color: string;
   vin: string;
@@ -72,12 +72,16 @@ interface ServiceRecord {
 export default function VehicleProfilePage() {
   const navigate = useNavigate();
   const { vehicleId } = useParams();
+  const location = useLocation() as { state?: { vehicle?: Vehicle } };
   const { toast } = useToast();
   const user = { email: 'customer@example.com', role: 'customer', userType: 'customer' };
 
   // State cho dialog edit
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [vehicleData, setVehicleData] = useState<Vehicle | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Form cho edit xe
   const form = useForm<VehicleEditFormData>({
@@ -90,102 +94,142 @@ export default function VehicleProfilePage() {
 
   // Handlers
   const handleEditClick = () => {
-    setVehicleData(vehicle);
+    if (!vehicleData) return;
     form.reset({
-      battery: vehicle.battery,
-      mileage: vehicle.mileage
+      battery: vehicleData.battery,
+      mileage: vehicleData.mileage
     });
     setIsEditDialogOpen(true);
   };
 
-  const handleEditSubmit = (data: VehicleEditFormData) => {
-    // Trong thực tế, đây sẽ là API call
-    console.log('Updating vehicle data:', data);
+  const handleEditSubmit = async (data: VehicleEditFormData) => {
+    if (!vehicleData) return;
+    try {
+      await apiClient.updateVehicle(vehicleData.vin, {
+        distanceTraveledKm: data.mileage,
+        batteryDegradation: data.battery,
+      });
 
+      // Update local state to reflect changes
+      setVehicleData({ ...vehicleData, mileage: data.mileage, battery: data.battery });
+
+      toast({
+        title: 'Cập nhật thành công',
+        description: 'Thông tin xe đã được cập nhật.'
+      });
+      setIsEditDialogOpen(false);
+    } catch (e) {
+      console.error('Failed to update vehicle', e);
+      toast({ title: 'Cập nhật thất bại', description: 'Không thể cập nhật xe.', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!vehicleData) return;
+    // TODO: Gọi API xóa xe theo VIN nếu có endpoint
     toast({
-      title: "Cập nhật thành công",
-      description: "Thông tin xe đã được cập nhật."
+      title: 'Đã xóa xe',
+      description: `Đã xóa ${vehicleData.name}.`,
     });
-
-    setIsEditDialogOpen(false);
+    setIsDeleteDialogOpen(false);
+    navigate('/customer/vehicles');
   };
 
-  // Mock data - in real app, this would be fetched based on vehicleId
-  const vehicle: Vehicle = {
-    id: vehicleId || '1',
-    name: 'VinFast VF8',
-    plate: '30A-123.45',
-    model: 'VF8 Plus',
-    year: 2024,
-    battery: 85,
-    nextService: '2025-10-15',
-    status: 'healthy',
-    mileage: 15000,
-    color: 'Trắng',
-    vin: 'VF8PLUS2024001',
-    purchaseDate: '2024-01-15'
-  };
+  // Load vehicle detail from API by VIN (vehicleId param)
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+        if (!vehicleId) throw new Error('Thiếu VIN của xe');
 
-  const serviceHistory: ServiceRecord[] = [
-    {
-      id: 'SV2025001',
-      service: 'Bảo dưỡng định kỳ',
-      date: '2025-08-20',
-      center: 'Trung tâm bảo dưỡng Hà Nội',
-      technician: 'Nguyễn Văn A',
-      status: 'completed',
-      cost: '2,500,000 VND',
-      details: {
-        checkIn: '08:00',
-        checkOut: '11:30',
-        services: ['Kiểm tra pin', 'Thay dầu phanh', 'Cập nhật phần mềm'],
-        notes: 'Xe trong tình trạng tốt, đã thay dầu phanh theo lịch định kỳ'
+        // 1) Prefer vehicle from navigation state
+        if (location.state?.vehicle) {
+          if (mounted) setVehicleData(location.state.vehicle);
+          return;
+        }
+
+        // 2) Try fetch by VIN endpoint
+        try {
+          const apiV = await apiClient.getVehicleByVin(vehicleId);
+          // Enrich with user's vehicle list to get mileage and battery degradation
+          let enrichedMileage = 0;
+          let enrichedBattery = 0;
+          try {
+            const auth = (await import('@/lib/auth')).authService;
+            const current = auth.getAuthState().user;
+            if (current) {
+              const list = await apiClient.getVehiclesByUserId(current.id);
+              const match = list.find(v => v.vin === apiV.vin);
+              if (match) {
+                enrichedMileage = Math.max(0, Number(match.distanceTraveledKm) || 0);
+                enrichedBattery = Number(match.batteryDegradation) || null;
+              }
+            }
+          } catch (_) { /* ignore enrichment errors */ }
+
+          const mapped: Vehicle = {
+            id: apiV.vin,
+            name: apiV.brand ? `${apiV.brand} ${apiV.model}` : (apiV.model || apiV.vin),
+            plate: apiV.plate || '-',
+            model: apiV.model || '-',
+            battery: enrichedBattery,
+            nextService: new Date().toISOString().split('T')[0],
+            mileage: enrichedMileage,
+            color: apiV.type || '-',
+            vin: apiV.vin,
+            purchaseDate: new Date().toISOString().split('T')[0],
+          };
+          if (mounted) setVehicleData(mapped);
+          return;
+        } catch (e) {
+          // fallthrough to search in user's vehicles
+        }
+
+        // 3) Fallback: get vehicles by current user and find by VIN
+        const auth = (await import('@/lib/auth')).authService;
+        const current = auth.getAuthState().user;
+        if (!current) throw new Error('Chưa đăng nhập');
+        const list = await apiClient.getVehiclesByUserId(current.id);
+        const found = list.find(v => v.vin === vehicleId);
+        if (!found) throw new Error('Không tìm thấy xe');
+        const mappedFromList: Vehicle = {
+          id: found.vin,
+          name: found.name || found.modelName,
+          plate: found.plateNumber,
+          model: found.modelName,
+          battery: typeof found.batteryDegradation === 'number' ? found.batteryDegradation : null,
+          nextService: new Date().toISOString().split('T')[0],
+          mileage: Math.max(0, Math.round(found.distanceTraveledKm || 0)),
+          color: found.color,
+          vin: found.vin,
+          purchaseDate: (found.purchasedAt || '').split('T')[0] || new Date().toISOString().split('T')[0],
+        };
+        if (mounted) setVehicleData(mappedFromList);
+      } catch (e) {
+        console.error('Load vehicle failed', e);
+        if (mounted) setLoadError('Không tải được thông tin xe');
+      } finally {
+        if (mounted) setIsLoading(false);
       }
-    },
-    {
-      id: 'SV2025002',
-      service: 'Thay lốp xe',
-      date: '2025-07-10',
-      center: 'Trung tâm bảo dưỡng TP.HCM',
-      technician: 'Trần Văn B',
-      status: 'completed',
-      cost: '1,800,000 VND',
-      details: {
-        checkIn: '14:00',
-        checkOut: '15:45',
-        services: ['Thay 4 lốp xe mới', 'Cân bằng lốp'],
-        notes: 'Lốp cũ đã mòn 80%, được thay mới hoàn toàn'
-      }
-    },
-    {
-      id: 'SV2025003',
-      service: 'Kiểm tra pin',
-      date: '2025-09-25',
-      center: 'Trung tâm bảo dưỡng Hà Nội',
-      technician: 'Lê Văn C',
-      status: 'in_progress',
-      cost: '1,200,000 VND',
-      details: {
-        checkIn: '09:00',
-        checkOut: null,
-        services: ['Kiểm tra dung lượng pin', 'Chẩn đoán hệ thống sạc'],
-        notes: 'Đang tiến hành kiểm tra chi tiết hệ thống pin'
-      }
+    })();
+    return () => { mounted = false; };
+  }, [vehicleId, location.state]);
+
+  // Service history should be loaded from API
+  // TODO: Load service history from API
+  const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
+
+  useEffect(() => {
+    // Load service history when vehicle data is available
+    if (vehicleData) {
+      // Service history should be loaded from API
+      // TODO: Load service history from API using vehicleData.id or vehicleData.vin
+      setServiceHistory([]);
     }
-  ];
+  }, [vehicleData]);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'healthy':
-        return <Badge variant="default" className="gap-1"><CheckCircle2 className="w-3 h-3" />Tốt</Badge>;
-      case 'warning':
-        return <Badge variant="secondary" className="gap-1"><AlertCircle className="w-3 h-3" />Cần kiểm tra</Badge>;
-      case 'critical':
-        return <Badge variant="destructive" className="gap-1"><AlertCircle className="w-3 h-3" />Cần bảo dưỡng</Badge>;
-      default:
-        return null;
-    }
-  };
 
   const getServiceStatusBadge = (status: string) => {
     switch (status) {
@@ -211,6 +255,24 @@ export default function VehicleProfilePage() {
 
 
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (loadError || !vehicleData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
+        {loadError || 'Không có dữ liệu xe'}
+      </div>
+    );
+  }
+
+  const vehicle = vehicleData;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -220,6 +282,10 @@ export default function VehicleProfilePage() {
           <Button variant="outline" onClick={handleEditClick}>
             <Edit className="w-4 h-4 mr-2" />
             Chỉnh sửa
+          </Button>
+          <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+            <Trash2 className="w-4 h-4 mr-2" />
+            Xóa
           </Button>
         </div>
       </div>
@@ -240,7 +306,6 @@ export default function VehicleProfilePage() {
                 <h3 className="text-lg font-semibold">{vehicle.name}</h3>
                 <p className="text-sm text-muted-foreground">{vehicle.plate} • {vehicle.model}</p>
               </div>
-              {getStatusBadge(vehicle.status)}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -254,9 +319,8 @@ export default function VehicleProfilePage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span>Số km:</span>
-                  <span className="font-medium">{vehicle.mileage.toLocaleString()}</span>
+                  <span className="font-medium">{vehicle.mileage.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}</span>
                 </div>
-                <Progress value={60} className="w-full" />
               </div>
             </div>
 
@@ -538,10 +602,6 @@ export default function VehicleProfilePage() {
                     <p className="font-medium">{vehicleData?.model}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Năm:</span>
-                    <p className="font-medium">{vehicleData?.year}</p>
-                  </div>
-                  <div>
                     <span className="text-muted-foreground">Màu sắc:</span>
                     <p className="font-medium">{vehicleData?.color}</p>
                   </div>
@@ -608,6 +668,26 @@ export default function VehicleProfilePage() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Xóa xe?</DialogTitle>
+            <DialogDescription>
+              Hành động này không thể hoàn tác. Bạn chắc chắn muốn xóa xe này?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              Xóa
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

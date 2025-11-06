@@ -13,3 +13,4 @@ export const initConfigApp = () => {
 };
 
 export default config;
+

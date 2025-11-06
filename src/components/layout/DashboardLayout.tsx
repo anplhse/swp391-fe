@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { authService } from '@/lib/auth';
 import { BarChart3, Bell, Calendar, Car, ClipboardList, DollarSign, FileText, History, LayoutDashboard, LogOut, Package, Settings, User, Users, Wrench } from 'lucide-react';
 import { ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -65,7 +66,11 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
   };
 
   // Use auth user if available, fallback to prop user
-  const currentUser = authUser || user;
+  // Map role from roleDisplayName if needed
+  const roleKey = authUser?.roleDisplayName
+    ? (authService.getRoleKey() || user?.role || 'customer')
+    : (user?.role || 'customer');
+  const currentUser = authUser ? { ...authUser, role: roleKey } : { ...user, role: roleKey };
 
   const getRoleDisplayName = (role: string) => {
     const roleNames = {
@@ -122,6 +127,7 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
           { to: '/service/services', icon: Wrench, label: 'Quản lý dịch vụ' },
           { to: '/service/maintenance', icon: Settings, label: 'Quy trình bảo dưỡng' },
           { to: '/service/parts', icon: Package, label: 'Quản lý phụ tùng' },
+          { to: '/service/vehicle-models', icon: Car, label: 'Quản lý mẫu xe' },
         ];
       case 'technician':
         return [

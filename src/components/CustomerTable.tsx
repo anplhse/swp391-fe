@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar, Car, Edit, Mail, Phone, Plus, Search, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 interface Customer {
   id: string;
@@ -12,9 +12,10 @@ interface Customer {
   email: string;
   phone: string;
   avatar?: string;
-  vehicles: number;
-  lastService: string;
-  status: 'active' | 'inactive';
+  roleDisplayName?: string;
+  createdAt?: string;
+  lastLogin?: string | null;
+  status: 'active' | 'inactive' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 }
 
 interface CustomerTableProps {
@@ -23,6 +24,7 @@ interface CustomerTableProps {
   onDelete: (customerId: string) => void;
   onAdd: () => void;
   showActions?: boolean;
+  rightAction?: ReactNode;
 }
 
 export function CustomerTable({
@@ -30,7 +32,8 @@ export function CustomerTable({
   onEdit,
   onDelete,
   onAdd,
-  showActions = true
+  showActions = true,
+  rightAction
 }: CustomerTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -41,11 +44,18 @@ export function CustomerTable({
   );
 
   const getStatusBadge = (status: string) => {
-    return status === 'active' ? (
-      <Badge variant="default" className="bg-green-100 text-green-800">Hoạt động</Badge>
-    ) : (
-      <Badge variant="secondary">Không hoạt động</Badge>
-    );
+    switch (status) {
+      case 'active':
+      case 'ACTIVE':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Hoạt động</Badge>;
+      case 'INACTIVE':
+      case 'inactive':
+        return <Badge variant="secondary">Không hoạt động</Badge>;
+      case 'ARCHIVED':
+        return <Badge variant="outline">Đã lưu trữ</Badge>;
+      default:
+        return <Badge variant="secondary">Không rõ</Badge>;
+    }
   };
 
   return (
@@ -55,18 +65,21 @@ export function CustomerTable({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
-            placeholder="Tìm kiếm khách hàng..."
+            placeholder="Tìm kiếm tài khoản..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 w-64"
           />
         </div>
-        {showActions && (
-          <Button onClick={onAdd}>
-            <Plus className="w-4 h-4 mr-2" />
-            Thêm khách hàng
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {rightAction}
+          {showActions && (
+            <Button onClick={onAdd}>
+              <Plus className="w-4 h-4 mr-2" />
+              Thêm tài khoản
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Customers Table */}
@@ -74,12 +87,13 @@ export function CustomerTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Khách hàng</TableHead>
+              <TableHead>Tên</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Số điện thoại</TableHead>
-              <TableHead>Số xe</TableHead>
-              <TableHead>Dịch vụ cuối</TableHead>
+              <TableHead>Vai trò</TableHead>
               <TableHead>Trạng thái</TableHead>
+              <TableHead>Ngày tạo</TableHead>
+              <TableHead>Đăng nhập cuối</TableHead>
               {showActions && <TableHead className="text-right">Thao tác</TableHead>}
             </TableRow>
           </TableHeader>
@@ -116,20 +130,18 @@ export function CustomerTable({
                       {customer.phone}
                     </div>
                   </TableCell>
+                  <TableCell>{customer.roleDisplayName || '—'}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Car className="w-4 h-4 text-muted-foreground" />
-                      {customer.vehicles} xe
-                    </div>
+                    {getStatusBadge(customer.status)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-muted-foreground" />
-                      {new Date(customer.lastService).toLocaleDateString('vi-VN')}
+                      {customer.createdAt ? new Date(customer.createdAt).toLocaleDateString('vi-VN') : '—'}
                     </div>
                   </TableCell>
                   <TableCell>
-                    {getStatusBadge(customer.status)}
+                    {customer.lastLogin ? new Date(customer.lastLogin).toLocaleString('vi-VN') : '—'}
                   </TableCell>
                   {showActions && (
                     <TableCell className="text-right">

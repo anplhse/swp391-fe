@@ -9,7 +9,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
 import { bookTimeSlot, getAvailableTimeSlots, getNextAvailableDates, isTimeSlotAvailable } from '@/lib/bookingUtils';
-import { getRegisteredVehicles } from '@/lib/sessionStore';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createColumnHelper } from '@tanstack/react-table';
@@ -136,19 +135,6 @@ export function BookingForm({ services }: BookingFormProps) {
   const handleVinLookup = useCallback(async (vin: string) => {
     if (!vin.trim()) return;
 
-    // Check if VIN is registered
-    const registeredVehicles = getRegisteredVehicles();
-    const isRegistered = registeredVehicles.some(v => v.vin === vin.toUpperCase());
-
-    if (!isRegistered) {
-      toast({
-        title: 'Lỗi',
-        description: 'Mã VIN này chưa được đăng ký trong hệ thống',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     try {
       const vehicleData = await apiClient.getVehicleByVin(vin);
       setVinData(vehicleData);
@@ -166,7 +152,7 @@ export function BookingForm({ services }: BookingFormProps) {
       console.error('VIN lookup error:', error);
       toast({
         title: 'Lỗi',
-        description: 'Không thể tra cứu thông tin xe với mã VIN này',
+        description: 'Không thể tra cứu thông tin xe với mã VIN này. VIN có thể chưa được đăng ký trong hệ thống.',
         variant: 'destructive'
       });
     }

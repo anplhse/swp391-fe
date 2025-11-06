@@ -50,6 +50,7 @@ const FinanceManagementPage = lazy(() => import("../pages/service/admin/FinanceM
 const PersonnelManagementPage = lazy(() => import("../pages/service/admin/PersonnelManagementPage"));
 const QuotationsPage = lazy(() => import("../pages/service/admin/QuotationsPage"));
 const ReportsPage = lazy(() => import("../pages/service/admin/ReportsPage"));
+const VehicleModelsPage = lazy(() => import("../pages/service/staff/VehicleModelsPage"));
 
 export default function AppRoutes() {
   return (
@@ -99,6 +100,7 @@ export default function AppRoutes() {
           <Route path="service/finance" element={<ProtectedRoute requiredRole="admin"><FinanceManagementPage /></ProtectedRoute>} />
           <Route path="service/reports" element={<ProtectedRoute requiredRole="admin"><ReportsPage /></ProtectedRoute>} />
           <Route path="service/quotations" element={<ProtectedRoute requiredRole="admin"><QuotationsPage /></ProtectedRoute>} />
+          <Route path="service/vehicle-models" element={<ProtectedRoute requiredRole="staff"><VehicleModelsPage /></ProtectedRoute>} />
         </Route>
 
         {/* Catch-all route */}

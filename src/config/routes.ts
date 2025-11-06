@@ -34,6 +34,7 @@ const routes = {
       services: '/service/services',
       maintenance: '/service/maintenance',
       parts: '/service/parts',
+      vehicleModels: '/service/vehicle-models',
     },
 
     // Technician routes

@@ -5,6 +5,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -26,13 +27,18 @@ interface Customer {
   email: string;
   phone: string;
   avatar?: string;
-  vehicles: number;
-  lastService: string;
-  status: 'active' | 'inactive';
+  roleDisplayName?: string;
+  createdAt?: string;
+  lastLogin?: string | null;
+  status: 'active' | 'inactive' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 }
 
 export default function CustomerManagementPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [roleFilter, setRoleFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
@@ -48,39 +54,27 @@ export default function CustomerManagementPage() {
   });
 
   useEffect(() => {
-    // Mock data - trong thực tế sẽ load từ API
-    const mockCustomers: Customer[] = [
-      {
-        id: '1',
-        name: 'Nguyễn Văn A',
-        email: 'nguyenvana@email.com',
-        phone: '0123456789',
-        avatar: '/c.jpg',
-        vehicles: 2,
-        lastService: '2024-01-15',
-        status: 'active'
-      },
-      {
-        id: '2',
-        name: 'Trần Thị B',
-        email: 'tranthib@email.com',
-        phone: '0987654321',
-        avatar: '/d.jpg',
-        vehicles: 1,
-        lastService: '2024-01-10',
-        status: 'active'
-      },
-      {
-        id: '3',
-        name: 'Lê Văn C',
-        email: 'levanc@email.com',
-        phone: '0369852147',
-        vehicles: 3,
-        lastService: '2023-12-20',
-        status: 'inactive'
+    let mounted = true;
+    (async () => {
+      try {
+        const users = await apiClient.getAllUsers();
+        if (!mounted) return;
+        const mapped: Customer[] = users.map(u => ({
+          id: String(u.id),
+          name: u.fullName,
+          email: u.email,
+          phone: u.phoneNumber,
+          roleDisplayName: u.roleDisplayName,
+          createdAt: u.createdAt,
+          lastLogin: u.lastLogin,
+          status: (u.status as any) ?? 'ACTIVE'
+        }));
+        setCustomers(mapped);
+      } catch (e) {
+        console.error('Failed to load user profiles', e);
       }
-    ];
-    setCustomers(mockCustomers);
+    })();
+    return () => { mounted = false; };
   }, []);
 
 
@@ -121,8 +115,9 @@ export default function CustomerManagementPage() {
       email: data.email,
       phone: data.phone,
       avatar: editingCustomer?.avatar,
-      vehicles: editingCustomer?.vehicles || 0,
-      lastService: editingCustomer?.lastService || new Date().toISOString().split('T')[0],
+      roleDisplayName: editingCustomer?.roleDisplayName,
+      createdAt: editingCustomer?.createdAt || new Date().toISOString(),
+      lastLogin: editingCustomer?.lastLogin || null,
       status: data.status
     };
 
@@ -146,14 +141,59 @@ export default function CustomerManagementPage() {
   };
 
 
+  // Derived lists for filters and pagination
+  const uniqueRoles = Array.from(new Set(customers.map(c => c.roleDisplayName).filter(Boolean))) as string[];
+  const filtered = customers.filter(c =>
+    (roleFilter !== 'ALL' ? c.roleDisplayName === roleFilter : true) &&
+    (statusFilter !== 'ALL' ? String(c.status) === statusFilter : true)
+  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const startIdx = (currentPage - 1) * pageSize;
+  const pageItems = filtered.slice(startIdx, startIdx + pageSize);
+
   return (
     <div className="space-y-6">
       <CustomerTable
-        customers={customers}
+        customers={pageItems}
         onEdit={handleEditCustomer}
         onDelete={handleDeleteCustomer}
         onAdd={handleAddCustomer}
         showActions={true}
+        rightAction={(
+          <div className="flex items-center gap-2">
+            <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setPage(1); }}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Vai trò" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả vai trò</SelectItem>
+                {uniqueRoles.map(r => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
+                <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                <SelectItem value="INACTIVE">INACTIVE</SelectItem>
+                <SelectItem value="ARCHIVED">ARCHIVED</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
+                Trước
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>
+                Sau
+              </Button>
+            </div>
+          </div>
+        )}
       />
 
       {/* Add/Edit Customer Dialog */}

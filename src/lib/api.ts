@@ -118,6 +118,10 @@ class ApiClient {
           }
         }
 
+        // Always append status for downstream handlers
+        if (!message.includes(`status: ${response.status}`)) {
+          message = `${message} (status: ${response.status})`;
+        }
         throw new Error(message);
       }
 
@@ -228,15 +232,11 @@ class ApiClient {
     name: string;
     plateNumber: string;
     color: string;
-    distanceTraveledKm: number;
-    batteryDegradation: number;
-    purchasedAt: string;
-    createdAt: string;
-    entityStatus: string;
+    distanceTraveledKm: number | null;
+    batteryDegradation: number | null;
+    purchasedAt: string; // ISO string with Z
     userId: number;
-    username: string;
-    modelId: number;
-    modelName: string;
+    vehicleModelId: number;
   }): Promise<{ id?: number }> {
     return this.request<{ id?: number }>('/vehicles', {
       method: 'POST',
@@ -248,9 +248,9 @@ class ApiClient {
     vin: string;
     name: string | null;
     plateNumber: string;
-    year: string | null;
     color: string;
     distanceTraveledKm: number;
+    batteryDegradation?: number;
     purchasedAt: string;
     createdAt: string;
     entityStatus: string;
@@ -264,19 +264,151 @@ class ApiClient {
     });
   }
 
+  async getAllVehicles(): Promise<Array<{
+    vin: string;
+    name: string | null;
+    plateNumber: string;
+    color: string;
+    distanceTraveledKm: number;
+    batteryDegradation?: number;
+    purchasedAt: string;
+    createdAt: string;
+    entityStatus: string;
+    userId: number;
+    username: string;
+    modelId: number;
+    modelName: string;
+  }>> {
+    return this.request('/vehicles', {
+      method: 'GET',
+    });
+  }
+
+  async updateVehicle(
+    vin: string,
+    payload: Partial<{
+      vin: string;
+      name: string | null;
+      plateNumber: string;
+      color: string;
+      distanceTraveledKm: number;
+      batteryDegradation: number;
+      purchasedAt: string;
+      createdAt: string;
+      entityStatus: string;
+      userId: number;
+      username: string;
+      modelId: number;
+      modelName: string;
+    }>
+  ): Promise<{
+    vin: string;
+    name: string | null;
+    plateNumber: string;
+    color: string;
+    distanceTraveledKm: number;
+    batteryDegradation: number;
+    purchasedAt: string;
+    createdAt: string;
+    entityStatus: string;
+    userId: number;
+    username: string;
+    modelId: number;
+    modelName: string;
+  }> {
+    return this.request(`/vehicles/${encodeURIComponent(vin)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+
   async getVehicleModels(): Promise<Array<{
     id: number;
     brandName: string;
     modelName: string;
+    dimensions?: string;
+    seats?: number;
+    batteryCapacityKwh?: number;
+    rangeKm?: number;
+    chargingTimeHours?: number;
+    motorPowerKw?: number;
+    weightKg?: number;
     status: string;
+    createdAt?: string;
   }>> {
     return this.request('/vehicle-models', {
       method: 'GET',
     });
   }
 
+  async getVehicleModelById(id: number): Promise<{
+    id: number;
+    brandName: string;
+    modelName: string;
+    dimensions?: string;
+    seats?: number;
+    batteryCapacityKwh?: number;
+    rangeKm?: number;
+    chargingTimeHours?: number;
+    motorPowerKw?: number;
+    weightKg?: number;
+    status: string;
+    createdAt?: string;
+  }> {
+    return this.request(`/vehicle-models/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async updateVehicleModel(
+    id: number,
+    payload: Partial<{
+      brandName: string;
+      modelName: string;
+      dimensions?: string;
+      seats?: number;
+      batteryCapacityKwh?: number;
+      rangeKm?: number;
+      chargingTimeHours?: number;
+      motorPowerKw?: number;
+      weightKg?: number;
+      status?: string;
+    }>
+  ): Promise<{
+    id: number;
+    brandName: string;
+    modelName: string;
+    dimensions?: string;
+    seats?: number;
+    batteryCapacityKwh?: number;
+    rangeKm?: number;
+    chargingTimeHours?: number;
+    motorPowerKw?: number;
+    weightKg?: number;
+    status: string;
+    createdAt?: string;
+  }> {
+    return this.request(`/vehicle-models/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+
   async getProfile(): Promise<LoginResponse['user']> {
     return this.request<LoginResponse['user']>('/auth/profile');
+  }
+
+  async getAllUsers(): Promise<Array<{
+    id: number;
+    email: string;
+    fullName: string;
+    phoneNumber: string;
+    roleDisplayName: string;
+    status: string;
+    createdAt: string;
+    lastLogin: string | null;
+  }>> {
+    return this.request('/userprofile', { method: 'GET' });
   }
 }
 

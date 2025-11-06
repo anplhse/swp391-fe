@@ -66,143 +66,9 @@ export default function BookingsAndHistoryPage() {
   const [status, setStatus] = useState<'all' | BookingStatus>('all');
 
   useEffect(() => {
-    // Mock data combining both bookings and service history
-    const mockData: BookingRecord[] = [
-      // Upcoming bookings
-      {
-        id: 'BK2025001',
-        service: {
-          id: 'maintenance',
-          name: 'Bảo dưỡng định kỳ',
-          price: '2,500,000 VND',
-          duration: '2-3 giờ',
-          description: 'Kiểm tra tổng quát hệ thống xe điện'
-        },
-        vehicle: {
-          id: 'vf8',
-          name: 'VinFast VF8',
-          plate: '30A-12345',
-          model: 'VF8 Plus'
-        },
-        date: '2025-09-15',
-        time: '09:00',
-        status: 'pending',
-        center: 'Trung tâm bảo dưỡng Hà Nội',
-        notes: 'Xe có tiếng ồn lạ ở bánh trước',
-        createdAt: '2025-01-10T10:30:00Z',
-        estimatedDuration: '2-3 giờ'
-      },
-      {
-        id: 'BK2025002',
-        service: {
-          id: 'battery',
-          name: 'Kiểm tra pin',
-          price: '1,800,000 VND',
-          duration: '1-2 giờ',
-          description: 'Chẩn đoán và bảo dưỡng hệ thống pin'
-        },
-        vehicle: {
-          id: 'vf9',
-          name: 'VinFast VF9',
-          plate: '29B-67890',
-          model: 'VF9 Plus'
-        },
-        date: '2025-09-16',
-        time: '14:00',
-        status: 'confirmed',
-        center: 'Trung tâm bảo dưỡng Hà Nội',
-        notes: 'Pin sạc chậm',
-        createdAt: '2025-01-11T14:20:00Z',
-        estimatedDuration: '1-2 giờ'
-      },
-      // Completed services (service history)
-      {
-        id: 'SV2025001',
-        service: {
-          id: 'maintenance',
-          name: 'Bảo dưỡng định kỳ',
-          price: '2,500,000 VND',
-          duration: '2-3 giờ',
-          description: 'Kiểm tra tổng quát hệ thống xe điện'
-        },
-        vehicle: {
-          id: 'vf8',
-          name: 'VinFast VF8',
-          plate: '30A-12345',
-          model: 'VF8 Plus'
-        },
-        date: '2025-08-20',
-        time: '08:00',
-        status: 'completed',
-        center: 'Trung tâm bảo dưỡng Hà Nội',
-        notes: 'Xe trong tình trạng tốt, đã thay dầu phanh theo lịch định kỳ',
-        createdAt: '2025-08-20T08:00:00Z',
-        estimatedDuration: '2-3 giờ',
-        technician: 'Nguyễn Văn A',
-        checkIn: '08:00',
-        checkOut: '11:30',
-        services: ['Kiểm tra pin', 'Thay dầu phanh', 'Cập nhật phần mềm'],
-        cost: '2,500,000 VND'
-      },
-      {
-        id: 'SV2025002',
-        service: {
-          id: 'tire',
-          name: 'Thay lốp xe',
-          price: '1,800,000 VND',
-          duration: '1-2 giờ',
-          description: 'Thay lốp mới, cân bằng bánh xe'
-        },
-        vehicle: {
-          id: 'vf8',
-          name: 'VinFast VF8',
-          plate: '30A-12345',
-          model: 'VF8 Plus'
-        },
-        date: '2025-07-10',
-        time: '14:00',
-        status: 'completed',
-        center: 'Trung tâm bảo dưỡng TP.HCM',
-        notes: 'Lốp cũ đã mòn 80%, được thay mới hoàn toàn',
-        createdAt: '2025-07-10T14:00:00Z',
-        estimatedDuration: '1-2 giờ',
-        technician: 'Trần Văn B',
-        checkIn: '14:00',
-        checkOut: '15:45',
-        services: ['Thay 4 lốp xe mới', 'Cân bằng lốp'],
-        cost: '1,800,000 VND'
-      },
-      // In progress
-      {
-        id: 'SV2025003',
-        service: {
-          id: 'battery',
-          name: 'Kiểm tra pin',
-          price: '1,200,000 VND',
-          duration: '1-2 giờ',
-          description: 'Chẩn đoán và bảo dưỡng hệ thống pin'
-        },
-        vehicle: {
-          id: 'vf8',
-          name: 'VinFast VF8',
-          plate: '30A-12345',
-          model: 'VF8 Plus'
-        },
-        date: '2025-09-25',
-        time: '09:00',
-        status: 'in_progress',
-        center: 'Trung tâm bảo dưỡng Hà Nội',
-        notes: 'Đang tiến hành kiểm tra chi tiết hệ thống pin',
-        createdAt: '2025-09-25T09:00:00Z',
-        estimatedDuration: '1-2 giờ',
-        technician: 'Lê Văn C',
-        checkIn: '09:00',
-        checkOut: undefined,
-        services: ['Kiểm tra dung lượng pin', 'Chẩn đoán hệ thống sạc'],
-        cost: '1,200,000 VND'
-      }
-    ];
-    setBookings(mockData);
+    // Bookings should be loaded from API
+    // TODO: Load bookings from API
+    setBookings([]);
   }, []);
 
   const filteredBookings = useMemo(() => {
@@ -249,6 +115,20 @@ export default function BookingsAndHistoryPage() {
   const formatPrice = useCallback((price: string) => {
     return price || '—';
   }, []);
+
+  const handleViewDetails = useCallback((bookingId: string) => {
+    toast({
+      title: "Chi tiết lịch hẹn",
+      description: `Xem chi tiết lịch hẹn ${bookingId}`,
+    });
+  }, [toast]);
+
+  const handleDownloadInvoice = useCallback((bookingId: string) => {
+    toast({
+      title: "Tải hóa đơn",
+      description: `Đang tải hóa đơn ${bookingId}`,
+    });
+  }, [toast]);
 
   // Define columns for unified table
   const bookingColumns: ColumnDef<BookingRecord>[] = useMemo(() => [
@@ -333,25 +213,11 @@ export default function BookingsAndHistoryPage() {
         </div>
       ),
     },
-  ], [getStatusBadge, formatPrice]);
+  ], [getStatusBadge, formatPrice, handleViewDetails, handleDownloadInvoice]);
 
   const clearAll = () => {
     localStorage.removeItem('bookings');
     setBookings([]);
-  };
-
-  const handleViewDetails = (bookingId: string) => {
-    toast({
-      title: "Chi tiết lịch hẹn",
-      description: `Xem chi tiết lịch hẹn ${bookingId}`,
-    });
-  };
-
-  const handleDownloadInvoice = (bookingId: string) => {
-    toast({
-      title: "Tải hóa đơn",
-      description: `Đang tải hóa đơn ${bookingId}`,
-    });
   };
 
 

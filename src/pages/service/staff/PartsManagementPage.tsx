@@ -60,87 +60,9 @@ export default function PartsManagementPage() {
   const partForm = useForm<PartFormData>({ resolver: zodResolver(partSchema), defaultValues: { name: '', partNumber: '', category: '', brand: '', compatibleModel: '', initialQuantity: '1', unitPrice: '0', supplier: '' } });
 
   useEffect(() => {
-    // Mock data for parts
-    const mockParts: Part[] = [
-      {
-        id: '1',
-        name: 'Pin Lithium-ion 60kWh',
-        partNumber: 'BAT-60KWH-001',
-        category: 'Pin',
-        brand: 'CATL',
-        compatibleModel: 'VF8',
-        initialQuantity: 20,
-        usedQuantity: 15,
-        currentStock: 5,
-        minStock: 3,
-        maxStock: 20,
-        unitPrice: 15000000,
-        supplier: 'CATL Vietnam',
-        lastRestocked: '2024-01-15',
-        status: 'in_stock',
-        location: 'Kho A - Kệ 1',
-        description: 'Pin lithium-ion 60kWh cho xe điện VinFast VF8'
-      },
-      {
-        id: '2',
-        name: 'Động cơ điện 150kW',
-        partNumber: 'MOT-150KW-002',
-        category: 'Động cơ',
-        brand: 'Bosch',
-        compatibleModel: 'VF9',
-        initialQuantity: 10,
-        usedQuantity: 8,
-        currentStock: 2,
-        minStock: 2,
-        maxStock: 10,
-        unitPrice: 25000000,
-        supplier: 'Bosch Vietnam',
-        lastRestocked: '2024-01-10',
-        status: 'low_stock',
-        location: 'Kho B - Kệ 3',
-        description: 'Động cơ điện 150kW cho xe điện hạng trung'
-      },
-      {
-        id: '3',
-        name: 'Bộ sạc nhanh 50kW',
-        partNumber: 'CHG-50KW-003',
-        category: 'Sạc',
-        brand: 'ABB',
-        compatibleModel: 'VF5',
-        initialQuantity: 5,
-        usedQuantity: 5,
-        currentStock: 0,
-        minStock: 1,
-        maxStock: 5,
-        unitPrice: 8000000,
-        supplier: 'ABB Vietnam',
-        lastRestocked: '2023-12-20',
-        status: 'out_of_stock',
-        location: 'Kho C - Kệ 2',
-        description: 'Bộ sạc nhanh 50kW cho trạm sạc'
-      },
-      {
-        id: '4',
-        name: 'Cảm biến nhiệt độ pin',
-        partNumber: 'SEN-TEMP-004',
-        category: 'Cảm biến',
-        brand: 'Honeywell',
-        compatibleModel: 'VFE34',
-        initialQuantity: 30,
-        usedQuantity: 15,
-        currentStock: 15,
-        minStock: 5,
-        maxStock: 50,
-        unitPrice: 500000,
-        supplier: 'Honeywell Vietnam',
-        lastRestocked: '2024-01-20',
-        status: 'in_stock',
-        location: 'Kho A - Kệ 5',
-        description: 'Cảm biến nhiệt độ cho hệ thống pin'
-      }
-    ];
-
-    setParts(mockParts);
+    // Parts should be loaded from API
+    // TODO: Load parts from API
+    setParts([]);
   }, []);
 
 
