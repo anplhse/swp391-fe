@@ -61,143 +61,16 @@ export default function FinanceManagementPage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
 
   useEffect(() => {
-    // Mock data
-    const mockData: FinancialData = {
-      revenue: {
-        total: 150000000,
-        thisMonth: 25000000,
-        lastMonth: 22000000,
-        growth: 13.6
-      },
-      expenses: {
-        total: 120000000,
-        thisMonth: 18000000,
-        lastMonth: 20000000,
-        growth: -10.0
-      },
-      profit: {
-        total: 30000000,
-        thisMonth: 7000000,
-        lastMonth: 2000000,
-        growth: 250.0
-      },
-      transactions: [
-        {
-          id: '1',
-          type: 'revenue',
-          category: 'Bảo dưỡng',
-          amount: 500000,
-          description: 'Bảo dưỡng định kỳ - VinFast VF8',
-          date: '2024-01-25',
-          status: 'completed',
-          paymentMethod: 'bank_transfer'
-        },
-        {
-          id: '2',
-          type: 'revenue',
-          category: 'Sửa chữa',
-          amount: 1500000,
-          description: 'Sửa chữa hệ thống pin - Tesla Model 3',
-          date: '2024-01-24',
-          status: 'completed',
-          paymentMethod: 'credit_card'
-        },
-        {
-          id: '3',
-          type: 'expense',
-          category: 'Phụ tùng',
-          amount: 800000,
-          description: 'Mua phụ tùng thay thế',
-          date: '2024-01-23',
-          status: 'completed',
-          paymentMethod: 'bank_transfer'
-        },
-        {
-          id: '4',
-          type: 'expense',
-          category: 'Lương',
-          amount: 50000000,
-          description: 'Lương tháng 1/2024',
-          date: '2024-01-31',
-          status: 'pending',
-          paymentMethod: 'bank_transfer'
-        }
-      ],
-      invoices: [
-        {
-          id: 'INV-001',
-          customerName: 'Nguyễn Văn A',
-          amount: 500000,
-          status: 'paid',
-          dueDate: '2024-01-25',
-          paidDate: '2024-01-25',
-          services: ['Bảo dưỡng định kỳ']
-        },
-        {
-          id: 'INV-002',
-          customerName: 'Trần Thị B',
-          amount: 1500000,
-          status: 'paid',
-          dueDate: '2024-01-24',
-          paidDate: '2024-01-24',
-          services: ['Sửa chữa hệ thống pin']
-        },
-        {
-          id: 'INV-003',
-          customerName: 'Lê Văn C',
-          amount: 300000,
-          status: 'pending',
-          dueDate: '2024-01-30',
-          services: ['Kiểm tra hệ thống điện']
-        },
-        {
-          id: 'INV-004',
-          customerName: 'Phạm Thị D',
-          amount: 800000,
-          status: 'overdue',
-          dueDate: '2024-01-20',
-          services: ['Thay thế phụ tùng']
-        }
-      ],
-      expenseList: [
-        {
-          id: '1',
-          category: 'Phụ tùng',
-          amount: 800000,
-          description: 'Mua phụ tùng thay thế',
-          date: '2024-01-23',
-          status: 'approved',
-          approvedBy: 'Nguyễn Văn Admin'
-        },
-        {
-          id: '2',
-          category: 'Lương',
-          amount: 50000000,
-          description: 'Lương tháng 1/2024',
-          date: '2024-01-31',
-          status: 'pending'
-        },
-        {
-          id: '3',
-          category: 'Điện nước',
-          amount: 2000000,
-          description: 'Hóa đơn điện nước tháng 1',
-          date: '2024-01-25',
-          status: 'approved',
-          approvedBy: 'Nguyễn Văn Admin'
-        },
-        {
-          id: '4',
-          category: 'Bảo hiểm',
-          amount: 5000000,
-          description: 'Bảo hiểm nhân viên',
-          date: '2024-01-20',
-          status: 'approved',
-          approvedBy: 'Nguyễn Văn Admin'
-        }
-      ]
-    };
-    setFinancialData(mockData);
+    // Financial data should be loaded from API
+    // TODO: Load financial data from API
+    setFinancialData({
+      revenue: { total: 0, thisMonth: 0, lastMonth: 0, growth: 0 },
+      expenses: { total: 0, thisMonth: 0, lastMonth: 0, growth: 0 },
+      profit: { total: 0, thisMonth: 0, lastMonth: 0, growth: 0 },
+      transactions: [],
+      invoices: [],
+      expenseList: []
+    });
   }, []);
 
   const formatCurrency = (amount: number) => {

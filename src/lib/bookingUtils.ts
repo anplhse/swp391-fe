@@ -24,45 +24,9 @@ export interface Booking {
   createdAt: string;
 }
 
-// Generate time slots for a dynamic date range starting from a given date
-const generateTimeSlotsForRange = (start: Date, numDays: number): TimeSlot[] => {
-  const slots: TimeSlot[] = [];
-  const times = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'];
-  const center = 'Trung tâm bảo dưỡng Hà Nội';
-
-  const startAtMidnight = new Date(start);
-  startAtMidnight.setHours(0, 0, 0, 0);
-
-  for (let i = 0; i < numDays; i++) {
-    const d = new Date(startAtMidnight);
-    d.setDate(startAtMidnight.getDate() + i);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    const date = `${yyyy}-${mm}-${dd}`;
-
-    times.forEach(time => {
-      // 85% chance available to ensure sufficient options in mock
-      const isAvailable = Math.random() > 0.15;
-      const currentBookings = isAvailable ? Math.floor(Math.random() * 2) : 2;
-
-      slots.push({
-        id: `slot_${yyyy}_${mm}_${dd}_${time.replace(':', '_')}`,
-        time,
-        date,
-        center,
-        isAvailable,
-        maxCapacity: 3,
-        currentBookings
-      });
-    });
-  }
-
-  return slots;
-};
-
-// Mock data for available time slots: next 60 days from today (covers 10/2025)
-export const availableTimeSlots: TimeSlot[] = generateTimeSlotsForRange(new Date(), 60);
+// Time slots should be loaded from API
+// TODO: Load time slots from API
+export const availableTimeSlots: TimeSlot[] = [];
 
 // Get available time slots for a specific date
 export const getAvailableTimeSlots = (date: string, center: string = 'Trung tâm bảo dưỡng Hà Nội'): TimeSlot[] => {

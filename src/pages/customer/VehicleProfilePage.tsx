@@ -20,6 +20,7 @@ import {
   Download,
   Edit,
   History,
+  Trash2,
   MapPin,
   Settings,
   Wrench
@@ -44,7 +45,6 @@ interface Vehicle {
   model: string;
   battery: number;
   nextService: string;
-  status: 'healthy' | 'warning' | 'critical';
   mileage: number;
   color: string;
   vin: string;
@@ -78,6 +78,7 @@ export default function VehicleProfilePage() {
 
   // State cho dialog edit
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [vehicleData, setVehicleData] = useState<Vehicle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -113,6 +114,17 @@ export default function VehicleProfilePage() {
     setIsEditDialogOpen(false);
   };
 
+  const handleDeleteConfirm = () => {
+    if (!vehicleData) return;
+    // TODO: Gọi API xóa xe theo VIN nếu có endpoint
+    toast({
+      title: 'Đã xóa xe',
+      description: `Đã xóa ${vehicleData.name}.`,
+    });
+    setIsDeleteDialogOpen(false);
+    navigate('/customer/vehicles');
+  };
+
   // Load vehicle detail from API by VIN (vehicleId param)
   useEffect(() => {
     let mounted = true;
@@ -142,7 +154,7 @@ export default function VehicleProfilePage() {
               const match = list.find(v => v.vin === apiV.vin);
               if (match) {
                 enrichedMileage = Math.max(0, Number(match.distanceTraveledKm) || 0);
-                enrichedBattery = Math.max(0, 100 - (Number(match.batteryDegradation) || 0));
+                enrichedBattery = Number(match.batteryDegradation) || null;
               }
             }
           } catch (_) { /* ignore enrichment errors */ }
@@ -154,7 +166,6 @@ export default function VehicleProfilePage() {
             model: apiV.model || '-',
             battery: enrichedBattery,
             nextService: new Date().toISOString().split('T')[0],
-            status: 'healthy',
             mileage: enrichedMileage,
             color: apiV.type || '-',
             vin: apiV.vin,
@@ -178,9 +189,8 @@ export default function VehicleProfilePage() {
           name: found.name || found.modelName,
           plate: found.plateNumber,
           model: found.modelName,
-          battery: Math.max(0, 100 - (Number(found.batteryDegradation) || 0)),
+          battery: typeof found.batteryDegradation === 'number' ? found.batteryDegradation : null,
           nextService: new Date().toISOString().split('T')[0],
-          status: found.entityStatus === 'ACTIVE' ? 'healthy' : 'warning',
           mileage: Math.max(0, Math.round(found.distanceTraveledKm || 0)),
           color: found.color,
           vin: found.vin,
@@ -197,66 +207,19 @@ export default function VehicleProfilePage() {
     return () => { mounted = false; };
   }, [vehicleId, location.state]);
 
-  const serviceHistory: ServiceRecord[] = [
-    {
-      id: 'SV2025001',
-      service: 'Bảo dưỡng định kỳ',
-      date: '2025-08-20',
-      center: 'Trung tâm bảo dưỡng Hà Nội',
-      technician: 'Nguyễn Văn A',
-      status: 'completed',
-      cost: '2,500,000 VND',
-      details: {
-        checkIn: '08:00',
-        checkOut: '11:30',
-        services: ['Kiểm tra pin', 'Thay dầu phanh', 'Cập nhật phần mềm'],
-        notes: 'Xe trong tình trạng tốt, đã thay dầu phanh theo lịch định kỳ'
-      }
-    },
-    {
-      id: 'SV2025002',
-      service: 'Thay lốp xe',
-      date: '2025-07-10',
-      center: 'Trung tâm bảo dưỡng TP.HCM',
-      technician: 'Trần Văn B',
-      status: 'completed',
-      cost: '1,800,000 VND',
-      details: {
-        checkIn: '14:00',
-        checkOut: '15:45',
-        services: ['Thay 4 lốp xe mới', 'Cân bằng lốp'],
-        notes: 'Lốp cũ đã mòn 80%, được thay mới hoàn toàn'
-      }
-    },
-    {
-      id: 'SV2025003',
-      service: 'Kiểm tra pin',
-      date: '2025-09-25',
-      center: 'Trung tâm bảo dưỡng Hà Nội',
-      technician: 'Lê Văn C',
-      status: 'in_progress',
-      cost: '1,200,000 VND',
-      details: {
-        checkIn: '09:00',
-        checkOut: null,
-        services: ['Kiểm tra dung lượng pin', 'Chẩn đoán hệ thống sạc'],
-        notes: 'Đang tiến hành kiểm tra chi tiết hệ thống pin'
-      }
-    }
-  ];
+  // Service history should be loaded from API
+  // TODO: Load service history from API
+  const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'healthy':
-        return <Badge variant="default" className="gap-1"><CheckCircle2 className="w-3 h-3" />Tốt</Badge>;
-      case 'warning':
-        return <Badge variant="secondary" className="gap-1"><AlertCircle className="w-3 h-3" />Cần kiểm tra</Badge>;
-      case 'critical':
-        return <Badge variant="destructive" className="gap-1"><AlertCircle className="w-3 h-3" />Cần bảo dưỡng</Badge>;
-      default:
-        return null;
+  useEffect(() => {
+    // Load service history when vehicle data is available
+    if (vehicleData) {
+      // Service history should be loaded from API
+      // TODO: Load service history from API using vehicleData.id or vehicleData.vin
+      setServiceHistory([]);
     }
-  };
+  }, [vehicleData]);
+
 
   const getServiceStatusBadge = (status: string) => {
     switch (status) {
@@ -310,6 +273,10 @@ export default function VehicleProfilePage() {
             <Edit className="w-4 h-4 mr-2" />
             Chỉnh sửa
           </Button>
+          <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+            <Trash2 className="w-4 h-4 mr-2" />
+            Xóa
+          </Button>
         </div>
       </div>
 
@@ -329,7 +296,6 @@ export default function VehicleProfilePage() {
                 <h3 className="text-lg font-semibold">{vehicle.name}</h3>
                 <p className="text-sm text-muted-foreground">{vehicle.plate} • {vehicle.model}</p>
               </div>
-              {getStatusBadge(vehicle.status)}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -692,6 +658,26 @@ export default function VehicleProfilePage() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Xóa xe?</DialogTitle>
+            <DialogDescription>
+              Hành động này không thể hoàn tác. Bạn chắc chắn muốn xóa xe này?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              Xóa
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

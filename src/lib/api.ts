@@ -118,6 +118,10 @@ class ApiClient {
           }
         }
 
+        // Always append status for downstream handlers
+        if (!message.includes(`status: ${response.status}`)) {
+          message = `${message} (status: ${response.status})`;
+        }
         throw new Error(message);
       }
 
@@ -228,8 +232,8 @@ class ApiClient {
     name: string;
     plateNumber: string;
     color: string;
-    distanceTraveledKm: number;
-    batteryDegradation: number;
+    distanceTraveledKm: number | null;
+    batteryDegradation: number | null;
     purchasedAt: string; // ISO string with Z
     userId: number;
     vehicleModelId: number;
@@ -244,7 +248,6 @@ class ApiClient {
     vin: string;
     name: string | null;
     plateNumber: string;
-    year: string | null;
     color: string;
     distanceTraveledKm: number;
     batteryDegradation?: number;

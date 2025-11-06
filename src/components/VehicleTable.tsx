@@ -1,21 +1,17 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertCircle, Calendar, Car, Edit, Eye, Search, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { Calendar, Car, Eye, Search } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 
 interface Vehicle {
   id: string;
   name: string;
   plate: string;
   model: string;
-  year: number;
-  battery: number;
+  battery: number | null;
   nextService: string;
-  status: 'healthy' | 'warning' | 'critical';
-  mileage: number;
+  mileage: number | null;
   color: string;
   vin: string;
   purchaseDate: string;
@@ -34,9 +30,8 @@ interface VehicleTableProps {
   showActions?: boolean;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
-  statusFilter?: string;
-  onStatusFilterChange?: (filter: string) => void;
   mode?: 'customer' | 'staff';
+  rightAction?: ReactNode;
 }
 
 export function VehicleTable({
@@ -48,12 +43,10 @@ export function VehicleTable({
   showActions = true,
   searchQuery,
   onSearchChange,
-  statusFilter,
-  onStatusFilterChange,
-  mode = 'customer'
+  mode = 'customer',
+  rightAction
 }: VehicleTableProps) {
   const [localSearchTerm, setLocalSearchTerm] = useState(searchQuery || '');
-  const [localStatusFilter, setLocalStatusFilter] = useState(statusFilter || 'all');
 
   const filteredVehicles = vehicles.filter(vehicle => {
     const matchesSearch =
@@ -62,23 +55,8 @@ export function VehicleTable({
       vehicle.model.toLowerCase().includes(localSearchTerm.toLowerCase()) ||
       vehicle.vin.toLowerCase().includes(localSearchTerm.toLowerCase());
 
-    const matchesStatus = localStatusFilter === 'all' || vehicle.status === localStatusFilter;
-
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'healthy':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Bình thường</Badge>;
-      case 'warning':
-        return <Badge variant="destructive">Cần bảo dưỡng</Badge>;
-      case 'critical':
-        return <Badge variant="destructive">Khẩn cấp</Badge>;
-      default:
-        return <Badge variant="outline">Không xác định</Badge>;
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -97,20 +75,9 @@ export function VehicleTable({
               className="pl-10 w-64"
             />
           </div>
-          <Select value={localStatusFilter} onValueChange={(value) => {
-            setLocalStatusFilter(value);
-            onStatusFilterChange?.(value);
-          }}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="healthy">Bình thường</SelectItem>
-              <SelectItem value="warning">Cần bảo dưỡng</SelectItem>
-              <SelectItem value="critical">Khẩn cấp</SelectItem>
-            </SelectContent>
-          </Select>
+        </div>
+        <div className="flex items-center gap-2">
+          {rightAction}
         </div>
       </div>
 
@@ -121,34 +88,31 @@ export function VehicleTable({
             <TableRow>
               {mode === 'customer' ? (
                 <>
-                  <TableHead>Tên xe</TableHead>
-                  <TableHead>Biển số</TableHead>
-                  <TableHead>Model</TableHead>
-                  <TableHead>Năm</TableHead>
-                  <TableHead>Pin</TableHead>
-                  <TableHead>Số km</TableHead>
-                  <TableHead>Màu</TableHead>
-                  <TableHead>VIN</TableHead>
-                  <TableHead>Trạng thái</TableHead>
+                  <TableHead className="px-4">Tên xe</TableHead>
+                  <TableHead className="px-4">Model</TableHead>
+                  <TableHead className="px-4">VIN</TableHead>
+                  <TableHead className="px-4">Biển số</TableHead>
+                  <TableHead className="px-4">Pin</TableHead>
+                  <TableHead className="px-4">Số km</TableHead>
+                  <TableHead className="px-4">Màu</TableHead>
                 </>
               ) : (
                 <>
-                  <TableHead>Biển số</TableHead>
-                  <TableHead>Thông tin xe</TableHead>
-                  <TableHead>Chủ xe</TableHead>
-                  <TableHead>Số km</TableHead>
-                  <TableHead>Dịch vụ cuối</TableHead>
-                  <TableHead>Dịch vụ tiếp</TableHead>
-                  <TableHead>Trạng thái</TableHead>
+                  <TableHead className="px-4">Biển số</TableHead>
+                  <TableHead className="px-4">Thông tin xe</TableHead>
+                  <TableHead className="px-4">Chủ xe</TableHead>
+                  <TableHead className="px-4">Số km</TableHead>
+                  <TableHead className="px-4">Dịch vụ cuối</TableHead>
+                  <TableHead className="px-4">Dịch vụ tiếp</TableHead>
                 </>
               )}
-              {showActions && <TableHead className="text-right">Thao tác</TableHead>}
+              {showActions && <TableHead className="text-right pr-8 px-4">Thao tác</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredVehicles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={showActions ? (mode === 'customer' ? 10 : 8) : (mode === 'customer' ? 9 : 7)} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={showActions ? (mode === 'customer' ? 8 : 7) : (mode === 'customer' ? 7 : 6)} className="text-center py-8 text-muted-foreground">
                   Không tìm thấy xe nào
                 </TableCell>
               </TableRow>
@@ -157,85 +121,64 @@ export function VehicleTable({
                 <TableRow key={vehicle.id}>
                   {mode === 'customer' ? (
                     <>
-                      <TableCell>
+                      <TableCell className="px-4">
                         <div className="flex items-center gap-2">
                           <Car className="w-4 h-4 text-primary" />
                           <span className="font-medium">{vehicle.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <span className="font-medium">{vehicle.plate}</span>
-                      </TableCell>
-                      <TableCell>
+                      <TableCell className="px-4">
                         <span className="font-medium">{vehicle.model}</span>
                       </TableCell>
-                      <TableCell>
-                        <span className="font-medium">{Number.isFinite(vehicle.year) ? vehicle.year : ''}</span>
+                      <TableCell className="px-4 pr-1 w-[200px]">
+                        <span className="font-mono text-xs truncate block" title={vehicle.vin}>{vehicle.vin}</span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-4">
+                        <span className="font-medium">{vehicle.plate}</span>
+                      </TableCell>
+                      <TableCell className="px-4">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">{vehicle.battery}%</span>
+                          <span className="font-medium">{vehicle.battery == null ? '—' : `${vehicle.battery}%`}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <span className="font-medium">{Number.isFinite(vehicle.mileage) ? vehicle.mileage.toLocaleString() : '0'} km</span>
+                      <TableCell className="px-4">
+                        <span className="font-medium">{vehicle.mileage == null ? '—' : `${vehicle.mileage.toLocaleString()} km`}</span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-4">
                         <span className="font-medium">{vehicle.color}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-mono text-xs">{vehicle.vin}</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {getStatusBadge(vehicle.status)}
-                          {vehicle.status === 'warning' && (
-                            <div className="flex items-center gap-1 text-xs text-destructive">
-                              <AlertCircle className="w-3 h-3" />
-                              <span>Cần bảo dưỡng</span>
-                            </div>
-                          )}
-                          {vehicle.status === 'critical' && (
-                            <div className="flex items-center gap-1 text-xs text-destructive">
-                              <AlertCircle className="w-3 h-3" />
-                              <span>Khẩn cấp</span>
-                            </div>
-                          )}
-                        </div>
                       </TableCell>
                     </>
                   ) : (
                     <>
-                      <TableCell className="font-medium">{vehicle.plate}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium px-4">{vehicle.plate}</TableCell>
+                      <TableCell className="px-4">
                         <div className="flex flex-col">
                           <span className="font-medium">{vehicle.name}</span>
-                          <span className="text-sm text-muted-foreground">Năm {vehicle.year}</span>
+                          <span className="text-sm text-muted-foreground">{vehicle.model}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-4">
                         <div className="flex flex-col">
                           <span className="font-medium">{vehicle.owner || '—'}</span>
                           <span className="text-sm text-muted-foreground">{vehicle.ownerPhone || ''}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{Number.isFinite(vehicle.mileage) ? vehicle.mileage.toLocaleString() : '0'} km</TableCell>
-                      <TableCell>
+                      <TableCell className="px-4">{vehicle.mileage == null ? '—' : `${vehicle.mileage.toLocaleString()} km`}</TableCell>
+                      <TableCell className="px-4">
                         <div className="flex items-center gap-2">
                           <span className="text-sm">{vehicle.lastService ? new Date(vehicle.lastService).toLocaleDateString('vi-VN') : '—'}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-4">
                         <div className="flex items-center gap-2">
                           <span className="text-sm">{vehicle.nextService ? new Date(vehicle.nextService).toLocaleDateString('vi-VN') : '—'}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{getStatusBadge(vehicle.status)}</TableCell>
                     </>
                   )}
                   {showActions && (
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <TableCell className="text-right pr-8 pl-0 whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1">
                         {mode === 'customer' && onBook && (
                           <Button
                             variant="default"
@@ -251,27 +194,12 @@ export function VehicleTable({
                             variant="outline"
                             size="sm"
                             onClick={() => onView(vehicle.id)}
-                            title="Xem chi tiết"
+                            title="Chi tiết"
+                            className="px-2"
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
                         )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onEdit(vehicle)}
-                          title="Chỉnh sửa"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onDelete(vehicle.id)}
-                          title="Xóa"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
                       </div>
                     </TableCell>
                   )}

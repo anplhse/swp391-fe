@@ -43,62 +43,9 @@ export default function StaffDashboard() {
   const [bookings, setBookings] = useState<StaffBookingRecord[]>([]);
 
   useEffect(() => {
-    // Mock data
-    const today = new Date().toISOString().split('T')[0];
-    const mockBookings: StaffBookingRecord[] = [
-      {
-        id: 'BK2025001',
-        service: {
-          id: 'maintenance',
-          name: 'Bảo dưỡng định kỳ',
-          price: '2,500,000 VND',
-          duration: '2-3 giờ',
-          description: 'Kiểm tra tổng quát hệ thống xe điện'
-        },
-        vehicle: {
-          id: 'vf8',
-          name: 'VinFast VF8',
-          plate: '30A-12345',
-          model: 'VF8 Plus'
-        },
-        date: today, // Sử dụng ngày hôm nay
-        time: '09:00',
-        status: 'pending',
-        center: 'Trung tâm bảo dưỡng Hà Nội',
-        notes: 'Xe có tiếng ồn lạ ở bánh trước',
-        createdAt: '2025-01-10T10:30:00Z',
-        estimatedDuration: '2-3 giờ',
-        customerName: 'Nguyễn Văn A',
-        customerPhone: '0901234567'
-      },
-      {
-        id: 'BK2025002',
-        service: {
-          id: 'repair',
-          name: 'Sửa chữa hệ thống phanh',
-          price: '1,800,000 VND',
-          duration: '1-2 giờ',
-          description: 'Kiểm tra và sửa chữa hệ thống phanh'
-        },
-        vehicle: {
-          id: 'vf9',
-          name: 'VinFast VF9',
-          plate: '29B-67890',
-          model: 'VF9 Plus'
-        },
-        date: today, // Sử dụng ngày hôm nay
-        time: '14:00',
-        status: 'confirmed',
-        center: 'Trung tâm bảo dưỡng Hà Nội',
-        notes: 'Phanh có tiếng kêu khi dừng',
-        createdAt: '2025-01-09T15:20:00Z',
-        estimatedDuration: '1-2 giờ',
-        customerName: 'Lê Thị B',
-        customerPhone: '0912345678',
-        technician: 'Trần Văn C'
-      }
-    ];
-    setBookings(mockBookings);
+    // Bookings should be loaded from API
+    // TODO: Load bookings from API
+    setBookings([]);
   }, []);
 
   const todayStr = new Date().toISOString().split('T')[0];

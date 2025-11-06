@@ -47,78 +47,42 @@ export default function ReportsPage() {
   const [reportType, setReportType] = useState('overview');
 
   useEffect(() => {
-    // Mock data
-    const mockData: ReportData = {
+    // Report data should be loaded from API
+    // TODO: Load report data from API
+    setReportData({
       revenue: {
-        monthly: [
-          { month: 'Tháng 10', amount: 20000000 },
-          { month: 'Tháng 11', amount: 22000000 },
-          { month: 'Tháng 12', amount: 25000000 },
-          { month: 'Tháng 1', amount: 28000000 }
-        ],
-        byService: [
-          { service: 'Bảo dưỡng định kỳ', amount: 12000000, count: 24 },
-          { service: 'Sửa chữa hệ thống pin', amount: 8000000, count: 8 },
-          { service: 'Kiểm tra hệ thống điện', amount: 4000000, count: 16 },
-          { service: 'Thay thế phụ tùng', amount: 4000000, count: 12 }
-        ],
-        growth: 12.0
+        monthly: [],
+        byService: [],
+        growth: 0
       },
       customers: {
-        total: 150,
-        newThisMonth: 25,
-        active: 120,
-        byType: [
-          { type: 'Cá nhân', count: 100 },
-          { type: 'Doanh nghiệp', count: 50 }
-        ]
+        total: 0,
+        newThisMonth: 0,
+        active: 0,
+        byType: []
       },
       services: {
-        total: 60,
-        completed: 45,
-        pending: 10,
-        cancelled: 5,
-        byType: [
-          { type: 'Bảo dưỡng', count: 30 },
-          { type: 'Sửa chữa', count: 15 },
-          { type: 'Kiểm tra', count: 10 },
-          { type: 'Thay thế', count: 5 }
-        ],
-        averageDuration: 120
+        total: 0,
+        completed: 0,
+        pending: 0,
+        cancelled: 0,
+        byType: [],
+        averageDuration: 0
       },
       vehicles: {
-        total: 200,
-        inService: 15,
-        completed: 180,
-        byBrand: [
-          { brand: 'VinFast', count: 80 },
-          { brand: 'Tesla', count: 60 },
-          { brand: 'BYD', count: 40 },
-          { brand: 'Khác', count: 20 }
-        ],
-        byYear: [
-          { year: 2023, count: 100 },
-          { year: 2022, count: 60 },
-          { year: 2021, count: 30 },
-          { year: 2020, count: 10 }
-        ]
+        total: 0,
+        inService: 0,
+        completed: 0,
+        byBrand: [],
+        byYear: []
       },
       performance: {
-        technicians: [
-          { name: 'Lê Văn Technician', completed: 25, rating: 4.9 },
-          { name: 'Nguyễn Thị Kỹ thuật', completed: 20, rating: 4.8 },
-          { name: 'Trần Văn Sửa chữa', completed: 18, rating: 4.7 }
-        ],
-        staff: [
-          { name: 'Trần Thị Staff', customers: 50, rating: 4.7 },
-          { name: 'Phạm Văn Tiếp nhận', customers: 45, rating: 4.6 },
-          { name: 'Lê Thị Dịch vụ', customers: 40, rating: 4.8 }
-        ],
-        averageCompletionTime: 2.5,
-        customerSatisfaction: 4.7
+        technicians: [],
+        staff: [],
+        averageCompletionTime: 0,
+        customerSatisfaction: 0
       }
-    };
-    setReportData(mockData);
+    });
   }, []);
 
   const formatCurrency = (amount: number) => {

@@ -48,39 +48,9 @@ export default function CustomerManagementPage() {
   });
 
   useEffect(() => {
-    // Mock data - trong thực tế sẽ load từ API
-    const mockCustomers: Customer[] = [
-      {
-        id: '1',
-        name: 'Nguyễn Văn A',
-        email: 'nguyenvana@email.com',
-        phone: '0123456789',
-        avatar: '/c.jpg',
-        vehicles: 2,
-        lastService: '2024-01-15',
-        status: 'active'
-      },
-      {
-        id: '2',
-        name: 'Trần Thị B',
-        email: 'tranthib@email.com',
-        phone: '0987654321',
-        avatar: '/d.jpg',
-        vehicles: 1,
-        lastService: '2024-01-10',
-        status: 'active'
-      },
-      {
-        id: '3',
-        name: 'Lê Văn C',
-        email: 'levanc@email.com',
-        phone: '0369852147',
-        vehicles: 3,
-        lastService: '2023-12-20',
-        status: 'inactive'
-      }
-    ];
-    setCustomers(mockCustomers);
+    // Customers should be loaded from API
+    // TODO: Load customers from API
+    setCustomers([]);
   }, []);
 
 

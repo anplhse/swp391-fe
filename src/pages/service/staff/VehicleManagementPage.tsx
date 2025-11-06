@@ -59,49 +59,9 @@ export default function VehicleManagementPage() {
   });
 
   useEffect(() => {
-    // Mock data
-    const mockVehicles: Vehicle[] = [
-      {
-        id: '1',
-        licensePlate: '30A-12345',
-        brand: 'VinFast',
-        model: 'VF8',
-        year: 2023,
-        owner: 'Nguyễn Văn A',
-        ownerPhone: '0123456789',
-        lastService: '2024-01-15',
-        nextService: '2024-04-15',
-        status: 'active',
-        mileage: 15000
-      },
-      {
-        id: '2',
-        licensePlate: '29B-67890',
-        brand: 'Tesla',
-        model: 'Model 3',
-        year: 2022,
-        owner: 'Trần Thị B',
-        ownerPhone: '0987654321',
-        lastService: '2024-01-10',
-        nextService: '2024-02-10',
-        status: 'warning',
-        mileage: 25000
-      },
-      {
-        id: '3',
-        licensePlate: '51C-11111',
-        brand: 'BYD',
-        model: 'Atto 3',
-        year: 2023,
-        owner: 'Lê Văn C',
-        ownerPhone: '0369852147',
-        lastService: '2024-01-20',
-        nextService: '2024-04-20',
-        status: 'maintenance',
-        mileage: 8000
-      }
-    ];
-    setVehicles(mockVehicles);
+    // Vehicles should be loaded from API
+    // TODO: Load vehicles from API
+    setVehicles([]);
   }, []);
 
 

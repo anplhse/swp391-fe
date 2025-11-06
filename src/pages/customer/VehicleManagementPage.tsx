@@ -19,15 +19,26 @@ interface Vehicle {
   name: string;
   plate: string;
   model: string;
-  year: number;
-  battery: number;
+  battery: number | null;
   nextService: string;
-  status: 'healthy' | 'warning' | 'critical';
-  mileage: number;
+  mileage: number | null;
   color: string;
   vin: string;
   purchaseDate: string;
 }
+
+type NewVehicleState = {
+  name: string;
+  plate: string;
+  model: string;
+  battery: number;
+  batteryDegradation: number | '';
+  nextService: string;
+  mileage: number | '';
+  color: string;
+  vin: string;
+  purchaseDate: string;
+};
 
 export default function VehicleManagementPage() {
   const navigate = useNavigate();
@@ -35,7 +46,6 @@ export default function VehicleManagementPage() {
   const user = { email: 'customer@example.com', role: 'customer', userType: 'customer' };
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
@@ -43,16 +53,14 @@ export default function VehicleManagementPage() {
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 
-  const [newVehicle, setNewVehicle] = useState({
+  const [newVehicle, setNewVehicle] = useState<NewVehicleState>({
     name: '',
     plate: '',
     model: '',
-    year: new Date().getFullYear(),
     battery: 100,
-    batteryDegradation: 100,
+    batteryDegradation: '',
     nextService: '',
-    status: 'healthy' as const,
-    mileage: 0,
+    mileage: '',
     color: '',
     vin: '',
     purchaseDate: ''
@@ -75,13 +83,20 @@ export default function VehicleManagementPage() {
         }
       } catch (e) {
         console.error('Failed to load vehicle models', e);
-        if (mounted) setModelsError('Không tải được danh sách model');
+        const msg = e instanceof Error ? e.message : String(e);
+        if (mounted) setModelsError(msg.includes('status: 401') || msg.includes('status: 403')
+          ? 'Phiên đăng nhập hết hạn hoặc không có quyền. Vui lòng đăng nhập lại.'
+          : 'Không tải được danh sách model');
+        if (msg.includes('status: 401') || msg.includes('status: 403')) {
+          // Điều hướng về login
+          navigate('/login');
+        }
       } finally {
         if (mounted) setModelsLoading(false);
       }
     })();
     return () => { mounted = false; };
-  }, []);
+  }, [navigate]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -102,37 +117,38 @@ export default function VehicleManagementPage() {
         const currentUser = authService.getAuthState().user;
         if (!currentUser) return;
         const apiVehicles = await apiClient.getVehiclesByUserId(currentUser.id);
-        const mapped: Vehicle[] = apiVehicles.map(v => {
-          const rawYear = v.year;
-          const parsedYear = (typeof rawYear === 'string' || typeof rawYear === 'number')
-            ? parseInt(String(rawYear))
-            : NaN;
-          const safeYear = Number.isFinite(parsedYear)
-            ? parsedYear
-            : new Date(v.createdAt).getFullYear();
-
-          return {
-            id: v.vin,
-            name: v.name ?? `${v.modelName}`,
-            plate: v.plateNumber,
-            model: v.modelName,
-            year: safeYear,
-            battery: 0,
-            nextService: '',
-            status: v.entityStatus === 'ACTIVE' ? 'healthy' : 'warning',
-            mileage: Math.max(0, Math.round(v.distanceTraveledKm)),
-            color: v.color || '-',
-            vin: v.vin,
-            purchaseDate: v.purchasedAt.split('T')[0],
-          };
-        });
+        const mapped: Vehicle[] = apiVehicles.map(v => ({
+          id: v.vin,
+          name: v.name ?? `${v.modelName}`,
+          plate: v.plateNumber,
+          model: v.modelName,
+          battery: typeof v.batteryDegradation === 'number'
+            ? v.batteryDegradation
+            : null,
+          nextService: '',
+          mileage: typeof v.distanceTraveledKm === 'number'
+            ? Math.max(0, Math.round(v.distanceTraveledKm))
+            : null,
+          color: v.color || '-',
+          vin: v.vin,
+          purchaseDate: v.purchasedAt.split('T')[0],
+        }));
         setVehicles(mapped);
       } catch (e) {
         console.error('Failed to load user vehicles', e);
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes('status: 401') || msg.includes('status: 403')) {
+          toast({
+            title: 'Không thể tải danh sách xe',
+            description: 'Phiên đăng nhập hết hạn hoặc không có quyền. Vui lòng đăng nhập lại.',
+            variant: 'destructive',
+          });
+          navigate('/login');
+        }
       }
     };
     loadUserVehicles();
-  }, []);
+  }, [navigate, toast]);
 
   const formatLocalIsoMillis = (date: Date) => {
     const pad = (n: number, w = 2) => n.toString().padStart(w, '0');
@@ -156,6 +172,8 @@ export default function VehicleManagementPage() {
       return;
     }
 
+    // Cho phép để trống (sẽ gửi null lên API)
+
     try {
       // Get current user ID from auth service
       const user = authService.getAuthState().user;
@@ -178,8 +196,13 @@ export default function VehicleManagementPage() {
       const purchasedAtIsoZ = newVehicle.purchaseDate
         ? new Date(newVehicle.purchaseDate).toISOString()
         : new Date().toISOString();
-      const distanceKm = Number(newVehicle.mileage) || 0;
-      const degradation = Math.max(0, Math.min(100, Number(newVehicle.batteryDegradation) || 0));
+      const distanceKm = newVehicle.mileage === ''
+        ? null
+        : (typeof newVehicle.mileage === 'number' ? newVehicle.mileage : Number(newVehicle.mileage));
+      const degVal = newVehicle.batteryDegradation === ''
+        ? null
+        : (typeof newVehicle.batteryDegradation === 'number' ? newVehicle.batteryDegradation : Number(newVehicle.batteryDegradation));
+      const degradation = degVal === null ? null : Math.max(0, Math.min(100, isNaN(degVal) ? 0 : degVal));
       const vehicleData = {
         vin: newVehicle.vin,
         name: newVehicle.name,
@@ -200,11 +223,9 @@ export default function VehicleManagementPage() {
         name: newVehicle.name,
         plate: newVehicle.plate,
         model: newVehicle.model,
-        year: newVehicle.year,
-        battery: Math.max(0, 100 - degradation),
-        mileage: distanceKm,
+        battery: degradation,
+        mileage: distanceKm === null ? null : distanceKm,
         nextService: '',
-        status: 'healthy',
         color: newVehicle.color || 'Trắng',
         vin: newVehicle.vin,
         purchaseDate: purchasedAtIsoZ.split('T')[0]
@@ -218,12 +239,10 @@ export default function VehicleManagementPage() {
         name: '',
         plate: '',
         model: '',
-        year: new Date().getFullYear(),
         battery: 100,
-        batteryDegradation: 100,
+        batteryDegradation: '',
         nextService: '',
-        status: 'healthy',
-        mileage: 0,
+        mileage: '',
         color: '',
         vin: '',
         purchaseDate: ''
@@ -295,7 +314,6 @@ export default function VehicleManagementPage() {
           vin: vehicle.vin,
           brand: vehicle.name.split(' ')[0], // VinFast
           model: vehicle.name.split(' ').slice(1).join(' '), // VF8, VF9, etc.
-          year: vehicle.year.toString(),
           plate: vehicle.plate
         }
       }
@@ -303,17 +321,13 @@ export default function VehicleManagementPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full mx-auto px-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Quản lý xe</h1>
           <p className="text-muted-foreground">Quản lý thông tin xe của bạn</p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm xe mới
-        </Button>
       </div>
 
       {/* Vehicle Table */}
@@ -325,8 +339,12 @@ export default function VehicleManagementPage() {
         onBook={handleBookService}
         searchQuery={searchTerm}
         onSearchChange={setSearchTerm}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
+        rightAction={(
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm xe mới
+          </Button>
+        )}
       />
 
       {/* Add Dialog */}
@@ -422,26 +440,40 @@ export default function VehicleManagementPage() {
               type="number"
               min={0}
               step={0.1}
-              value={newVehicle.mileage}
+              value={newVehicle.mileage === '' ? '' : newVehicle.mileage}
               onChange={(e) => {
-                const val = Number(e.target.value);
-                setNewVehicle({ ...newVehicle, mileage: isNaN(val) || val < 0 ? 0 : val });
+                const valStr = e.target.value;
+                if (valStr === '') {
+                  setNewVehicle({ ...newVehicle, mileage: '' });
+                  return;
+                }
+                const val = Number(valStr);
+                setNewVehicle({ ...newVehicle, mileage: isNaN(val) || val < 0 ? '' : val });
               }}
               placeholder="VD: 15000"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="batteryDegradation">% pin chai</Label>
+            <Label htmlFor="batteryDegradation">Pin (%)</Label>
             <Input
               id="batteryDegradation"
               type="number"
               min={0}
               max={100}
               step={0.1}
-              value={newVehicle.batteryDegradation}
+              value={newVehicle.batteryDegradation === '' ? '' : newVehicle.batteryDegradation}
               onChange={(e) => {
-                const val = Number(e.target.value);
-                const safe = Math.max(0, Math.min(100, isNaN(val) ? 0 : val));
+                const valStr = e.target.value;
+                if (valStr === '') {
+                  setNewVehicle({ ...newVehicle, batteryDegradation: '' });
+                  return;
+                }
+                const val = Number(valStr);
+                if (isNaN(val)) {
+                  setNewVehicle({ ...newVehicle, batteryDegradation: '' });
+                  return;
+                }
+                const safe = Math.max(0, Math.min(100, val));
                 setNewVehicle({ ...newVehicle, batteryDegradation: safe });
               }}
               placeholder="0 - 100"
@@ -491,15 +523,6 @@ export default function VehicleManagementPage() {
                   id="edit-model"
                   value={editingVehicle.model}
                   onChange={(e) => setEditingVehicle({ ...editingVehicle, model: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-year">Năm sản xuất</Label>
-                <Input
-                  id="edit-year"
-                  type="number"
-                  value={editingVehicle.year}
-                  onChange={(e) => setEditingVehicle({ ...editingVehicle, year: parseInt(e.target.value) })}
                 />
               </div>
               <div className="space-y-2">

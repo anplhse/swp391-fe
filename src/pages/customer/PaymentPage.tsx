@@ -54,25 +54,10 @@ export default function PaymentPage() {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Mock data - in real app, this would come from location state or API
-  const paymentItems: PaymentItem[] = location.state?.items || [
-    {
-      id: '1',
-      name: 'Bảo dưỡng định kỳ',
-      type: 'service',
-      price: 2500000,
-      quantity: 1,
-      description: 'Kiểm tra tổng quát hệ thống xe điện'
-    },
-    {
-      id: '2',
-      name: 'Gói Cao cấp',
-      type: 'package',
-      price: 25000000,
-      quantity: 1,
-      description: 'Gói dịch vụ bảo dưỡng 12 tháng'
-    }
-  ];
+  // Payment items should come from location state or API
+  // TODO: Load payment items from API if not in location state
+  // Note: This page is for payment after booking is completed (status = 'completed')
+  const paymentItems: PaymentItem[] = location.state?.items || [];
 
   const paymentMethods: PaymentMethod[] = [
     {
@@ -143,13 +128,14 @@ export default function PaymentPage() {
         title: "Thanh toán thành công!",
         description: "Đơn hàng của bạn đã được xử lý",
       });
-      // If purchase originated from packages, attach package to the selected vehicle
-      if (location.state?.from === 'packages' && location.state?.items?.length) {
-        const vehicleId: string | undefined = location.state?.vehicleId;
-        // In real app, this would save to API
-        console.log('Payment completed for vehicle:', vehicleId);
+      // Navigate back to booking status or customer dashboard
+      if (location.state?.from === 'booking-status' && location.state?.bookingId) {
+        navigate('/customer/booking-status', {
+          state: { bookingData: location.state?.bookingData }
+        });
+      } else {
+        navigate('/customer');
       }
-      navigate('/customer/vehicles');
     }, 3000);
   };
 
@@ -193,7 +179,7 @@ export default function PaymentPage() {
           <Card>
             <CardHeader>
               <CardTitle>Đơn hàng</CardTitle>
-              <CardDescription>Chi tiết các dịch vụ và gói đã chọn</CardDescription>
+              <CardDescription>Chi tiết các dịch vụ đã thực hiện</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
