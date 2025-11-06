@@ -2,11 +2,28 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api';
 import { Mail, MapPin, Phone, Plus, Search } from 'lucide-react';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+// Schema validation
+const employeeSchema = z.object({
+  name: z.string().min(1, 'Tên là bắt buộc'),
+  email: z.string().email('Email không hợp lệ'),
+  phone: z.string().min(10, 'Số điện thoại phải có ít nhất 10 số'),
+  roleDisplayName: z.string().min(1, 'Vai trò là bắt buộc'),
+});
+
+type EmployeeFormData = z.infer<typeof employeeSchema>;
 
 interface Employee {
   id: string;
@@ -15,34 +32,37 @@ interface Employee {
   phone: string;
   avatar?: string;
   role: 'admin' | 'staff' | 'technician';
-  department: string;
-  position: string;
-  status: 'active' | 'inactive' | 'on_leave';
-  hireDate: string;
-  salary: number;
-  workingHours: {
+  roleDisplayName?: string;
+  department?: string;
+  position?: string;
+  status: 'active' | 'inactive' | 'on_leave' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+  hireDate?: string;
+  salary?: number;
+  workingHours?: {
     start: string;
     end: string;
     days: string[];
   };
-  certifications: {
+  certifications?: {
     name: string;
     issuedBy: string;
     expiryDate: string;
     status: 'valid' | 'expired' | 'expiring';
   }[];
-  performance: {
+  performance?: {
     rating: number;
     completedTasks: number;
     customerRating: number;
     lastReview: string;
   };
-  address: string;
-  emergencyContact: {
+  address?: string;
+  emergencyContact?: {
     name: string;
     phone: string;
     relationship: string;
   };
+  createdAt?: string;
+  lastLogin?: string | null;
 }
 
 interface Shift {
@@ -61,13 +81,137 @@ export default function PersonnelManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const { toast } = useToast();
+
+  const form = useForm<EmployeeFormData>({
+    resolver: zodResolver(employeeSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      roleDisplayName: ''
+    }
+  });
 
   useEffect(() => {
-    // Employees and shifts should be loaded from API
-    // TODO: Load employees and shifts from API
-    setEmployees([]);
-    setShifts([]);
+    let mounted = true;
+    (async () => {
+      try {
+        const users = await apiClient.getAllUsers();
+        if (!mounted) return;
+        // Lọc chỉ lấy staff, technician, admin (không lấy customer)
+        const staffUsers = users.filter(u => 
+          u.roleDisplayName === 'Nhân viên' || 
+          u.roleDisplayName === 'Kỹ thuật viên' || 
+          u.roleDisplayName === 'Quản trị viên'
+        );
+        const mapped: Employee[] = staffUsers.map(u => ({
+          id: String(u.id),
+          name: u.fullName,
+          email: u.email,
+          phone: u.phoneNumber,
+          roleDisplayName: u.roleDisplayName,
+          role: u.roleDisplayName === 'Quản trị viên' ? 'admin' : 
+                u.roleDisplayName === 'Kỹ thuật viên' ? 'technician' : 'staff',
+          status: (u.status as any) ?? 'ACTIVE',
+          createdAt: u.createdAt,
+          lastLogin: u.lastLogin
+        }));
+        setEmployees(mapped);
+      } catch (e) {
+        console.error('Failed to load employees', e);
+      }
+    })();
+    return () => { mounted = false; };
   }, []);
+
+  const handleAddEmployee = () => {
+    setEditingEmployee(null);
+    form.reset({
+      name: '',
+      email: '',
+      phone: '',
+      roleDisplayName: ''
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleEditEmployee = (employee: Employee) => {
+    setEditingEmployee(employee);
+    form.reset({
+      name: employee.name,
+      email: employee.email,
+      phone: employee.phone,
+      roleDisplayName: employee.roleDisplayName || ''
+    });
+    setIsDialogOpen(true);
+  };
+
+  const onSubmit = async (data: EmployeeFormData) => {
+    try {
+      if (editingEmployee) {
+        // Cập nhật tài khoản - chỉ cho phép cập nhật số điện thoại
+        const userId = parseInt(editingEmployee.id);
+        if (isNaN(userId)) {
+          throw new Error('ID tài khoản không hợp lệ');
+        }
+
+        await apiClient.updateUserProfile(userId, {
+          phoneNumber: data.phone
+        });
+
+        toast({
+          title: "Cập nhật thành công",
+          description: "Số điện thoại đã được cập nhật."
+        });
+      } else {
+        // Thêm tài khoản mới cho staff/technician
+        await apiClient.createUserProfile({
+          email: data.email,
+          fullName: data.name,
+          phoneNumber: data.phone,
+          roleDisplayName: data.roleDisplayName
+        });
+
+        toast({
+          title: "Thêm nhân viên thành công",
+          description: "Tài khoản mới đã được thêm vào hệ thống."
+        });
+      }
+
+      // Reload danh sách
+      const users = await apiClient.getAllUsers();
+      const staffUsers = users.filter(u => 
+        u.roleDisplayName === 'Nhân viên' || 
+        u.roleDisplayName === 'Kỹ thuật viên' || 
+        u.roleDisplayName === 'Quản trị viên'
+      );
+      const mapped: Employee[] = staffUsers.map(u => ({
+        id: String(u.id),
+        name: u.fullName,
+        email: u.email,
+        phone: u.phoneNumber,
+        roleDisplayName: u.roleDisplayName,
+        role: u.roleDisplayName === 'Quản trị viên' ? 'admin' : 
+              u.roleDisplayName === 'Kỹ thuật viên' ? 'technician' : 'staff',
+        status: (u.status as any) ?? 'ACTIVE',
+        createdAt: u.createdAt,
+        lastLogin: u.lastLogin
+      }));
+      setEmployees(mapped);
+
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      console.error('Failed to save employee', error);
+      toast({
+        title: "Lỗi",
+        description: error?.message || (editingEmployee ? "Không thể cập nhật số điện thoại. Vui lòng thử lại." : "Không thể thêm nhân viên. Vui lòng thử lại."),
+        variant: "destructive"
+      });
+    }
+  };
 
   const filteredEmployees = employees.filter(employee => {
     const matchesSearch =
@@ -76,7 +220,7 @@ export default function PersonnelManagementPage() {
       employee.phone.includes(searchTerm);
 
     const matchesRole = roleFilter === 'all' || employee.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || employee.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || String(employee.status).toLowerCase() === statusFilter;
 
     return matchesSearch && matchesRole && matchesStatus;
   });
@@ -127,9 +271,9 @@ export default function PersonnelManagementPage() {
     }).format(salary);
   };
 
-  const activeEmployees = filteredEmployees.filter(emp => emp.status === 'active');
+  const activeEmployees = filteredEmployees.filter(emp => emp.status === 'active' || emp.status === 'ACTIVE');
   const expiringCertifications = employees.filter(emp =>
-    emp.certifications.some(cert => cert.status === 'expiring' || cert.status === 'expired')
+    emp.certifications && emp.certifications.some(cert => cert.status === 'expiring' || cert.status === 'expired')
   );
 
   return (
@@ -140,7 +284,7 @@ export default function PersonnelManagementPage() {
             <h1 className="text-3xl font-bold">Quản lý nhân sự</h1>
             <p className="text-muted-foreground">Quản lý thông tin nhân viên, ca làm việc và chứng chỉ</p>
           </div>
-          <Button>
+          <Button onClick={handleAddEmployee}>
             <Plus className="w-4 h-4 mr-2" />
             Thêm nhân viên
           </Button>
@@ -221,21 +365,34 @@ export default function PersonnelManagementPage() {
                       <Phone className="w-4 h-4" />
                       {employee.phone}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="w-4 h-4" />
-                      {employee.address}
-                    </div>
-                    <div className="text-sm">
-                      <span className="font-medium">Lương:</span> {formatSalary(employee.salary)}
-                    </div>
-                    <div className="text-sm">
-                      <span className="font-medium">Ngày vào làm:</span> {new Date(employee.hireDate).toLocaleDateString('vi-VN')}
-                    </div>
-                    <div className="text-sm">
-                      <span className="font-medium">Đánh giá:</span> {employee.performance.rating}/5
-                    </div>
+                    {employee.address && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="w-4 h-4" />
+                        {employee.address}
+                      </div>
+                    )}
+                    {employee.salary && (
+                      <div className="text-sm">
+                        <span className="font-medium">Lương:</span> {formatSalary(employee.salary)}
+                      </div>
+                    )}
+                    {employee.hireDate && (
+                      <div className="text-sm">
+                        <span className="font-medium">Ngày vào làm:</span> {new Date(employee.hireDate).toLocaleDateString('vi-VN')}
+                      </div>
+                    )}
+                    {employee.performance?.rating && (
+                      <div className="text-sm">
+                        <span className="font-medium">Đánh giá:</span> {employee.performance.rating}/5
+                      </div>
+                    )}
+                    {employee.createdAt && (
+                      <div className="text-sm">
+                        <span className="font-medium">Ngày tạo:</span> {new Date(employee.createdAt).toLocaleDateString('vi-VN')}
+                      </div>
+                    )}
                     <div className="flex gap-2 pt-2">
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditEmployee(employee)}>
                         Chỉnh sửa
                       </Button>
                       <Button variant="outline" size="sm" className="flex-1">
@@ -306,7 +463,7 @@ export default function PersonnelManagementPage() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="text-sm font-medium">Chứng chỉ:</div>
-                    {employee.certifications.map((cert, idx) => (
+                    {employee.certifications && employee.certifications.map((cert, idx) => (
                       <div key={idx} className="border rounded p-3 space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{cert.name}</span>
@@ -335,6 +492,132 @@ export default function PersonnelManagementPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Add/Edit Employee Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingEmployee ? 'Cập nhật số điện thoại' : 'Thêm nhân viên mới'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingEmployee
+                ? 'Chỉ có thể cập nhật số điện thoại. Các thông tin khác không thể thay đổi.'
+                : 'Thêm nhân viên mới vào hệ thống'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {editingEmployee ? (
+                <>
+                  <div className="space-y-2">
+                    <FormLabel>Tên</FormLabel>
+                    <Input value={editingEmployee.name} disabled readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-2">
+                    <FormLabel>Email</FormLabel>
+                    <Input value={editingEmployee.email} disabled readOnly className="bg-muted" />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Số điện thoại *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nhập số điện thoại" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="space-y-2">
+                    <FormLabel>Vai trò</FormLabel>
+                    <Input value={editingEmployee.roleDisplayName || ''} disabled readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-2">
+                    <FormLabel>Trạng thái</FormLabel>
+                    <Input value={String(editingEmployee.status)} disabled readOnly className="bg-muted" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tên *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nhập tên" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email *</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="Nhập email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Số điện thoại *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nhập số điện thoại" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="roleDisplayName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Vai trò *</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Chọn vai trò" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Nhân viên">Nhân viên</SelectItem>
+                            <SelectItem value="Kỹ thuật viên">Kỹ thuật viên</SelectItem>
+                            <SelectItem value="Quản trị viên">Quản trị viên</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Hủy
+                </Button>
+                <Button type="submit">
+                  {editingEmployee ? 'Cập nhật' : 'Thêm mới'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

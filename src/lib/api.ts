@@ -451,6 +451,46 @@ class ApiClient {
   }>> {
     return this.request('/userprofile', { method: 'GET' });
   }
+
+  async updateUserProfile(
+    id: number,
+    payload: { phoneNumber: string }
+  ): Promise<{
+    id: number;
+    email: string;
+    fullName: string;
+    phoneNumber: string;
+    roleDisplayName: string;
+    status: string;
+    createdAt: string;
+    lastLogin: string | null;
+  }> {
+    return this.request(`/userprofile/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async createUserProfile(payload: {
+    email: string;
+    fullName: string;
+    phoneNumber: string;
+    roleDisplayName: string;
+  }): Promise<{
+    id: number;
+    email: string;
+    fullName: string;
+    phoneNumber: string;
+    roleDisplayName: string;
+    status: string;
+    createdAt: string;
+    lastLogin: string | null;
+  }> {
+    return this.request('/userprofile', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
