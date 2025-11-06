@@ -6,18 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
-import { Plus } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-// Schema validation
+// Schema validation - chỉ cho phép cập nhật số điện thoại
 const customerSchema = z.object({
-  name: z.string().min(1, 'Tên khách hàng là bắt buộc'),
-  email: z.string().email('Email không hợp lệ'),
   phone: z.string().min(10, 'Số điện thoại phải có ít nhất 10 số'),
-  status: z.enum(['active', 'inactive'])
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -47,10 +43,7 @@ export default function CustomerManagementPage() {
   const form = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      status: 'active'
+      phone: ''
     }
   });
 
@@ -79,24 +72,10 @@ export default function CustomerManagementPage() {
   }, []);
 
 
-  const handleAddCustomer = () => {
-    setEditingCustomer(null);
-    form.reset({
-      name: '',
-      email: '',
-      phone: '',
-      status: 'active'
-    });
-    setIsDialogOpen(true);
-  };
-
   const handleEditCustomer = (customer: Customer) => {
     setEditingCustomer(customer);
     form.reset({
-      name: customer.name,
-      email: customer.email,
-      phone: customer.phone,
-      status: customer.status
+      phone: customer.phone
     });
     setIsDialogOpen(true);
   };
@@ -109,36 +88,55 @@ export default function CustomerManagementPage() {
     });
   };
 
-  const onSubmit = (data: CustomerFormData) => {
-    const customerData: Customer = {
-      id: editingCustomer ? editingCustomer.id : (customers.length + 1).toString(),
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      avatar: editingCustomer?.avatar,
-      roleDisplayName: editingCustomer?.roleDisplayName,
-      createdAt: editingCustomer?.createdAt || new Date().toISOString(),
-      lastLogin: editingCustomer?.lastLogin || null,
-      status: data.status
-    };
-
-    if (editingCustomer) {
-      setCustomers(customers.map(customer =>
-        customer.id === editingCustomer.id ? customerData : customer
-      ));
+  const onSubmit = async (data: CustomerFormData) => {
+    if (!editingCustomer) {
       toast({
-        title: "Cập nhật khách hàng thành công",
-        description: "Thông tin khách hàng đã được cập nhật."
+        title: "Lỗi",
+        description: "Không thể cập nhật tài khoản không tồn tại.",
+        variant: "destructive"
       });
-    } else {
-      setCustomers([...customers, customerData]);
-      toast({
-        title: "Thêm khách hàng thành công",
-        description: "Khách hàng mới đã được thêm vào hệ thống."
-      });
+      return;
     }
 
-    setIsDialogOpen(false);
+    try {
+      // Cập nhật tài khoản - chỉ cho phép cập nhật số điện thoại
+      const userId = parseInt(editingCustomer.id);
+      if (isNaN(userId)) {
+        throw new Error('ID tài khoản không hợp lệ');
+      }
+
+      await apiClient.updateUserProfile(userId, {
+        phoneNumber: data.phone
+      });
+
+      toast({
+        title: "Cập nhật thành công",
+        description: "Số điện thoại đã được cập nhật."
+      });
+
+      // Reload danh sách để lấy dữ liệu mới nhất
+      const users = await apiClient.getAllUsers();
+      const mapped: Customer[] = users.map(u => ({
+        id: String(u.id),
+        name: u.fullName,
+        email: u.email,
+        phone: u.phoneNumber,
+        roleDisplayName: u.roleDisplayName,
+        createdAt: u.createdAt,
+        lastLogin: u.lastLogin,
+        status: (u.status as any) ?? 'ACTIVE'
+      }));
+      setCustomers(mapped);
+
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      console.error('Failed to update user profile', error);
+      toast({
+        title: "Lỗi",
+        description: error?.message || "Không thể cập nhật số điện thoại. Vui lòng thử lại.",
+        variant: "destructive"
+      });
+    }
   };
 
 
@@ -159,7 +157,6 @@ export default function CustomerManagementPage() {
         customers={pageItems}
         onEdit={handleEditCustomer}
         onDelete={handleDeleteCustomer}
-        onAdd={handleAddCustomer}
         showActions={true}
         filters={(
           <>
@@ -188,109 +185,71 @@ export default function CustomerManagementPage() {
           </>
         )}
         rightAction={(
-          <>
-            <Button onClick={handleAddCustomer}>
-              <Plus className="w-4 h-4 mr-2" />
-              Thêm tài khoản
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
+              Trước
             </Button>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
-                Trước
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>
-                Sau
-              </Button>
-            </div>
-          </>
+            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>
+              Sau
+            </Button>
+          </div>
         )}
       />
 
-      {/* Add/Edit Customer Dialog */}
+      {/* Edit Customer Dialog - Staff chỉ có quyền chỉnh sửa */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingCustomer ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng mới'}
+              Cập nhật số điện thoại
             </DialogTitle>
             <DialogDescription>
-              {editingCustomer
-                ? 'Cập nhật thông tin khách hàng'
-                : 'Thêm khách hàng mới vào hệ thống'
-              }
+              Chỉ có thể cập nhật số điện thoại. Các thông tin khác không thể thay đổi.
             </DialogDescription>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tên khách hàng *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nhập tên khách hàng" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email *</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="Nhập email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Số điện thoại *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nhập số điện thoại" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Trạng thái</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+          {editingCustomer && (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <FormLabel>Tên khách hàng</FormLabel>
+                  <Input value={editingCustomer.name} disabled readOnly className="bg-muted" />
+                </div>
+                <div className="space-y-2">
+                  <FormLabel>Email</FormLabel>
+                  <Input value={editingCustomer.email} disabled readOnly className="bg-muted" />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Số điện thoại *</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
+                        <Input placeholder="Nhập số điện thoại" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="active">Hoạt động</SelectItem>
-                        <SelectItem value="inactive">Không hoạt động</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Hủy
-                </Button>
-                <Button type="submit">
-                  {editingCustomer ? 'Cập nhật' : 'Thêm mới'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="space-y-2">
+                  <FormLabel>Vai trò</FormLabel>
+                  <Input value={editingCustomer.roleDisplayName || ''} disabled readOnly className="bg-muted" />
+                </div>
+                <div className="space-y-2">
+                  <FormLabel>Trạng thái</FormLabel>
+                  <Input value={editingCustomer.status} disabled readOnly className="bg-muted" />
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    Hủy
+                  </Button>
+                  <Button type="submit">
+                    Cập nhật
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          )}
         </DialogContent>
       </Dialog>
     </div>
