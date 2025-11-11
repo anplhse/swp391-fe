@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -58,10 +59,13 @@ interface Service {
 // Services should be loaded from API
 
 const vehicleTypes = [
-  { value: 'VF5', label: 'VF5 (Hatchback)' },
-  { value: 'VF8', label: 'VF8 (SUV)' },
-  { value: 'VF9', label: 'VF9 (SUV)' },
-  { value: 'VFE34', label: 'VFE34 (Sedan)' }
+  { value: 'VF 3', label: 'VF 3' },
+  { value: 'VF 5 Plus', label: 'VF 5 Plus' },
+  { value: 'VF 6', label: 'VF 6' },
+  { value: 'VF 7', label: 'VF 7' },
+  { value: 'VF 8', label: 'VF 8' },
+  { value: 'VF 9', label: 'VF 9' },
+  { value: 'VF e34', label: 'VF e34' }
 ];
 
 const serviceCategories = [
@@ -98,6 +102,66 @@ export default function ServiceManagementPage() {
       status: 'active'
     }
   });
+
+  // Fetch services from API
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const catalogs = await apiClient.getMaintenanceCatalogs();
+        if (!mounted) return;
+
+        // Map API response to Service interface
+        const mappedServices: Service[] = catalogs.map((catalog) => {
+          // Get all unique model names
+          const compatibleVehicles = catalog.models.map(m => m.modelName);
+
+          // Calculate average price and duration
+          const prices = catalog.models.map(m => m.maintenancePrice);
+          const durations = catalog.models.map(m => m.estTimeMinutes);
+          const avgPrice = prices.length > 0
+            ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length)
+            : 0;
+          const avgDuration = durations.length > 0
+            ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+            : 0;
+
+          // Map parts by model
+          const relatedParts: Record<string, string[]> = {};
+          catalog.models.forEach(model => {
+            if (model.parts && model.parts.length > 0) {
+              relatedParts[model.modelName] = model.parts.map(p => p.partName);
+            }
+          });
+
+          return {
+            id: String(catalog.id),
+            name: catalog.name,
+            description: catalog.description,
+            price: avgPrice,
+            duration: avgDuration,
+            compatibleVehicles: compatibleVehicles,
+            relatedParts: relatedParts,
+            category: catalog.maintenanceServiceCategory, // Use category directly from API
+            status: catalog.status === 'ACTIVE' ? 'active' : 'inactive',
+          };
+        });
+
+        setServices(mappedServices);
+      } catch (error) {
+        console.error('Error loading maintenance catalogs:', error);
+        toast({
+          title: 'Lỗi',
+          description: 'Không thể tải danh sách dịch vụ',
+          variant: 'destructive',
+        });
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
 
   // Mock user data removed; layout is provided by DefaultLayout
 

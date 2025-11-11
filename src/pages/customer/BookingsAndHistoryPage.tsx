@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiClient } from '@/lib/api';
+import { authService } from '@/lib/auth';
 
 type BookingStatus = 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
 
@@ -66,9 +68,58 @@ export default function BookingsAndHistoryPage() {
   const [status, setStatus] = useState<'all' | BookingStatus>('all');
 
   useEffect(() => {
-    // Bookings should be loaded from API
-    // TODO: Load bookings from API
-    setBookings([]);
+    const loadBookings = async () => {
+      try {
+        const currentUser = authService.getAuthState().user;
+        if (!currentUser) return;
+        const data = await apiClient.getCustomerBookings(currentUser.id);
+        const mapped: BookingRecord[] = data.map(b => {
+          // Split date/time from scheduleDateTime.value
+          const dt = b.scheduleDateTime?.value || '';
+          const [date, time] = dt.split(' ');
+          const toStatus = (s: string): BookingStatus => {
+            const normalized = (s || '').toLowerCase();
+            switch (normalized) {
+              case 'pending': return 'pending';
+              case 'confirmed': return 'confirmed';
+              case 'in_progress': return 'in_progress';
+              case 'maintenance_complete': return 'completed';
+              case 'completed': return 'completed';
+              case 'cancelled': return 'cancelled';
+              default: return 'pending';
+            }
+          };
+          return {
+            id: String(b.id),
+            service: {
+              id: String(b.id),
+              name: b.vehicleModel || 'Dịch vụ bảo dưỡng',
+              price: '',
+              duration: '',
+              description: '',
+            },
+            vehicle: {
+              id: b.vehicleVin,
+              name: b.vehicleModel,
+              plate: b.vehicleVin, // API không trả plate, hiển thị VIN để nhận biết
+              model: b.vehicleModel,
+            },
+            date: date || '',
+            time: time || '',
+            status: toStatus(b.bookingStatus),
+            center: '—',
+            notes: '',
+            createdAt: b.createdAt,
+            estimatedDuration: '',
+          };
+        });
+        setBookings(mapped);
+      } catch (e) {
+        console.error('Failed to load bookings', e);
+        setBookings([]);
+      }
+    };
+    loadBookings();
   }, []);
 
   const filteredBookings = useMemo(() => {
@@ -117,11 +168,13 @@ export default function BookingsAndHistoryPage() {
   }, []);
 
   const handleViewDetails = useCallback((bookingId: string) => {
-    toast({
-      title: "Chi tiết lịch hẹn",
-      description: `Xem chi tiết lịch hẹn ${bookingId}`,
+    // Lưu bookingId vào localStorage để trang confirmation có thể load
+    localStorage.setItem('latestBookingId', bookingId);
+    // Điều hướng đến trang chi tiết booking
+    navigate('/customer/booking/confirmation', {
+      state: { bookingId: Number(bookingId) }
     });
-  }, [toast]);
+  }, [navigate]);
 
   const handleDownloadInvoice = useCallback((bookingId: string) => {
     toast({
@@ -132,16 +185,6 @@ export default function BookingsAndHistoryPage() {
 
   // Define columns for unified table
   const bookingColumns: ColumnDef<BookingRecord>[] = useMemo(() => [
-    {
-      accessorKey: 'service.name',
-      header: 'Dịch vụ',
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.service.name}</div>
-          <div className="text-sm text-muted-foreground">Mã: {row.original.id}</div>
-        </div>
-      ),
-    },
     {
       accessorKey: 'vehicle',
       header: 'Xe',
@@ -216,7 +259,6 @@ export default function BookingsAndHistoryPage() {
   ], [getStatusBadge, formatPrice, handleViewDetails, handleDownloadInvoice]);
 
   const clearAll = () => {
-    localStorage.removeItem('bookings');
     setBookings([]);
   };
 

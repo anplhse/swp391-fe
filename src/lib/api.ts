@@ -216,13 +216,34 @@ class ApiClient {
   // Vehicle APIs
   async getVehicleByVin(vin: string): Promise<{
     vin: string;
-    brand: string;
-    model: string;
-    year: string;
-    plate?: string;
-    type?: string;
+    name: string;
+    plateNumber: string;
+    color: string;
+    distanceTraveledKm: number;
+    batteryDegradation: number;
+    purchasedAt: string;
+    createdAt: string;
+    entityStatus: string;
+    userId: number;
+    username: string;
+    modelId: number;
+    modelName: string;
   }> {
-    return this.request(`/vehicles/vin/${encodeURIComponent(vin)}`, {
+    return this.request<{
+      vin: string;
+      name: string;
+      plateNumber: string;
+      color: string;
+      distanceTraveledKm: number;
+      batteryDegradation: number;
+      purchasedAt: string;
+      createdAt: string;
+      entityStatus: string;
+      userId: number;
+      username: string;
+      modelId: number;
+      modelName: string;
+    }>(`/vehicles/${encodeURIComponent(vin)}`, {
       method: 'GET',
     });
   }
@@ -454,7 +475,7 @@ class ApiClient {
 
   async updateUserProfile(
     id: number,
-    payload: { phoneNumber: string }
+    payload: { fullName: string; phoneNumber: string }
   ): Promise<{
     id: number;
     email: string;
@@ -476,6 +497,7 @@ class ApiClient {
     fullName: string;
     phoneNumber: string;
     roleDisplayName: string;
+    password: string;
   }): Promise<{
     id: number;
     email: string;
@@ -489,6 +511,196 @@ class ApiClient {
     return this.request('/userprofile', {
       method: 'POST',
       body: JSON.stringify(payload),
+    });
+  }
+
+  async getUserProfileRoles(): Promise<{
+    name: string;
+    enumValue: string[];
+    description: string;
+    type: string;
+  }> {
+    return this.request('/userprofile/roles', {
+      method: 'GET',
+    });
+  }
+
+  async getParts(): Promise<Array<{
+    id: number;
+    name: string;
+    partNumber: string;
+    manufacturer: string;
+    category: string;
+    currentUnitPrice: number;
+    quantity: number;
+    reserved: number;
+    used: number;
+    all: number;
+    status: string;
+    createdAt: string;
+    catalogsEnum: {
+      name: string;
+      enumValue: string[];
+      description: string;
+      type: string;
+    } | null;
+    vehicleModelsEnum: {
+      name: string;
+      enumValue: string[];
+      description: string;
+      type: string;
+    } | null;
+    catalogVehicleMapping: Record<string, string[]> | null;
+  }>> {
+    return this.request('/parts', {
+      method: 'GET',
+    });
+  }
+
+  async getMaintenanceCatalogs(): Promise<Array<{
+    id: number;
+    name: string;
+    description: string;
+    maintenanceServiceCategory: string;
+    status: string;
+    createdAt: string;
+    models: Array<{
+      modelId: number;
+      modelName: string;
+      modelBrand: string;
+      estTimeMinutes: number;
+      maintenancePrice: number;
+      notes: string | null;
+      createdAt: string;
+      parts: Array<{
+        partId: number;
+        partName: string;
+        quantityRequired: number;
+        isOptional: boolean;
+        notes: string | null;
+      }>;
+    }>;
+  }>> {
+    return this.request('/maintenance-catalogs', {
+      method: 'GET',
+    });
+  }
+
+  async getMaintenanceCatalogCategories(): Promise<{
+    name: string;
+    enumValue: string[];
+    description: string;
+    type: string;
+  }> {
+    return this.request('/maintenance-catalogs/enum/category', {
+      method: 'GET',
+    });
+  }
+
+  // Bookings - Customer
+  async createBooking(payload: {
+    customerId: number;
+    vehicleVin: string;
+    scheduleDateTime: {
+      format: string; // e.g. 'yyyy-MM-dd HH:mm:ss'
+      value: string;  // e.g. '2025-11-11 14:00:00'
+      timezone: string | null;
+    };
+    catalogDetails: Array<{
+      catalogId: number;
+      modelId: number;
+      description: string;
+    }>;
+  }): Promise<{
+    id: number;
+    customerId: number;
+    customerName: string;
+    vehicleVin: string;
+    vehicleModel: string;
+    scheduleDateTime: {
+      format: string;
+      value: string;
+      timezone: string | null;
+    };
+    bookingStatus: string;
+    createdAt: string;
+    updatedAt: string;
+    catalogDetails: Array<{
+      id: number;
+      catalogId: number;
+      serviceName: string;
+      description: string;
+    }>;
+  }> {
+    return this.request('/bookings', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getCustomerBookings(customerId: number): Promise<Array<{
+    id: number;
+    customerId: number;
+    customerName: string;
+    vehicleVin: string;
+    vehicleModel: string;
+    scheduleDateTime: {
+      format: string;
+      value: string;
+      timezone: string | null;
+    };
+    bookingStatus: string;
+    createdAt: string;
+    updatedAt: string;
+  }>> {
+    return this.request(`/bookings/customer/${customerId}`, {
+      method: 'GET',
+    });
+  }
+
+  async getBookingById(id: number): Promise<{
+    id: number;
+    customerId: number;
+    customerName: string;
+    vehicleVin: string;
+    vehicleModel: string;
+    scheduleDateTime: {
+      format: string;
+      value: string;
+      timezone: string | null;
+    };
+    bookingStatus: string;
+    createdAt: string;
+    updatedAt: string;
+    catalogDetails: Array<{
+      id: number;
+      catalogId: number;
+      serviceName: string;
+      description: string;
+    }>;
+  }> {
+    return this.request(`/bookings/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async getWorkingHours(): Promise<{
+    name: string;
+    enumValue: string[];
+    description: string;
+    type: string;
+  }> {
+    return this.request('/bookings/working-hours', {
+      method: 'GET',
+    });
+  }
+
+  async getAvailableSlots(): Promise<Array<{
+    date: string;
+    bookedHours: number[];
+  }>> {
+    return this.request('/bookings/slots', {
+      method: 'GET',
     });
   }
 }

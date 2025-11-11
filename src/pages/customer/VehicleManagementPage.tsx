@@ -1,5 +1,4 @@
 import { VehicleTable } from '@/components/VehicleTable';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -14,6 +13,22 @@ import {
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+type ApiVehicle = {
+  vin: string;
+  name: string | null;
+  plateNumber: string;
+  color: string;
+  distanceTraveledKm: number;
+  batteryDegradation?: number;
+  purchasedAt: string;
+  createdAt: string;
+  entityStatus: string;
+  userId: number;
+  username: string;
+  modelId: number;
+  modelName: string;
+};
+
 interface Vehicle {
   id: string;
   name: string;
@@ -25,13 +40,14 @@ interface Vehicle {
   color: string;
   vin: string;
   purchaseDate: string;
+  apiVehicle?: ApiVehicle;
 }
 
 type NewVehicleState = {
   name: string;
   plate: string;
   model: string;
-  battery: number;
+  battery: number | '';
   batteryDegradation: number | '';
   nextService: string;
   mileage: number | '';
@@ -43,7 +59,6 @@ type NewVehicleState = {
 export default function VehicleManagementPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const user = { email: 'customer@example.com', role: 'customer', userType: 'customer' };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -52,12 +67,13 @@ export default function VehicleManagementPage() {
 
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicleDetails, setVehicleDetails] = useState<Record<string, ApiVehicle>>({});
 
   const [newVehicle, setNewVehicle] = useState<NewVehicleState>({
     name: '',
     plate: '',
     model: '',
-    battery: 100,
+    battery: '',
     batteryDegradation: '',
     nextService: '',
     mileage: '',
@@ -98,42 +114,50 @@ export default function VehicleManagementPage() {
     return () => { mounted = false; };
   }, [navigate]);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'healthy':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Bình thường</Badge>;
-      case 'warning':
-        return <Badge variant="destructive">Cần bảo dưỡng</Badge>;
-      case 'critical':
-        return <Badge variant="destructive">Khẩn cấp</Badge>;
-      default:
-        return null;
-    }
-  };
-
   useEffect(() => {
     const loadUserVehicles = async () => {
       try {
         const currentUser = authService.getAuthState().user;
         if (!currentUser) return;
         const apiVehicles = await apiClient.getVehiclesByUserId(currentUser.id);
-        const mapped: Vehicle[] = apiVehicles.map(v => ({
-          id: v.vin,
-          name: v.name ?? `${v.modelName}`,
-          plate: v.plateNumber,
-          model: v.modelName,
-          battery: typeof v.batteryDegradation === 'number'
-            ? v.batteryDegradation
-            : null,
-          nextService: '',
-          mileage: typeof v.distanceTraveledKm === 'number'
-            ? Math.max(0, Math.round(v.distanceTraveledKm))
-            : null,
-          color: v.color || '-',
-          vin: v.vin,
-          purchaseDate: v.purchasedAt.split('T')[0],
-        }));
+        const detailMap: Record<string, ApiVehicle> = {};
+        const mapped: Vehicle[] = apiVehicles.map(v => {
+          detailMap[v.vin] = {
+            vin: v.vin,
+            name: v.name ?? v.modelName ?? '',
+            plateNumber: v.plateNumber,
+            color: v.color,
+            distanceTraveledKm: v.distanceTraveledKm,
+            batteryDegradation: v.batteryDegradation,
+            purchasedAt: v.purchasedAt,
+            createdAt: v.createdAt,
+            entityStatus: v.entityStatus,
+            userId: v.userId,
+            username: v.username,
+            modelId: v.modelId,
+            modelName: v.modelName,
+          };
+
+          return {
+            id: v.vin,
+            name: v.name ?? `${v.modelName}`,
+            plate: v.plateNumber,
+            model: v.modelName,
+            battery: typeof v.batteryDegradation === 'number'
+              ? v.batteryDegradation
+              : null,
+            nextService: '',
+            mileage: typeof v.distanceTraveledKm === 'number'
+              ? Math.max(0, Math.round(v.distanceTraveledKm))
+              : null,
+            color: v.color || '-',
+            vin: v.vin,
+            purchaseDate: v.purchasedAt.split('T')[0],
+            apiVehicle: detailMap[v.vin],
+          };
+        });
         setVehicles(mapped);
+        setVehicleDetails(detailMap);
       } catch (e) {
         console.error('Failed to load user vehicles', e);
         const msg = e instanceof Error ? e.message : String(e);
@@ -150,17 +174,6 @@ export default function VehicleManagementPage() {
     loadUserVehicles();
   }, [navigate, toast]);
 
-  const formatLocalIsoMillis = (date: Date) => {
-    const pad = (n: number, w = 2) => n.toString().padStart(w, '0');
-    const y = date.getFullYear();
-    const m = pad(date.getMonth() + 1);
-    const d = pad(date.getDate());
-    const hh = pad(date.getHours());
-    const mm = pad(date.getMinutes());
-    const ss = pad(date.getSeconds());
-    const ms = pad(date.getMilliseconds(), 3);
-    return `${y}-${m}-${d}T${hh}:${mm}:${ss}.${ms}`;
-  };
 
   const handleAddVehicle = async () => {
     if (!newVehicle.name || !newVehicle.plate || !newVehicle.model || !newVehicle.vin || !selectedModelId) {
@@ -192,6 +205,21 @@ export default function VehicleManagementPage() {
         : vehicleModels.find(m => m.modelName === newVehicle.model);
       const modelId = selectedModel!.id;
 
+      // Validate purchase date - không được trong tương lai
+      if (newVehicle.purchaseDate) {
+        const selectedDate = new Date(newVehicle.purchaseDate);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999); // Set to end of today
+        if (selectedDate > today) {
+          toast({
+            title: "Lỗi",
+            description: "Ngày mua không được trong tương lai.",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+
       // Call API to add vehicle
       const purchasedAtIsoZ = newVehicle.purchaseDate
         ? new Date(newVehicle.purchaseDate).toISOString()
@@ -218,6 +246,22 @@ export default function VehicleManagementPage() {
       const response = await apiClient.addVehicle(vehicleData);
 
       // Create vehicle object for local state
+      const apiVehicle: ApiVehicle = {
+        vin: newVehicle.vin,
+        name: newVehicle.name,
+        plateNumber: newVehicle.plate,
+        color: newVehicle.color || 'Trắng',
+        distanceTraveledKm: distanceKm ?? 0,
+        batteryDegradation: degradation ?? undefined,
+        purchasedAt: purchasedAtIsoZ,
+        createdAt: new Date().toISOString(),
+        entityStatus: 'ACTIVE',
+        userId: user.id,
+        username: user.fullName,
+        modelId: modelId,
+        modelName: newVehicle.model,
+      };
+
       const vehicle: Vehicle = {
         id: response.id?.toString() || Date.now().toString(),
         name: newVehicle.name,
@@ -228,10 +272,15 @@ export default function VehicleManagementPage() {
         nextService: '',
         color: newVehicle.color || 'Trắng',
         vin: newVehicle.vin,
-        purchaseDate: purchasedAtIsoZ.split('T')[0]
+        purchaseDate: purchasedAtIsoZ.split('T')[0],
+        apiVehicle,
       };
 
       setVehicles([...vehicles, vehicle]);
+      setVehicleDetails(prev => ({
+        ...prev,
+        [apiVehicle.vin]: apiVehicle,
+      }));
 
       // Không dùng sessionStore nữa
 
@@ -285,6 +334,22 @@ export default function VehicleManagementPage() {
       setVehicles(vehicles.map(v => (
         v.id === editingVehicle.id ? { ...v, mileage: editingVehicle.mileage, battery: editingVehicle.battery } : v
       )));
+      setVehicleDetails(prev => {
+        const detail = prev[editingVehicle.vin];
+        if (!detail) return prev;
+        return {
+          ...prev,
+          [editingVehicle.vin]: {
+            ...detail,
+            distanceTraveledKm: typeof editingVehicle.mileage === 'number'
+              ? editingVehicle.mileage
+              : Number(editingVehicle.mileage) || 0,
+            batteryDegradation: typeof editingVehicle.battery === 'number'
+              ? editingVehicle.battery
+              : Number(editingVehicle.battery) || 0,
+          },
+        };
+      });
 
       setIsEditDialogOpen(false);
       setEditingVehicle(null);
@@ -306,6 +371,11 @@ export default function VehicleManagementPage() {
   const handleDeleteVehicle = (vehicleId: string) => {
     const vehicle = vehicles.find(v => v.id === vehicleId);
     setVehicles(vehicles.filter(v => v.id !== vehicleId));
+    setVehicleDetails(prev => {
+      const updated = { ...prev };
+      delete updated[vehicleId];
+      return updated;
+    });
 
     // Không dùng sessionStore
 
@@ -323,15 +393,27 @@ export default function VehicleManagementPage() {
   };
 
   const handleBookService = (vehicle: Vehicle) => {
+    const detail = vehicleDetails[vehicle.vin] ?? vehicle.apiVehicle;
     navigate('/customer/booking', {
       state: {
         preselectVin: vehicle.vin,
-        preselectVehicle: {
-          vin: vehicle.vin,
-          brand: vehicle.name.split(' ')[0], // VinFast
-          model: vehicle.name.split(' ').slice(1).join(' '), // VF8, VF9, etc.
-          plate: vehicle.plate
-        }
+        preselectVehicle: detail
+          ? detail
+          : {
+            vin: vehicle.vin,
+            name: vehicle.name,
+            plateNumber: vehicle.plate,
+            color: vehicle.color,
+            distanceTraveledKm: vehicle.mileage ?? 0,
+            batteryDegradation: vehicle.battery ?? undefined,
+            purchasedAt: vehicle.purchaseDate ? new Date(vehicle.purchaseDate).toISOString() : new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            entityStatus: 'ACTIVE',
+            userId: authService.getAuthState().user?.id ?? 0,
+            username: authService.getAuthState().user?.fullName ?? '',
+            modelId: 0,
+            modelName: vehicle.model,
+          },
       }
     });
   };
@@ -444,6 +526,7 @@ export default function VehicleManagementPage() {
               <Input
                 id="purchaseDate"
                 type="date"
+                max={new Date().toISOString().split('T')[0]}
                 value={newVehicle.purchaseDate}
                 onChange={(e) => setNewVehicle({ ...newVehicle, purchaseDate: e.target.value })}
               />
@@ -547,7 +630,7 @@ export default function VehicleManagementPage() {
               {/* Thông tin có thể chỉnh sửa */}
               <div className="space-y-4">
                 <h4 className="text-sm font-medium">Thông tin có thể chỉnh sửa</h4>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="edit-battery">Pin (%)</Label>
                   <Input

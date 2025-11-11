@@ -152,19 +152,20 @@ export default function PersonnelManagementPage() {
   const onSubmit = async (data: EmployeeFormData) => {
     try {
       if (editingEmployee) {
-        // Cập nhật tài khoản - chỉ cho phép cập nhật số điện thoại
+        // Cập nhật tài khoản - cho phép cập nhật tên và số điện thoại
         const userId = parseInt(editingEmployee.id);
         if (isNaN(userId)) {
           throw new Error('ID tài khoản không hợp lệ');
         }
 
         await apiClient.updateUserProfile(userId, {
+          fullName: data.name,
           phoneNumber: data.phone
         });
 
         toast({
           title: "Cập nhật thành công",
-          description: "Số điện thoại đã được cập nhật."
+          description: "Thông tin nhân viên đã được cập nhật."
         });
       } else {
         // Thêm tài khoản mới cho staff/technician
@@ -207,7 +208,7 @@ export default function PersonnelManagementPage() {
       console.error('Failed to save employee', error);
       toast({
         title: "Lỗi",
-        description: error?.message || (editingEmployee ? "Không thể cập nhật số điện thoại. Vui lòng thử lại." : "Không thể thêm nhân viên. Vui lòng thử lại."),
+        description: error?.message || (editingEmployee ? "Không thể cập nhật thông tin. Vui lòng thử lại." : "Không thể thêm nhân viên. Vui lòng thử lại."),
         variant: "destructive"
       });
     }
@@ -498,11 +499,11 @@ export default function PersonnelManagementPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingEmployee ? 'Cập nhật số điện thoại' : 'Thêm nhân viên mới'}
+              {editingEmployee ? 'Cập nhật thông tin nhân viên' : 'Thêm nhân viên mới'}
             </DialogTitle>
             <DialogDescription>
               {editingEmployee
-                ? 'Chỉ có thể cập nhật số điện thoại. Các thông tin khác không thể thay đổi.'
+                ? 'Có thể cập nhật tên và số điện thoại. Email và vai trò không thể thay đổi.'
                 : 'Thêm nhân viên mới vào hệ thống'
               }
             </DialogDescription>
@@ -511,10 +512,19 @@ export default function PersonnelManagementPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {editingEmployee ? (
                 <>
-                  <div className="space-y-2">
-                    <FormLabel>Tên</FormLabel>
-                    <Input value={editingEmployee.name} disabled readOnly className="bg-muted" />
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tên *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nhập tên nhân viên" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <div className="space-y-2">
                     <FormLabel>Email</FormLabel>
                     <Input value={editingEmployee.email} disabled readOnly className="bg-muted" />

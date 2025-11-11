@@ -18,7 +18,13 @@ const vehicleSchema = z.object({
   modelId: z.string().min(1, 'Model xe là bắt buộc'),
   color: z.string().min(1, 'Màu sắc là bắt buộc'),
   vin: z.string().min(1, 'VIN là bắt buộc'),
-  purchaseDate: z.string().min(1, 'Ngày mua là bắt buộc'),
+  purchaseDate: z.string().min(1, 'Ngày mua là bắt buộc').refine((val) => {
+    if (!val) return false;
+    const selectedDate = new Date(val);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // Set to end of today
+    return selectedDate <= today;
+  }, 'Ngày mua không được trong tương lai'),
   mileage: z.string().refine((val) => {
     if (!val) return true; // Optional
     const num = Number(val);
@@ -237,6 +243,21 @@ export default function VehicleManagementPage() {
             variant: "destructive"
           });
           return;
+        }
+
+        // Validate purchase date - không được trong tương lai
+        if (data.purchaseDate) {
+          const selectedDate = new Date(data.purchaseDate);
+          const today = new Date();
+          today.setHours(23, 59, 59, 999); // Set to end of today
+          if (selectedDate > today) {
+            toast({
+              title: "Lỗi",
+              description: "Ngày mua không được trong tương lai.",
+              variant: "destructive"
+            });
+            return;
+          }
         }
 
         const purchasedAtIsoZ = data.purchaseDate
@@ -554,7 +575,11 @@ export default function VehicleManagementPage() {
                         <FormItem>
                           <FormLabel>Ngày mua *</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <Input
+                              type="date"
+                              max={new Date().toISOString().split('T')[0]}
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

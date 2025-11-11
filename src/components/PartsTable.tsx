@@ -24,7 +24,7 @@ interface Part {
   unitPrice: number;
   supplier: string;
   lastRestocked: string;
-  status: 'in_stock' | 'low_stock' | 'out_of_stock';
+  status: 'active' | 'inactive'; // Trạng thái sử dụng (đang sử dụng/ngưng)
   location: string;
   description?: string;
 }
@@ -41,7 +41,7 @@ interface PartsTableProps {
 const filtersSchema = z.object({
   search: z.string().optional(),
   category: z.string().default('all'),
-  status: z.enum(['all', 'in_stock', 'low_stock', 'out_of_stock']).default('all')
+  status: z.enum(['all', 'active', 'inactive']).default('all')
 });
 type FiltersForm = z.infer<typeof filtersSchema>;
 
@@ -73,12 +73,10 @@ export function PartsTable({
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'in_stock':
-        return <Badge className="bg-green-500">Còn hàng</Badge>;
-      case 'low_stock':
-        return <Badge variant="destructive">Sắp hết</Badge>;
-      case 'out_of_stock':
-        return <Badge variant="outline">Hết hàng</Badge>;
+      case 'active':
+        return <Badge className="bg-green-500">Đang sử dụng</Badge>;
+      case 'inactive':
+        return <Badge variant="secondary">Ngưng</Badge>;
       default:
         return <Badge variant="outline">Không xác định</Badge>;
     }
@@ -117,10 +115,14 @@ export function PartsTable({
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="Pin">Pin</SelectItem>
-                    <SelectItem value="Động cơ">Động cơ</SelectItem>
-                    <SelectItem value="Sạc">Sạc</SelectItem>
-                    <SelectItem value="Cảm biến">Cảm biến</SelectItem>
+                    <SelectItem value="Lọc">Lọc</SelectItem>
+                    <SelectItem value="Dung dịch & Hóa chất">Dung dịch & Hóa chất</SelectItem>
+                    <SelectItem value="Pin & Ắc quy">Pin & Ắc quy</SelectItem>
+                    <SelectItem value="Gạt mưa">Gạt mưa</SelectItem>
+                    <SelectItem value="Lốp xe">Lốp xe</SelectItem>
+                    <SelectItem value="Phanh">Phanh</SelectItem>
+                    <SelectItem value="Điều hòa">Điều hòa</SelectItem>
+                    <SelectItem value="Khác">Khác</SelectItem>
                   </SelectContent>
                 </Select>
               </FormItem>
@@ -135,9 +137,8 @@ export function PartsTable({
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="in_stock">Còn hàng</SelectItem>
-                    <SelectItem value="low_stock">Sắp hết</SelectItem>
-                    <SelectItem value="out_of_stock">Hết hàng</SelectItem>
+                    <SelectItem value="active">Đang sử dụng</SelectItem>
+                    <SelectItem value="inactive">Ngưng</SelectItem>
                   </SelectContent>
                 </Select>
               </FormItem>

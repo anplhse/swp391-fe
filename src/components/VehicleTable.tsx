@@ -19,6 +19,7 @@ interface Vehicle {
   owner?: string;
   ownerPhone?: string;
   lastService?: string;
+  apiVehicle?: unknown;
 }
 
 interface VehicleTableProps {

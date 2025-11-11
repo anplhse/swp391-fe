@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -24,11 +25,37 @@ interface Part {
   unitPrice: number;
   supplier: string;
   lastRestocked: string;
-  status: 'in_stock' | 'low_stock' | 'out_of_stock';
+  status: 'active' | 'inactive'; // Trạng thái sử dụng (đang sử dụng/ngưng)
   location: string;
   description?: string;
 }
 
+// Helper function to extract category from partNumber (fallback if API doesn't provide)
+const extractCategory = (partNumber: string): string => {
+  const partNum = partNumber.toUpperCase();
+  if (partNum.includes('FIL')) return 'Lọc';
+  if (partNum.includes('FLD') || partNum.includes('FLUID')) return 'Dầu/Chất lỏng';
+  if (partNum.includes('BAT')) return 'Pin';
+  if (partNum.includes('WPR')) return 'Gạt mưa';
+  if (partNum.includes('TIRE')) return 'Lốp';
+  if (partNum.includes('BRAKE')) return 'Phanh';
+  if (partNum.includes('AC') || partNum.includes('ACG')) return 'Điều hòa';
+  return 'Khác';
+};
+
+// Helper function to extract compatible model from description
+const extractCompatibleModel = (description?: string): string => {
+  if (!description) return '';
+  const desc = description.toUpperCase();
+  if (desc.includes('VF 3') || desc.includes('VF3')) return 'VF 3';
+  if (desc.includes('VF 5') || desc.includes('VF5')) return 'VF 5';
+  if (desc.includes('VF 6') || desc.includes('VF6')) return 'VF 6';
+  if (desc.includes('VF 7') || desc.includes('VF7')) return 'VF 7';
+  if (desc.includes('VF 8') || desc.includes('VF8')) return 'VF 8';
+  if (desc.includes('VF 9') || desc.includes('VF9')) return 'VF 9';
+  if (desc.includes('VF E34') || desc.includes('VFE34')) return 'VF e34';
+  return '';
+};
 
 export default function PartsManagementPage() {
   const [parts, setParts] = useState<Part[]>([]);
@@ -60,10 +87,73 @@ export default function PartsManagementPage() {
   const partForm = useForm<PartFormData>({ resolver: zodResolver(partSchema), defaultValues: { name: '', partNumber: '', category: '', brand: '', compatibleModel: '', initialQuantity: '1', unitPrice: '0', supplier: '' } });
 
   useEffect(() => {
-    // Parts should be loaded from API
-    // TODO: Load parts from API
-    setParts([]);
-  }, []);
+    let mounted = true;
+    (async () => {
+      try {
+        const apiParts = await apiClient.getParts();
+        if (!mounted) return;
+        
+        // Map API response to UI interface
+        const mappedParts: Part[] = apiParts.map((apiPart) => {
+          const currentStock = apiPart.quantity;
+          const usedQuantity = apiPart.used; // Use 'used' from API
+          const initialQuantity = apiPart.all; // Use 'all' from API (total quantity)
+          const minStock = Math.max(1, Math.floor(initialQuantity * 0.2)); // 20% of initial
+          
+          // Map status from API (ACTIVE/INACTIVE) to active/inactive
+          const status: 'active' | 'inactive' = apiPart.status === 'ACTIVE' ? 'active' : 'inactive';
+          
+          // Use category from API (already available)
+          const category = apiPart.category || extractCategory(apiPart.partNumber);
+          
+          // Extract compatible model from vehicleModelsEnum
+          let compatibleModel = '';
+          if (apiPart.vehicleModelsEnum && apiPart.vehicleModelsEnum.enumValue.length > 0) {
+            // Join all models or take the first one
+            compatibleModel = apiPart.vehicleModelsEnum.enumValue
+              .map(model => model.replace('VinFast ', '')) // Remove "VinFast " prefix
+              .join(', ');
+          } else {
+            // Fallback to extraction from description if enum not available
+            compatibleModel = extractCompatibleModel(apiPart.description);
+          }
+          
+          return {
+            id: String(apiPart.id),
+            name: apiPart.name,
+            partNumber: apiPart.partNumber,
+            category: category,
+            brand: apiPart.manufacturer,
+            compatibleModel: compatibleModel,
+            initialQuantity: initialQuantity,
+            usedQuantity: usedQuantity,
+            currentStock: currentStock,
+            minStock: minStock,
+            maxStock: initialQuantity * 2,
+            unitPrice: apiPart.currentUnitPrice,
+            supplier: '', // Not available in API
+            lastRestocked: apiPart.createdAt ? apiPart.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+            status: status, // Trạng thái sử dụng (active/inactive)
+            location: 'Kho chính',
+            description: apiPart.description,
+          };
+        });
+        
+        setParts(mappedParts);
+      } catch (error) {
+        console.error('Error loading parts:', error);
+        toast({
+          title: 'Lỗi',
+          description: 'Không thể tải danh sách phụ tùng',
+          variant: 'destructive',
+        });
+      }
+    })();
+    
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
 
 
   const handleAddPart = () => {

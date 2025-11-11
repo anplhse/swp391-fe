@@ -425,7 +425,6 @@ export default function VehicleProfilePage() {
                           <h3 className="font-semibold">{service.service}</h3>
                           {getServiceStatusBadge(service.status)}
                         </div>
-                        <p className="text-sm text-muted-foreground">Mã: {service.id}</p>
                         <p className="text-sm text-muted-foreground">
                           {new Date(service.date).toLocaleDateString('vi-VN')}
                         </p>

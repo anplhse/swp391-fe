@@ -2,90 +2,109 @@ import { DataTable } from '@/components/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api';
 import { ColumnDef } from '@tanstack/react-table';
 import { CheckCircle, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-interface BookingData {
-  id: string;
-  vehicle: {
-    vin: string;
-    brand: string;
-    model: string;
-    year: number;
+type ApiBooking = {
+  id: number;
+  customerId: number;
+  customerName: string;
+  vehicleVin: string;
+  vehicleModel: string;
+  scheduleDateTime: {
+    format: string;
+    value: string;
+    timezone: string | null;
   };
-  services: Array<{
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    duration: number;
-  }>;
-  date: string;
-  time: string;
-  notes?: string;
-  totalAmount: number;
-  estimatedDuration: number;
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+  bookingStatus: string;
   createdAt: string;
-}
+  updatedAt: string;
+  catalogDetails?: Array<{
+    id: number;
+    catalogId: number;
+    serviceName: string;
+    description: string;
+  }>;
+};
+
+type FallbackService = {
+  id?: string | number;
+  name?: string;
+  description?: string;
+};
 
 export default function BookingConfirmationPage() {
-  const [bookingData, setBookingData] = useState<BookingData | null>(null);
+  const [booking, setBooking] = useState<ApiBooking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Lấy dữ liệu booking từ state hoặc localStorage
-    const bookingFromState = location.state?.bookingData;
-    const bookingFromStorage = localStorage.getItem('latestBooking');
-
-    if (bookingFromState) {
-      setBookingData(bookingFromState);
-      setIsLoading(false);
-    } else if (bookingFromStorage) {
+    const load = async () => {
       try {
-        const parsedBooking = JSON.parse(bookingFromStorage);
-        setBookingData(parsedBooking);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error parsing booking data:', error);
+        const idFromState = location.state?.bookingId as number | undefined;
+        const latestId = localStorage.getItem('latestBookingId');
+        if (idFromState || latestId) {
+          const id = idFromState ?? Number(latestId);
+          const data = await apiClient.getBookingById(Number(id));
+          setBooking(data);
+        } else {
+          // Fallback (cũ) để không trắng trang nếu thiếu id
+          const old = localStorage.getItem('latestBooking');
+          if (old) {
+            const parsed = JSON.parse(old);
+            const [date, time] = `${parsed?.date || ''} ${parsed?.time || ''}`.trim().split(' ');
+            const fb: ApiBooking = {
+              id: Date.now(),
+              customerId: 0,
+              customerName: '',
+              vehicleVin: parsed?.vehicle?.vin || '',
+              vehicleModel: parsed?.vehicle?.model || '',
+              scheduleDateTime: { format: 'yyyy-MM-dd HH:mm:ss', value: `${date || ''} ${time || ''}`, timezone: null },
+              bookingStatus: 'PENDING',
+              createdAt: parsed?.createdAt || new Date().toISOString(),
+              updatedAt: parsed?.createdAt || new Date().toISOString(),
+              catalogDetails: ((parsed?.services || []) as FallbackService[]).map((s, i: number) => ({
+                id: i + 1,
+                catalogId: Number(s.id) || i + 1,
+                serviceName: s.name || '',
+                description: s.description || ''
+              }))
+            };
+            setBooking(fb);
+          }
+        }
+      } catch (e) {
+        console.error('Load booking failed', e);
+        toast({ title: 'Lỗi', description: 'Không tải được thông tin lịch hẹn', variant: 'destructive' });
+      } finally {
         setIsLoading(false);
       }
-    } else {
-      setIsLoading(false);
-    }
-  }, [location.state]);
+    };
+    load();
+  }, [location.state, toast]);
 
   const handleCancelBooking = () => {
-    if (!bookingData) return;
-
-    // Cập nhật trạng thái booking thành cancelled
-    const updatedBooking = { ...bookingData, status: 'cancelled' as const };
-    setBookingData(updatedBooking);
-
-    // Lưu vào localStorage
-    localStorage.setItem('latestBooking', JSON.stringify(updatedBooking));
-
     toast({
-      title: "Hủy lịch hẹn thành công",
-      description: "Lịch hẹn của bạn đã được hủy. Bạn có thể đặt lịch mới bất cứ lúc nào.",
+      title: 'Thông báo',
+      description: 'Tính năng hủy lịch sẽ được bổ sung sau.',
     });
   };
 
   const handleEditBooking = () => {
-    if (!bookingData) return;
+    if (!booking) return;
 
     // Chuyển về trang đặt lịch với dữ liệu hiện tại
     navigate('/customer/booking', {
       state: {
-        preselectedVin: bookingData.vehicle.vin,
-        preselectedVehicle: bookingData.vehicle,
+        preselectedVin: booking.vehicleVin,
+        preselectedVehicle: { vin: booking.vehicleVin, modelName: booking.vehicleModel },
         editMode: true,
-        existingBooking: bookingData
+        existingBooking: null
       }
     });
   };
@@ -99,140 +118,63 @@ export default function BookingConfirmationPage() {
 
   const getStatusBadge = useCallback((status: string) => {
     switch (status) {
-      case 'pending':
+      case 'PENDING':
         return <Badge variant="secondary">Chờ xác nhận</Badge>;
-      case 'confirmed':
+      case 'CONFIRMED':
         return <Badge variant="default">Đã xác nhận</Badge>;
-      case 'in_progress':
+      case 'IN_PROGRESS':
         return <Badge variant="destructive">Đang thực hiện</Badge>;
-      case 'completed':
+      case 'MAINTENANCE_COMPLETE':
         return <Badge variant="default" className="bg-green-600 hover:bg-green-700">Hoàn thành</Badge>;
-      case 'cancelled':
+      case 'CANCELLED':
         return <Badge variant="outline">Đã hủy</Badge>;
       default:
         return <Badge variant="outline">Không xác định</Badge>;
     }
   }, []);
 
-  // Define columns for booking information table
+  // Old column definitions removed; using unified definitions below
+
   const bookingInfoColumns: ColumnDef<{ label: string; value: string | React.ReactNode }>[] = useMemo(
     () => [
       {
         accessorKey: 'label',
         header: 'Thông tin',
-        cell: ({ row }) => (
-          <div className="font-medium">{row.getValue('label')}</div>
-        ),
+        cell: ({ row }) => <div className="font-medium">{row.getValue('label')}</div>,
       },
       {
         accessorKey: 'value',
         header: 'Chi tiết',
-        cell: ({ row }) => (
-          <div>{row.getValue('value')}</div>
-        ),
+        cell: ({ row }) => <div>{row.getValue('value') as React.ReactNode}</div>,
       },
     ],
     []
   );
 
-  // Define columns for services table
+  const bookingInfoData = useMemo(() => {
+    if (!booking) return [];
+    const [dateStr = '', timeStr = ''] = (booking.scheduleDateTime?.value || '').split(' ');
+    return [
+      { label: 'Trạng thái', value: getStatusBadge(booking.bookingStatus) },
+      { label: 'VIN', value: <span className="font-mono">{booking.vehicleVin}</span> },
+      { label: 'Xe', value: booking.vehicleModel },
+      { label: 'Ngày hẹn', value: dateStr ? new Date(dateStr).toLocaleDateString('vi-VN') : '—' },
+      { label: 'Giờ hẹn', value: timeStr || '—' },
+      { label: 'Tạo lúc', value: new Date(booking.createdAt).toLocaleString('vi-VN') },
+    ];
+  }, [booking, getStatusBadge]);
+
   const servicesColumns: ColumnDef<{
-    id: string;
-    name: string;
+    id: number;
+    serviceName: string;
     description: string;
-    duration: number;
-    price: number;
   }>[] = useMemo(
     () => [
-      {
-        accessorKey: 'name',
-        header: 'Tên dịch vụ',
-        cell: ({ row }) => (
-          <div className="font-medium">{row.getValue('name')}</div>
-        ),
-      },
-      {
-        accessorKey: 'description',
-        header: 'Mô tả',
-        cell: ({ row }) => (
-          <div className="text-muted-foreground text-sm">
-            {row.getValue('description')}
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'duration',
-        header: 'Thời gian',
-        cell: ({ row }) => (
-          <div>{row.getValue('duration')} phút</div>
-        ),
-      },
-      {
-        accessorKey: 'price',
-        header: 'Giá',
-        cell: ({ row }) => (
-          <div className="text-right font-medium">
-            {formatPrice(row.getValue('price'))}
-          </div>
-        ),
-      },
+      { accessorKey: 'serviceName', header: 'Tên dịch vụ' },
+      { accessorKey: 'description', header: 'Mô tả' },
     ],
-    [formatPrice]
+    []
   );
-
-  // Prepare booking info data
-  const bookingInfoData = useMemo(() => {
-    if (!bookingData) return [];
-
-    return [
-      {
-        label: 'Mã lịch hẹn',
-        value: (
-          <div className="flex items-center justify-between">
-            <span className="font-mono">{bookingData.id}</span>
-            {getStatusBadge(bookingData.status)}
-          </div>
-        ),
-      },
-      {
-        label: 'VIN',
-        value: <span className="font-mono">{bookingData.vehicle.vin}</span>,
-      },
-      {
-        label: 'Thông tin xe',
-        value: `${bookingData.vehicle.brand} ${bookingData.vehicle.model} (${bookingData.vehicle.year})`,
-      },
-      {
-        label: 'Ngày hẹn',
-        value: new Date(bookingData.date).toLocaleDateString('vi-VN', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        }),
-      },
-      {
-        label: 'Giờ hẹn',
-        value: bookingData.time,
-      },
-      {
-        label: 'Tổng cộng',
-        value: (
-          <span className="text-lg font-semibold text-primary">
-            {formatPrice(bookingData.totalAmount)}
-          </span>
-        ),
-      },
-      ...(bookingData.notes ? [{
-        label: 'Ghi chú',
-        value: (
-          <div className="bg-muted p-3 rounded text-sm">
-            {bookingData.notes}
-          </div>
-        ),
-      }] : []),
-    ];
-  }, [bookingData, getStatusBadge, formatPrice]);
 
   if (isLoading) {
     return (
@@ -245,7 +187,7 @@ export default function BookingConfirmationPage() {
     );
   }
 
-  if (!bookingData) {
+  if (!booking) {
     return (
       <div className="text-center py-12">
         <X className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -281,18 +223,20 @@ export default function BookingConfirmationPage() {
 
       {/* Services Table */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">
-          Dịch vụ đã chọn ({bookingData.services.length} dịch vụ)
-        </h2>
-        <DataTable columns={servicesColumns} data={bookingData.services} />
-        <div className="text-right text-sm text-muted-foreground">
-          Tổng thời gian dự kiến: <span className="font-medium">{bookingData.estimatedDuration} phút</span>
-        </div>
+        <h2 className="text-xl font-semibold">Dịch vụ đã chọn</h2>
+        <DataTable
+          columns={servicesColumns}
+          data={(booking.catalogDetails || []).map(s => ({
+            id: s.id,
+            serviceName: s.serviceName,
+            description: s.description
+          }))}
+        />
       </div>
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        {bookingData.status !== 'cancelled' && (
+        {booking.bookingStatus !== 'CANCELLED' && (
           <>
             <Button variant="outline" onClick={handleEditBooking}>
               Chỉnh sửa lịch hẹn

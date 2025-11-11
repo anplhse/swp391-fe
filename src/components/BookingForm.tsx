@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
-import { bookTimeSlot, getAvailableTimeSlots, getNextAvailableDates, isTimeSlotAvailable } from '@/lib/bookingUtils';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createColumnHelper } from '@tanstack/react-table';
@@ -83,11 +82,18 @@ export function BookingForm({ services }: BookingFormProps) {
   // State
   const [vinData, setVinData] = useState<{
     vin: string;
-    brand: string;
-    model: string;
-    year: string;
-    plate?: string;
-    type?: string;
+    name: string;
+    plateNumber: string;
+    color: string;
+    distanceTraveledKm: number;
+    batteryDegradation: number;
+    purchasedAt: string;
+    createdAt: string;
+    entityStatus: string;
+    userId: number;
+    username: string;
+    modelId: number;
+    modelName: string;
   } | null>(() => {
     // Load vinData from localStorage on mount with error handling
     try {
@@ -103,34 +109,72 @@ export function BookingForm({ services }: BookingFormProps) {
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [isLoadingTimeSlots, setIsLoadingTimeSlots] = useState(false);
+  const [workingHours, setWorkingHours] = useState<string[]>([]);
+  const [slotsData, setSlotsData] = useState<Array<{ date: string; bookedHours: number[] }>>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(true);
 
   // Get selected date and time slot from form
   const selectedDate = form.watch('selectedDate');
   const selectedTimeSlot = form.watch('selectedTimeSlot');
 
-  const loadTimeSlots = useCallback(async (date: Date) => {
-    setIsLoadingTimeSlots(true);
-    try {
-      const dateString = format(date, 'yyyy-MM-dd');
-      const timeSlots = getAvailableTimeSlots(dateString);
-      setAvailableTimeSlots(timeSlots.map(slot => slot.time));
+  // Convert hour string "07:00" to hour number 7
+  const hourStringToNumber = useCallback((hourStr: string): number => {
+    return parseInt(hourStr.split(':')[0], 10);
+  }, []);
 
-      // Reset selected time slot if not available
+  // Convert hour number to time slot format "07:00 - 08:00"
+  const formatTimeSlot = useCallback((hour: string, nextHour?: string): string => {
+    if (nextHour) {
+      return `${hour} - ${nextHour}`;
+    }
+    // If no next hour, assume 1 hour duration
+    const hourNum = hourStringToNumber(hour);
+    const nextHourNum = hourNum + 1;
+    const nextHourStr = `${nextHourNum.toString().padStart(2, '0')}:00`;
+    return `${hour} - ${nextHourStr}`;
+  }, [hourStringToNumber]);
+
+  const loadTimeSlots = useCallback(
+    async (date: Date) => {
+      if (!workingHours.length) {
+        setIsLoadingTimeSlots(false);
+        return;
+      }
+
+      setIsLoadingTimeSlots(true);
+      const dateKey = format(date, 'yyyy-MM-dd');
+
+      // Find booked hours for this date
+      const daySlot = slotsData.find(s => s.date === dateKey);
+      const bookedHours = daySlot?.bookedHours || [];
+      const bookedHoursSet = new Set(bookedHours);
+
+      // Generate available time slots from working hours
+      const available: string[] = [];
+      for (let i = 0; i < workingHours.length; i++) {
+        const hour = workingHours[i];
+        const hourNum = hourStringToNumber(hour);
+
+        // Skip if this hour is booked
+        if (bookedHoursSet.has(hourNum)) {
+          continue;
+        }
+
+        // Format as time slot (e.g., "07:00 - 08:00")
+        const nextHour = i < workingHours.length - 1 ? workingHours[i + 1] : undefined;
+        available.push(formatTimeSlot(hour, nextHour));
+      }
+
+      setAvailableTimeSlots(available);
+
       const currentTimeSlot = form.getValues('selectedTimeSlot');
-      if (currentTimeSlot && !timeSlots.some(slot => slot.time === currentTimeSlot)) {
+      if (currentTimeSlot && !available.includes(currentTimeSlot)) {
         form.setValue('selectedTimeSlot', '');
       }
-    } catch (error) {
-      console.error('Error loading time slots:', error);
-      toast({
-        title: 'Lỗi',
-        description: 'Không thể tải khung giờ khả dụng',
-        variant: 'destructive'
-      });
-    } finally {
       setIsLoadingTimeSlots(false);
-    }
-  }, [form, toast]);
+    },
+    [workingHours, slotsData, form, hourStringToNumber, formatTimeSlot]
+  );
 
   const handleVinLookup = useCallback(async (vin: string) => {
     if (!vin.trim()) return;
@@ -140,9 +184,8 @@ export function BookingForm({ services }: BookingFormProps) {
       setVinData(vehicleData);
 
       // Auto-fill form with vehicle data
-      form.setValue('plate', vehicleData.plate || '');
-      form.setValue('year', vehicleData.year || '');
-      form.setValue('model', vehicleData.model || '');
+      form.setValue('plate', vehicleData.plateNumber || '');
+      form.setValue('model', vehicleData.modelName || '');
 
       toast({
         title: 'Thành công',
@@ -165,17 +208,24 @@ export function BookingForm({ services }: BookingFormProps) {
       // Tự động hiển thị thông tin xe mà không cần tra cứu
       if (location.state?.preselectVehicle) {
         const vehicle = location.state.preselectVehicle;
+        // Map old format to new API format
         setVinData({
           vin: location.state.preselectVin,
-          brand: vehicle.brand || '',
-          model: vehicle.model || '',
-          year: vehicle.year || '',
-          plate: vehicle.plate || '',
-          type: 'electric'
+          name: vehicle.name || vehicle.model || '',
+          plateNumber: vehicle.plateNumber || vehicle.plate || '',
+          color: vehicle.color || '',
+          distanceTraveledKm: vehicle.distanceTraveledKm || 0,
+          batteryDegradation: vehicle.batteryDegradation || 0,
+          purchasedAt: vehicle.purchasedAt || new Date().toISOString(),
+          createdAt: vehicle.createdAt || new Date().toISOString(),
+          entityStatus: vehicle.entityStatus || 'ACTIVE',
+          userId: vehicle.userId || 0,
+          username: vehicle.username || '',
+          modelId: vehicle.modelId || 0,
+          modelName: vehicle.modelName || vehicle.model || ''
         });
-        form.setValue('plate', vehicle.plate || '');
-        form.setValue('year', vehicle.year || '');
-        form.setValue('model', vehicle.model || '');
+        form.setValue('plate', vehicle.plateNumber || vehicle.plate || '');
+        form.setValue('model', vehicle.modelName || vehicle.model || '');
       }
     }
 
@@ -186,17 +236,24 @@ export function BookingForm({ services }: BookingFormProps) {
       // Pre-fill VIN and vehicle data
       if (booking.vehicle) {
         form.setValue('vin', booking.vehicle.vin);
+        // Map old format to new API format
         setVinData({
           vin: booking.vehicle.vin,
-          brand: booking.vehicle.brand || '',
-          model: booking.vehicle.model || '',
-          year: booking.vehicle.year?.toString() || '',
-          plate: booking.vehicle.plate || '',
-          type: 'electric'
+          name: booking.vehicle.name || booking.vehicle.model || '',
+          plateNumber: booking.vehicle.plateNumber || booking.vehicle.plate || '',
+          color: booking.vehicle.color || '',
+          distanceTraveledKm: booking.vehicle.distanceTraveledKm || 0,
+          batteryDegradation: booking.vehicle.batteryDegradation || 0,
+          purchasedAt: booking.vehicle.purchasedAt || new Date().toISOString(),
+          createdAt: booking.vehicle.createdAt || new Date().toISOString(),
+          entityStatus: booking.vehicle.entityStatus || 'ACTIVE',
+          userId: booking.vehicle.userId || 0,
+          username: booking.vehicle.username || '',
+          modelId: booking.vehicle.modelId || 0,
+          modelName: booking.vehicle.modelName || booking.vehicle.model || ''
         });
-        form.setValue('plate', booking.vehicle.plate || '');
-        form.setValue('year', booking.vehicle.year?.toString() || '');
-        form.setValue('model', booking.vehicle.model || '');
+        form.setValue('plate', booking.vehicle.plateNumber || booking.vehicle.plate || '');
+        form.setValue('model', booking.vehicle.modelName || booking.vehicle.model || '');
       }
 
       // Pre-fill selected services
@@ -224,9 +281,8 @@ export function BookingForm({ services }: BookingFormProps) {
   useEffect(() => {
     if (vinData && !location.state?.preselectVin && !location.state?.editMode) {
       form.setValue('vin', vinData.vin);
-      form.setValue('plate', vinData.plate || '');
-      form.setValue('year', vinData.year || '');
-      form.setValue('model', vinData.model || '');
+      form.setValue('plate', vinData.plateNumber || '');
+      form.setValue('model', vinData.modelName || '');
     }
   }, [vinData, form, location.state]);
 
@@ -239,19 +295,35 @@ export function BookingForm({ services }: BookingFormProps) {
     }
   }, [vinData]);
 
-  // Load available dates on mount
+  // Load working hours and slots from API on mount
   useEffect(() => {
-    const loadAvailableDates = async () => {
+    const loadData = async () => {
+      setIsLoadingSlots(true);
       try {
-        const dateStrings = getNextAvailableDates('Trung tâm bảo dưỡng Hà Nội', 30); // Next 30 days
-        const dates = dateStrings.map(dateStr => new Date(dateStr));
+        // Load working hours
+        const workingHoursData = await apiClient.getWorkingHours();
+        setWorkingHours(workingHoursData.enumValue || []);
+
+        // Load available slots
+        const slots = await apiClient.getAvailableSlots();
+        setSlotsData(slots);
+
+        // Calculate available dates from slots
+        const dates: Date[] = slots.map(slot => new Date(slot.date));
         setAvailableDates(dates);
       } catch (error) {
-        console.error('Error loading available dates:', error);
+        console.error('Failed to load working hours and slots:', error);
+        toast({
+          title: 'Lỗi',
+          description: 'Không thể tải thông tin khung giờ. Vui lòng thử lại.',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoadingSlots(false);
       }
     };
-    loadAvailableDates();
-  }, []);
+    loadData();
+  }, [toast]);
 
   // Load time slots when date changes
   useEffect(() => {
@@ -262,13 +334,13 @@ export function BookingForm({ services }: BookingFormProps) {
 
   // Lọc dịch vụ theo model xe từ VIN
   const visibleServices = useMemo(() => {
-    if (!vinData?.model) return [];
+    if (!vinData?.modelName) return [];
 
     return services.filter(service =>
-      service.compatibleVehicles.includes(vinData.model) ||
+      service.compatibleVehicles.includes(vinData.modelName) ||
       service.compatibleVehicles.includes('All')
     );
-  }, [services, vinData?.model]);
+  }, [services, vinData?.modelName]);
 
   // Local state for search and pagination (giống ServiceTable)
   const [searchQuery, setSearchQuery] = useState('');
@@ -332,23 +404,17 @@ export function BookingForm({ services }: BookingFormProps) {
     try {
       const dateString = format(data.selectedDate, 'yyyy-MM-dd');
 
-      // Check if time slot is still available
-      const isAvailable = isTimeSlotAvailable(dateString, data.selectedTimeSlot);
-      if (!isAvailable) {
-        toast({
-          title: 'Lỗi',
-          description: 'Khung giờ đã được đặt trước, vui lòng chọn khung giờ khác',
-          variant: 'destructive'
-        });
-        return;
-      }
+      // Check if slot is still available from API data
+      const daySlot = slotsData.find(s => s.date === dateString);
+      const bookedHours = daySlot?.bookedHours || [];
+      const slotMatch = data.selectedTimeSlot.match(/\d{2}:\d{2}/);
+      const slotStart = slotMatch ? slotMatch[0] : '08:00';
+      const hourNum = hourStringToNumber(slotStart);
 
-      // Book the time slot
-      const success = bookTimeSlot(dateString, data.selectedTimeSlot);
-      if (!success) {
+      if (bookedHours.includes(hourNum)) {
         toast({
           title: 'Lỗi',
-          description: 'Không thể đặt lịch, vui lòng thử lại',
+          description: 'Khung giờ này đã được đặt. Vui lòng chọn khung giờ khác.',
           variant: 'destructive'
         });
         return;
@@ -359,17 +425,69 @@ export function BookingForm({ services }: BookingFormProps) {
       const totalPrice = selectedServices.reduce((sum, service) => sum + service.price, 0);
       const totalDuration = selectedServices.reduce((sum, service) => sum + service.duration, 0);
 
-      // Generate booking ID
-      const bookingId = `BK${Date.now()}`;
+      // Compose schedule time 'yyyy-MM-dd HH:mm:ss' from selected slot (use slotStart already extracted above)
+      const scheduleValue = `${dateString} ${slotStart}:00`;
+
+      // Get current customer
+      const userStr = localStorage.getItem('user');
+      const currentUser = userStr ? JSON.parse(userStr) as { id?: number } : {};
+      const customerId = currentUser?.id;
+
+      // Build catalog details payload
+      const catalogDetailsPayload = selectedServices.map(s => ({
+        catalogId: Number(s.id),
+        modelId: vinData?.modelId ?? 0,
+        description: s.description || ''
+      }));
+
+      // Call backend to create booking
+      try {
+        const created = await apiClient.createBooking({
+          customerId: Number(customerId),
+          vehicleVin: data.vin,
+          scheduleDateTime: {
+            format: 'yyyy-MM-dd HH:mm:ss',
+            value: scheduleValue,
+            timezone: null
+          },
+          catalogDetails: catalogDetailsPayload
+        });
+
+        // Reload slots data from API to reflect the new booking
+        try {
+          const updatedSlots = await apiClient.getAvailableSlots();
+          setSlotsData(updatedSlots);
+          // Recalculate available dates
+          const dates: Date[] = updatedSlots.map(slot => new Date(slot.date));
+          setAvailableDates(dates);
+          // Reload time slots for the selected date
+          if (data.selectedDate) {
+            await loadTimeSlots(data.selectedDate);
+          }
+        } catch (slotError) {
+          console.error('Failed to reload slots:', slotError);
+        }
+
+        // Persist latest booking id for confirmation page
+        if (created?.id) {
+          localStorage.setItem('latestBookingId', String(created.id));
+        }
+      } catch (err) {
+        // Revert local slot booking on failure
+        toast({
+          title: 'Lỗi',
+          description: 'Không thể đặt lịch với hệ thống. Vui lòng thử lại.',
+          variant: 'destructive'
+        });
+        throw err;
+      }
 
       // Create booking data
       const bookingData = {
-        id: bookingId,
+        id: `BK${Date.now()}`,
         vehicle: {
           vin: data.vin,
-          brand: vinData?.brand || 'N/A',
-          model: vinData?.model || 'N/A',
-          year: vinData?.year || new Date().getFullYear()
+          model: vinData?.modelName || 'N/A'
         },
         services: selectedServices.map(service => ({
           id: service.id,
@@ -398,9 +516,17 @@ export function BookingForm({ services }: BookingFormProps) {
 
       // Clear localStorage and navigate to confirmation page
       localStorage.removeItem('bookingVinData');
-      navigate('/customer/booking/confirmation', {
-        state: { bookingData }
-      });
+      // Prefer navigating with bookingId; fallback to local bookingData
+      const latestId = localStorage.getItem('latestBookingId');
+      if (latestId) {
+        navigate('/customer/booking/confirmation', {
+          state: { bookingId: Number(latestId) }
+        });
+      } else {
+        navigate('/customer/booking/confirmation', {
+          state: { bookingData }
+        });
+      }
     } catch (error) {
       console.error('Booking error:', error);
       toast({
@@ -438,7 +564,7 @@ export function BookingForm({ services }: BookingFormProps) {
 
     return {
       title: 'Chọn dịch vụ và thời gian',
-      description: `Xe: ${vinData.brand} ${vinData.model} (${vinData.year}) - VIN: ${vinData.vin}`
+      description: `Xe: ${vinData.modelName} - VIN: ${vinData.vin}`
     };
   };
 
@@ -500,30 +626,54 @@ export function BookingForm({ services }: BookingFormProps) {
                 Thông tin xe
               </h2>
               <div className="bg-muted/50 rounded-lg p-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <span className="text-sm text-muted-foreground">Mã VIN:</span>
                     <p className="font-medium">{vinData.vin}</p>
                   </div>
                   <div>
                     <span className="text-sm text-muted-foreground">Biển số:</span>
-                    <p className="font-medium">{vinData.plate || 'N/A'}</p>
+                    <p className="font-medium">{vinData.plateNumber || 'N/A'}</p>
                   </div>
                   <div>
                     <span className="text-sm text-muted-foreground">Model:</span>
-                    <p className="font-medium">{vinData.model || 'N/A'}</p>
+                    <p className="font-medium">{vinData.modelName || 'N/A'}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-muted-foreground">Năm sản xuất:</span>
-                    <p className="font-medium">{vinData.year || 'N/A'}</p>
+                    <span className="text-sm text-muted-foreground">Tên xe:</span>
+                    <p className="font-medium">{vinData.name || 'N/A'}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-muted-foreground">Hãng xe:</span>
-                    <p className="font-medium">{vinData.brand || 'N/A'}</p>
+                    <span className="text-sm text-muted-foreground">Màu sắc:</span>
+                    <p className="font-medium">{vinData.color || 'N/A'}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-muted-foreground">Loại xe:</span>
-                    <p className="font-medium">{vinData.type || 'N/A'}</p>
+                    <span className="text-sm text-muted-foreground">Quãng đường:</span>
+                    <p className="font-medium">{vinData.distanceTraveledKm?.toLocaleString() || 'N/A'} km</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-muted-foreground">Pin:</span>
+                    <p className="font-medium">{vinData.batteryDegradation || 'N/A'}%</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-muted-foreground">Ngày mua:</span>
+                    <p className="font-medium">
+                      {vinData.purchasedAt
+                        ? new Date(vinData.purchasedAt).toLocaleDateString('vi-VN')
+                        : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-muted-foreground">Ngày tạo:</span>
+                    <p className="font-medium">
+                      {vinData.createdAt
+                        ? new Date(vinData.createdAt).toLocaleDateString('vi-VN')
+                        : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-muted-foreground">Tên người dùng:</span>
+                    <p className="font-medium">{vinData.username || 'N/A'}</p>
                   </div>
                 </div>
                 <div className="mt-4 flex justify-end">
@@ -697,7 +847,7 @@ export function BookingForm({ services }: BookingFormProps) {
                                   <TableCell>
                                     <div className="flex flex-wrap gap-1">
                                       {(() => {
-                                        const modelParts = vinData?.model ? service.relatedParts?.[vinData.model] : null;
+                                        const modelParts = vinData?.modelName ? service.relatedParts?.[vinData.modelName] : null;
                                         if (!modelParts || modelParts.length === 0) {
                                           return (
                                             <span className="text-xs text-muted-foreground">
@@ -785,6 +935,9 @@ export function BookingForm({ services }: BookingFormProps) {
                               mode="single"
                               selected={field.value}
                               onSelect={field.onChange}
+                              month={field.value || undefined}
+                              defaultMonth={field.value || undefined}
+                              modifiersClassNames={{ today: 'pointer-events-none opacity-60' }}
                               disabled={(date) => {
                                 const today = new Date();
                                 today.setHours(0, 0, 0, 0);
@@ -795,7 +948,6 @@ export function BookingForm({ services }: BookingFormProps) {
                                 );
                                 return date < today || !availableDates.some(d => isSameDay(d, date));
                               }}
-                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>
