@@ -174,6 +174,12 @@ export default function VehicleManagementPage() {
     loadUserVehicles();
   }, [navigate, toast]);
 
+  // Reset selectedModelId when add dialog opens
+  useEffect(() => {
+    if (isAddDialogOpen) {
+      setSelectedModelId(null);
+    }
+  }, [isAddDialogOpen]);
 
   const handleAddVehicle = async () => {
     if (!newVehicle.name || !newVehicle.plate || !newVehicle.model || !newVehicle.vin || !selectedModelId) {
@@ -288,7 +294,7 @@ export default function VehicleManagementPage() {
         name: '',
         plate: '',
         model: '',
-        battery: 100,
+        battery: '',
         batteryDegradation: '',
         nextService: '',
         mileage: '',
@@ -297,6 +303,7 @@ export default function VehicleManagementPage() {
         purchaseDate: ''
       });
 
+      setSelectedModelId(null);
       setIsAddDialogOpen(false);
 
       toast({

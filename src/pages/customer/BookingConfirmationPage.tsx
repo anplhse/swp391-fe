@@ -28,6 +28,23 @@ type ApiBooking = {
     serviceName: string;
     description: string;
   }>;
+  invoice?: {
+    id: number;
+    invoiceNumber: string;
+    issueDate: string;
+    dueDate: string;
+    totalAmount: number;
+    status: string;
+    createdAt: string;
+    invoiceLines: Array<{
+      id: number;
+      itemDescription: string;
+      itemType: string;
+      quantity: number;
+      unitPrice: number;
+      totalPrice: number;
+    }>;
+  };
 };
 
 type FallbackService = {
@@ -176,6 +193,35 @@ export default function BookingConfirmationPage() {
     []
   );
 
+  const invoiceLinesColumns: ColumnDef<{
+    id: number;
+    itemDescription: string;
+    itemType: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }>[] = useMemo(
+    () => [
+      { accessorKey: 'itemDescription', header: 'Hạng mục' },
+      {
+        accessorKey: 'quantity',
+        header: 'SL',
+        cell: ({ row }) => <div className="text-center">{row.getValue('quantity')}</div>,
+      },
+      {
+        accessorKey: 'unitPrice',
+        header: 'Đơn giá',
+        cell: ({ row }) => formatPrice(row.getValue('unitPrice') as number),
+      },
+      {
+        accessorKey: 'totalPrice',
+        header: 'Thành tiền',
+        cell: ({ row }) => <div className="font-medium">{formatPrice(row.getValue('totalPrice') as number)}</div>,
+      },
+    ],
+    [formatPrice]
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -233,6 +279,25 @@ export default function BookingConfirmationPage() {
           }))}
         />
       </div>
+
+      {/* Invoice Lines */}
+      {booking.invoice && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Chi phí dự kiến</h2>
+          <DataTable
+            columns={invoiceLinesColumns}
+            data={booking.invoice.invoiceLines}
+          />
+          <div className="flex justify-end">
+            <div className="w-full max-w-md space-y-2 p-4 border rounded-lg bg-muted/50">
+              <div className="flex justify-between text-lg font-semibold">
+                <span>Tổng cộng:</span>
+                <span>{formatPrice(booking.invoice.totalAmount)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
