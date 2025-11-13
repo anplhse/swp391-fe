@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
-import { Mail, MapPin, Phone, Plus, Search } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Mail, MapPin, Phone, Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -102,9 +102,9 @@ export default function PersonnelManagementPage() {
         const users = await apiClient.getAllUsers();
         if (!mounted) return;
         // Lọc chỉ lấy staff, technician, admin (không lấy customer)
-        const staffUsers = users.filter(u => 
-          u.roleDisplayName === 'Nhân viên' || 
-          u.roleDisplayName === 'Kỹ thuật viên' || 
+        const staffUsers = users.filter(u =>
+          u.roleDisplayName === 'Nhân viên' ||
+          u.roleDisplayName === 'Kỹ thuật viên' ||
           u.roleDisplayName === 'Quản trị viên'
         );
         const mapped: Employee[] = staffUsers.map(u => ({
@@ -113,9 +113,9 @@ export default function PersonnelManagementPage() {
           email: u.email,
           phone: u.phoneNumber,
           roleDisplayName: u.roleDisplayName,
-          role: u.roleDisplayName === 'Quản trị viên' ? 'admin' : 
-                u.roleDisplayName === 'Kỹ thuật viên' ? 'technician' : 'staff',
-          status: (u.status as any) ?? 'ACTIVE',
+          role: u.roleDisplayName === 'Quản trị viên' ? 'admin' :
+            u.roleDisplayName === 'Kỹ thuật viên' ? 'technician' : 'staff',
+          status: (u.status as Employee['status']) ?? 'ACTIVE',
           createdAt: u.createdAt,
           lastLogin: u.lastLogin
         }));
@@ -169,11 +169,46 @@ export default function PersonnelManagementPage() {
         });
       } else {
         // Thêm tài khoản mới cho staff/technician
+        // Generate secure random password (user will need to reset password on first login)
+        // Password format: 12 lowercase + 4 uppercase + 2 numbers + 2 special chars = 20 chars
+        const generateSecurePassword = (): string => {
+          const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+          const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+          const numbers = '0123456789';
+          const special = '!@#$%^&*';
+
+          const getRandomChar = (chars: string) => chars[Math.floor(Math.random() * chars.length)];
+
+          let password = '';
+          // Add 12 lowercase
+          for (let i = 0; i < 12; i++) {
+            password += getRandomChar(lowercase);
+          }
+          // Add 4 uppercase
+          for (let i = 0; i < 4; i++) {
+            password += getRandomChar(uppercase);
+          }
+          // Add 2 numbers
+          for (let i = 0; i < 2; i++) {
+            password += getRandomChar(numbers);
+          }
+          // Add 2 special chars
+          for (let i = 0; i < 2; i++) {
+            password += getRandomChar(special);
+          }
+
+          // Shuffle the password
+          return password.split('').sort(() => Math.random() - 0.5).join('');
+        };
+
+        const randomPassword = generateSecurePassword();
+
         await apiClient.createUserProfile({
           email: data.email,
           fullName: data.name,
           phoneNumber: data.phone,
-          roleDisplayName: data.roleDisplayName
+          roleDisplayName: data.roleDisplayName,
+          password: randomPassword
         });
 
         toast({
@@ -184,9 +219,9 @@ export default function PersonnelManagementPage() {
 
       // Reload danh sách
       const users = await apiClient.getAllUsers();
-      const staffUsers = users.filter(u => 
-        u.roleDisplayName === 'Nhân viên' || 
-        u.roleDisplayName === 'Kỹ thuật viên' || 
+      const staffUsers = users.filter(u =>
+        u.roleDisplayName === 'Nhân viên' ||
+        u.roleDisplayName === 'Kỹ thuật viên' ||
         u.roleDisplayName === 'Quản trị viên'
       );
       const mapped: Employee[] = staffUsers.map(u => ({
@@ -195,20 +230,21 @@ export default function PersonnelManagementPage() {
         email: u.email,
         phone: u.phoneNumber,
         roleDisplayName: u.roleDisplayName,
-        role: u.roleDisplayName === 'Quản trị viên' ? 'admin' : 
-              u.roleDisplayName === 'Kỹ thuật viên' ? 'technician' : 'staff',
-        status: (u.status as any) ?? 'ACTIVE',
+        role: u.roleDisplayName === 'Quản trị viên' ? 'admin' :
+          u.roleDisplayName === 'Kỹ thuật viên' ? 'technician' : 'staff',
+        status: (u.status as Employee['status']) ?? 'ACTIVE',
         createdAt: u.createdAt,
         lastLogin: u.lastLogin
       }));
       setEmployees(mapped);
 
       setIsDialogOpen(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to save employee', error);
+      const errorMessage = error instanceof Error ? error.message : (editingEmployee ? "Không thể cập nhật thông tin. Vui lòng thử lại." : "Không thể thêm nhân viên. Vui lòng thử lại.");
       toast({
         title: "Lỗi",
-        description: error?.message || (editingEmployee ? "Không thể cập nhật thông tin. Vui lòng thử lại." : "Không thể thêm nhân viên. Vui lòng thử lại."),
+        description: errorMessage,
         variant: "destructive"
       });
     }

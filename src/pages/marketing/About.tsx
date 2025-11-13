@@ -60,7 +60,7 @@ export default function About() {
                 <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
               </svg>
             </div>
-            <span className="font-semibold text-gray-800">EV Service Center</span>
+            <span className="font-semibold text-gray-800">VinFast Service Workshop</span>
           </div>
           <div className="flex items-center gap-3 relative z-30">
             <Button 
@@ -82,8 +82,8 @@ export default function About() {
         ></div>
       </div>
 
-      <main className="mx-auto max-w-6xl px-4 py-14 space-y-12 relative z-20">
-        <div className="text-center space-y-4" style={{ animation: 'fadeInUp 1s ease-out' }}>
+      <main className="mx-auto max-w-6xl px-4 py-14 space-y-24 md:space-y-32 relative z-20">
+        <div className="text-center space-y-4 mb-20 md:mb-24" style={{ animation: 'fadeInUp 1s ease-out' }}>
           <h1 
             className="text-5xl md:text-7xl font-bold text-white mb-4 inline-block"
             style={{ 
@@ -100,7 +100,7 @@ export default function About() {
           </p>
         </div>
         
-        <div className="space-y-8 relative z-20">
+        <div className="space-y-20 relative z-20">
           <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-8 md:p-12 shadow-2xl border-2 border-white/50 hover:shadow-[0_20px_60px_rgba(0,0,0,0.3)] transition-all duration-500 hover:scale-[1.01]" style={{ animation: 'fadeInUp 1.4s ease-out' }}>
             <div className="flex items-start gap-6">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-red-500 flex items-center justify-center flex-shrink-0 shadow-xl" style={{ animation: 'pulse 2s ease-in-out infinite' }}>
@@ -136,7 +136,7 @@ export default function About() {
                   </svg>
                 </div>
                 <h4 className="font-bold text-gray-900 mb-3 text-xl group-hover:text-accent transition-colors">🔍 Theo dõi tiến độ</h4>
-                <p className="text-gray-700 text-base leading-relaxed">Cập nhật trạng thái real-time từng bước</p>
+                <p className="text-gray-700 text-base leading-relaxed">Cập nhật trạng thái từng bước</p>
               </div>
 
               <div className="group bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl p-7 shadow-lg border-2 border-primary/30 hover:shadow-2xl hover:border-primary transition-all duration-500 hover:-translate-y-3 hover:scale-105 cursor-pointer" style={{ animation: 'fadeInUp 2s ease-out' }}>
@@ -153,7 +153,7 @@ export default function About() {
         </div>
 
         {/* Mobile App Demo Section */}
-        <div className="mt-20 relative">
+        <div className="mt-32 md:mt-44 relative">
           <div className="relative h-80 bg-gradient-to-b from-blue-100 to-blue-50 rounded-3xl overflow-hidden shadow-2xl">
             {/* Mobile App Mockup */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ animation: 'floatSlow 6s ease-in-out infinite' }}>
@@ -331,8 +331,8 @@ export default function About() {
         </div>
 
         {/* Testimonials Section */}
-        <div className="mt-16 space-y-8" style={{ animation: 'fadeInUp 2.2s ease-out' }}>
-          <h2 className="text-4xl md:text-5xl font-bold text-white text-center mb-12" style={{ 
+        <div className="mt-32 md:mt-44 space-y-8" style={{ animation: 'fadeInUp 2.2s ease-out' }}>
+          <h2 className="text-4xl md:text-5xl font-bold text-white text-center mb-24" style={{ 
             textShadow: '0 4px 20px rgba(0,0,0,0.3)',
             animation: 'glow 3s ease-in-out infinite alternate'
           }}>
@@ -403,8 +403,8 @@ export default function About() {
         </div>
 
         {/* CTA Section */}
-        <div className="mt-20 mb-12" style={{ animation: 'fadeInUp 2.4s ease-out' }}>
-          <div className="bg-gradient-to-br from-primary to-accent rounded-3xl p-12 md:p-16 shadow-2xl text-center hover:shadow-[0_30px_70px_rgba(255,126,95,0.4)] transition-all duration-500 hover:scale-[1.02]">
+        <div className="mt-32 md:mt-44 mb-12" style={{ animation: 'fadeInUp 2.4s ease-out' }}>
+          <div className="bg-primary rounded-3xl p-12 md:p-16 shadow-2xl text-center hover:shadow-[0_30px_70px_rgba(255,126,95,0.4)] transition-all duration-500 hover:scale-[1.02]">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6" style={{ 
               textShadow: '0 2px 8px rgba(0,0,0,0.2)'
             }}>
@@ -429,29 +429,6 @@ export default function About() {
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="mt-16 pt-12 pb-8 border-t-2 border-white/30">
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-white/90 flex items-center justify-center shadow-lg">
-                <svg className="w-7 h-7 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
-                </svg>
-              </div>
-              <span className="text-2xl font-bold text-white">EV Service Center</span>
-            </div>
-            <div className="flex gap-6 justify-center text-white/80 text-sm">
-              <a href="/about" className="hover:text-white transition-colors">Giới thiệu</a>
-              <a href="/services" className="hover:text-white transition-colors">Dịch vụ</a>
-              <a href="/pricing" className="hover:text-white transition-colors">Bảng giá</a>
-              <a href="/contact" className="hover:text-white transition-colors">Liên hệ</a>
-            </div>
-            <p className="text-white/70 text-sm">
-              © 2024 EV Service Center. Nền tảng bảo dưỡng xe điện thông minh.
-            </p>
-          </div>
-        </footer>
       </main>
     </div>
   );

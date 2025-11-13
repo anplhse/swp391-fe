@@ -23,7 +23,7 @@ export default function Blog() {
       
       <main className="mx-auto max-w-7xl px-4 py-14 relative z-20">
         {/* Hero Section */}
-        <div className="mb-16 text-center" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
+        <div className="mb-20 md:mb-28 text-center" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
           <div className="inline-block mb-4">
             <span className="px-5 py-2 bg-white/20 backdrop-blur-sm text-white text-sm font-semibold rounded-full border border-white/30 shadow-lg">
               📚 Kiến thức xe điện
@@ -46,7 +46,7 @@ export default function Blog() {
         </div>
 
         {/* Featured Post */}
-        <div className="mb-16" style={{ animation: 'fadeInUp 1.2s ease-out' }}>
+        <div className="mb-20 md:mb-28" style={{ animation: 'fadeInUp 1.2s ease-out' }}>
           <div className="flex items-center gap-3 mb-6">
             <div className="h-1 w-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full"></div>
             <h2 className="text-3xl font-bold text-white">Bài Viết Nổi Bật</h2>
@@ -88,12 +88,12 @@ export default function Blog() {
         </div>
 
         {/* Section Title */}
-        <div className="mb-8" style={{ animation: 'fadeInUp 1.4s ease-out' }}>
+        <div className="mb-12 md:mb-16" style={{ animation: 'fadeInUp 1.4s ease-out' }}>
           <h2 className="text-3xl font-bold text-white">Bài Viết Mới Nhất</h2>
         </div>
 
         {/* Grid layout - 3 columns */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 md:mb-20">
           {[
             { url: 'https://vinfastauto.com/vn_vi/bao-duong-o-to-dien', tag: '📋 Hướng dẫn', title: 'Bảo Dưỡng Xe Điện: Hướng Dẫn Chi Tiết', desc: 'Các bước bảo dưỡng định kỳ và kiểm tra xe điện chuyên nghiệp.', border: 'border-primary', bg: 'bg-primary', delay: '1.6s' },
             { url: 'https://vinfastauto.com/vn_vi/chi-phi-su-dung-xe-dien', tag: '💰 Chi phí', title: 'Chi Phí Sử Dụng Xe Điện: So Sánh & Phân Tích', desc: 'So sánh chi phí sạc và bảo dưỡng xe điện với xe xăng.', border: 'border-accent', bg: 'bg-accent', delay: '1.8s' },
@@ -125,7 +125,7 @@ export default function Blog() {
         </div>
 
         {/* View All Button - CTA */}
-        <div className="flex justify-center">
+        <div className="flex justify-center mt-20 md:mt-28">
           <a 
             href="https://vinfastauto.com/vn_vi/tin-tuc" 
             target="_blank" 

@@ -16,7 +16,7 @@ export default function Pricing() {
 
       <main className="mx-auto max-w-6xl px-4 py-14 relative z-20">
         {/* Title Section */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-24 md:mb-32">
           <h1 
             className="text-4xl md:text-5xl font-bold mb-4 text-white"
             style={{ 
@@ -33,7 +33,7 @@ export default function Pricing() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 md:mb-24">
           {[
             { icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', badge: 'Dịch vụ Phổ thông', title: 'Kiểm Tra Tổng Quát Xe', desc: 'Kiểm tra toàn diện xe, hệ thống điện, phanh, lốp, cập nhật phần mềm (nếu có) theo chuẩn hãng.', price: '300.000', border: 'border-primary', bg: 'bg-primary', badgeBg: 'bg-primary/10', badgeText: 'text-primary', priceColor: 'text-primary' },
             { icon: 'M13 10V3L4 14h7v7l9-11h-7z', badge: 'Dịch vụ Đặc thù EV', title: 'Bảo Dưỡng Hệ Thống Làm Mát Pin', desc: 'Kiểm tra hệ thống làm mátx pin, đảm bảo nhiệt độ hoạt động tối ưu và an toàn cho pin cao áp.', price: '350.000', border: 'border-accent', bg: 'bg-accent', badgeBg: 'bg-accent/10', badgeText: 'text-accent', priceColor: 'text-accent' },
@@ -63,7 +63,7 @@ export default function Pricing() {
         </div>
 
         {/* Disclaimer Note */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-xl p-6 shadow-lg max-w-4xl mx-auto mb-12">
+        <div className="bg-white/95 backdrop-blur-sm rounded-xl p-6 shadow-lg max-w-4xl mx-auto mb-20 md:mb-24">
           <div className="flex items-start gap-3">
             <svg className="w-6 h-6 text-orange-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -79,7 +79,7 @@ export default function Pricing() {
         </div>
 
         {/* Call to Action */}
-        <div className="mt-16 text-center">
+        <div className="mt-24 md:mt-32 text-center">
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-10 shadow-2xl max-w-3xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
               Sẵn sàng trải nghiệm dịch vụ chuyên nghiệp?

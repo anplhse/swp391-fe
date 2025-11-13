@@ -678,6 +678,23 @@ class ApiClient {
       serviceName: string;
       description: string;
     }>;
+    invoice?: {
+      id: number;
+      invoiceNumber: string;
+      issueDate: string;
+      dueDate: string;
+      totalAmount: number;
+      status: string;
+      createdAt: string;
+      invoiceLines: Array<{
+        id: number;
+        itemDescription: string;
+        itemType: string;
+        quantity: number;
+        unitPrice: number;
+        totalPrice: number;
+      }>;
+    };
   }> {
     return this.request(`/bookings/${id}`, {
       method: 'GET',

@@ -1,8 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 export default function Services() {
   const navigate = useNavigate();
+  const [hoveredVehicle, setHoveredVehicle] = useState<number | null>(null);
 
   return (
     <div 
@@ -44,7 +46,7 @@ export default function Services() {
       
       <main className="mx-auto max-w-6xl px-4 py-14 relative z-20">
         {/* Hero Section */}
-        <div className="mb-16 text-center" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
+        <div className="mb-20 md:mb-28 text-center" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
           <h1 className="text-5xl md:text-7xl font-extrabold mb-4 relative inline-block">
             <span 
               className="text-white drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]"
@@ -54,26 +56,9 @@ export default function Services() {
             </span>
             <div className="absolute -bottom-2 left-0 right-0 h-1 bg-white/40 rounded-full"></div>
           </h1>
-          <p className="text-white/90 text-xl md:text-2xl mt-8 font-medium drop-shadow-lg max-w-3xl mx-auto" style={{ animation: 'fadeInUp 1s ease-out' }}>
-            Trải nghiệm dịch vụ bảo dưỡng xe điện thông minh - Tiện lợi, minh bạch, chuyên nghiệp
-          </p>
         </div>
-
-        {/* Services Title */}
-        <div className="mb-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-3" style={{ 
-            textShadow: '0 4px 20px rgba(0,0,0,0.3)',
-            animation: 'fadeInUp 1.4s ease-out'
-          }}>
-            Dịch vụ của chúng tôi
-          </h2>
-          <p className="text-white/80 text-lg" style={{ animation: 'fadeInUp 1.5s ease-out' }}>
-            Giải pháp toàn diện cho xe điện của bạn
-          </p>
-        </div>
-
         {/* Top 3 features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 md:mb-16">
           <div className="group rounded-2xl p-7 bg-white/95 backdrop-blur-sm shadow-2xl hover:shadow-[0_20px_60px_rgba(255,100,0,0.3)] transition-all duration-500 cursor-pointer hover:-translate-y-3 hover:scale-105 border-t-4 border-primary relative overflow-hidden" style={{ animation: 'bounceIn 1s ease-out' }}>
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30 transition-opacity duration-500" style={{ animation: 'shimmer 2s infinite' }}></div>
             <div className="mb-4 relative z-10">
@@ -101,7 +86,7 @@ export default function Services() {
               </div>
             </div>
             <h3 className="font-bold mb-3 text-xl text-gray-900 group-hover:text-orange-600 transition-colors duration-300 relative z-10">
-              Theo dõi tiến độ <span className="text-orange-600 font-black">Real-time</span>
+              Theo dõi tiến độ
             </h3>
             <p className="text-sm text-gray-600 leading-relaxed group-hover:text-gray-800 transition-colors duration-300 relative z-10">
               Biết chính xác xe đang ở trạng thái nào (Chẩn đoán, Đang sửa, Chờ phụ tùng, Hoàn tất) ngay trên app.
@@ -125,7 +110,7 @@ export default function Services() {
         </div>
 
         {/* Bottom 2 features centered */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-20 md:mb-28">
           <div className="group rounded-2xl p-7 bg-white/95 backdrop-blur-sm shadow-2xl hover:shadow-[0_20px_60px_rgba(255,126,95,0.3)] transition-all duration-500 cursor-pointer hover:-translate-y-3 hover:scale-105 border-t-4 border-primary relative overflow-hidden" style={{ animation: 'slideInLeft 1s ease-out' }}>
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
             <div className="mb-4 relative z-10">
@@ -157,9 +142,161 @@ export default function Services() {
           </div>
         </div>
 
+        {/* Featured Vehicle Models Section */}
+        <div className="mt-28 md:mt-40 mb-20 md:mb-28" style={{ animation: 'fadeInUp 2.4s ease-out' }}>
+          <div className="text-center mb-16 md:mb-20">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3" style={{ 
+              textShadow: '0 4px 20px rgba(0,0,0,0.3)'
+            }}>
+              Dòng Xe Điển Hình
+            </h2>
+            <p className="text-white/80 text-lg">
+              Một số dòng xe VinFast chúng tôi sửa chữa
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                model: 'VF 3',
+                brand: 'VinFast',
+                seats: 4,
+                batteryCapacity: 18.64,
+                range: 210,
+                acceleration: 0.5,
+                power: 32,
+                weight: 1090,
+                imageUrl: 'https://vinfast-cars.vn/wp-content/uploads/2024/10/vinfast-vf3-do.png'
+              },
+              {
+                model: 'VF 5 Plus',
+                brand: 'VinFast',
+                seats: 5,
+                batteryCapacity: 37.23,
+                range: 326,
+                acceleration: 0.5,
+                power: 100,
+                weight: 1360,
+                imageUrl: 'https://vinfastbinhthanh.com/wp-content/uploads/2024/01/vinfast_vf5_trang-768x768.webp'
+              },
+              {
+                model: 'VF 6',
+                brand: 'VinFast',
+                seats: 5,
+                batteryCapacity: 59.6,
+                range: 399,
+                acceleration: 0.5,
+                power: 150,
+                weight: 1550,
+                imageUrl: 'https://i.pinimg.com/736x/1c/d6/c8/1cd6c8d23d8815f29ebd852f158e3119.jpg'
+              },
+              {
+                model: 'VF 7',
+                brand: 'VinFast',
+                seats: 5,
+                batteryCapacity: 75.3,
+                range: 431,
+                acceleration: 0.42,
+                power: 260,
+                weight: 2025,
+                imageUrl: 'https://i.pinimg.com/736x/e3/c9/ae/e3c9aeed275f2b3efcf0f4e008a9992b.jpg'
+              },
+              {
+                model: 'VF 8',
+                brand: 'VinFast',
+                seats: 5,
+                batteryCapacity: 87.7,
+                range: 471,
+                acceleration: 0.43,
+                power: 300,
+                weight: 2605,
+                imageUrl: 'https://i.pinimg.com/736x/8d/1d/43/8d1d4386aa53db78fa935b4ff4b67161.jpg'
+              },
+              {
+                model: 'VF 9',
+                brand: 'VinFast',
+                seats: 7,
+                batteryCapacity: 92,
+                range: 438,
+                acceleration: 0.43,
+                power: 300,
+                weight: 2830,
+                imageUrl: 'https://i.pinimg.com/736x/43/e9/17/43e917f48fe53c38185bd39cf750d6d6.jpg'
+              }
+            ].map((vehicle, index) => (
+              <div
+                key={index}
+                className="rounded-xl overflow-hidden bg-white/95 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group"
+              >
+                <div 
+                  className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden cursor-pointer"
+                  onMouseEnter={() => setHoveredVehicle(index)}
+                  onMouseLeave={() => setHoveredVehicle(null)}
+                >
+                  <img
+                    src={vehicle.imageUrl}
+                    alt={`${vehicle.brand} ${vehicle.model}`}
+                    className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-110"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
+                    }}
+                  />
+                  
+                  {/* Overlay Info - Show on hover */}
+                  {hoveredVehicle === index && (
+                    <div className="absolute inset-0 bg-black/75 backdrop-blur-sm p-4 flex flex-col justify-end animate-in fade-in duration-300">
+                      <div className="text-white space-y-2">
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                          <div>
+                            <p className="text-white/70">Số chỗ ngồi</p>
+                            <p className="font-semibold">{vehicle.seats} chỗ</p>
+                          </div>
+                          <div>
+                            <p className="text-white/70">Pin</p>
+                            <p className="font-semibold">{vehicle.batteryCapacity} kWh</p>
+                          </div>
+                          <div>
+                            <p className="text-white/70">Quãng đường</p>
+                            <p className="font-semibold">{vehicle.range} km</p>
+                          </div>
+                          <div>
+                            <p className="text-white/70">Công suất</p>
+                            <p className="font-semibold">{vehicle.power} kW</p>
+                          </div>
+                          <div>
+                            <p className="text-white/70">Tăng tốc</p>
+                            <p className="font-semibold">{vehicle.acceleration}s (0-100km/h)</p>
+                          </div>
+                          <div>
+                            <p className="text-white/70">Trọng lượng</p>
+                            <p className="font-semibold">{vehicle.weight} kg</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="p-5 bg-white">
+                  <h3 className="text-xl font-bold text-gray-900">{vehicle.model}</h3>
+                  <p className="text-gray-600">{vehicle.brand}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-8">
+            <Button 
+              onClick={() => navigate('/solutions')}
+              className="bg-white text-primary hover:bg-gray-100 font-bold px-8 py-6 text-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 border-0"
+            >
+              🚗 Xem tất cả dòng xe
+            </Button>
+          </div>
+        </div>
+
         {/* Process Section */}
-        <div className="mt-20 mb-16" style={{ animation: 'fadeInUp 2.8s ease-out' }}>
-          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-12" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+        <div className="mt-28 md:mt-40 mb-16 md:mb-20" style={{ animation: 'fadeInUp 2.8s ease-out' }}>
+          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-16 md:mb-20" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
             Quy trình đơn giản
           </h2>
           
@@ -182,8 +319,8 @@ export default function Services() {
         </div>
 
         {/* CTA Section */}
-        <div className="mt-20 mb-12" style={{ animation: 'fadeInUp 3s ease-out' }}>
-          <div className="bg-gradient-to-br from-primary to-accent rounded-3xl p-12 md:p-16 shadow-2xl text-center hover:shadow-[0_30px_70px_rgba(255,126,95,0.4)] transition-all duration-500 hover:scale-[1.02]">
+        <div className="mt-20 md:mt-24 mb-12" style={{ animation: 'fadeInUp 3s ease-out' }}>
+          <div className="bg-primary rounded-3xl p-12 md:p-16 shadow-2xl text-center hover:shadow-[0_30px_70px_rgba(255,126,95,0.4)] transition-all duration-500 hover:scale-[1.02]">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6" style={{ 
               textShadow: '0 2px 8px rgba(0,0,0,0.2)'
             }}>
