@@ -145,18 +145,10 @@ class AuthService {
     return { message: res.message };
   }
 
-  async verifyAccount(payload: { userName: string; code: string }): Promise<LoginResponse> {
+  async verifyAccount(payload: { userName: string; code: string }): Promise<{ message: string; timestamp?: string; path?: string }> {
     const response = await apiClient.verifyAccount(payload);
-    this.authState = {
-      user: response.user,
-      accessToken: response.accessToken,
-      refreshToken: response.refreshToken,
-      isAuthenticated: true,
-      isLoading: false,
-    };
-
-    this.saveToStorage(response);
-    this.notifyListeners();
+    // Verify chỉ trả về message, không tự động login
+    // User cần login riêng sau khi verify thành công
     return response;
   }
 

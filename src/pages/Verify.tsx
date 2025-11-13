@@ -49,18 +49,16 @@ export default function Verify() {
     setIsVerifying(true);
     try {
       const res = await authService.verifyAccount({ userName, code });
-      const roleKey = authService.getRoleKey();
 
-      toast({ title: 'Xác minh thành công', description: `Chào mừng ${res.user.fullName}` });
+      toast({
+        title: 'Xác minh thành công',
+        description: res.message || 'Bạn có thể đăng nhập ngay bây giờ.'
+      });
 
-      const roleRoutes: Record<string, string> = {
-        customer: '/customer',
-        staff: '/service/staff',
-        technician: '/service/technician',
-        admin: '/service/admin',
-      };
-      const target = roleKey ? roleRoutes[roleKey] : '/customer';
-      navigate(target);
+      // Redirect to login sau khi verify thành công
+      setTimeout(() => {
+        navigate('/login', { replace: true });
+      }, 1500);
     } catch (e) {
       const err = e as Error;
       toast({ title: 'Xác minh thất bại', description: err.message || 'Vui lòng thử lại', variant: 'destructive' });
