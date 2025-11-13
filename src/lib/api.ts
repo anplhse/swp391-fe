@@ -44,23 +44,6 @@ class ApiClient {
   ): Promise<T> {
     const url = this.joinUrl(this.baseURL, endpoint);
 
-    // Không refresh cho endpoint auth để tránh loop
-    const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/refresh') || endpoint.includes('/auth/logout') || endpoint.includes('/auth/forgot-password') || endpoint.includes('/auth/reset-password');
-
-    // Kiểm tra token expiration trước khi gửi request (trừ các endpoint auth)
-    if (!isAuthEndpoint) {
-      // Dynamic import để tránh circular dependency
-      const { authService } = await import('./auth');
-      if (authService.isTokenExpired()) {
-        // Token đã hết hạn, thử refresh trước
-        const refreshed = await this.tryRefreshToken();
-        if (!refreshed) {
-          // Refresh thất bại, throw error để caller xử lý
-          throw new Error('Token đã hết hạn và không thể refresh. Vui lòng đăng nhập lại.');
-        }
-      }
-    }
-
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
@@ -82,8 +65,10 @@ class ApiClient {
     try {
       const response = await fetch(url, config);
 
-      // Nếu 401: thử refresh token và retry một lần (fallback nếu kiểm tra expiration ở trên không catch được)
+      // Nếu 401: thử refresh token và retry một lần
       if (response.status === 401) {
+        // Không refresh cho endpoint refresh/login để tránh loop
+        const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/refresh') || endpoint.includes('/auth/logout');
         if (!isAuthEndpoint) {
           const refreshed = await this.tryRefreshToken();
           if (refreshed) {
@@ -172,8 +157,8 @@ class ApiClient {
     });
   }
 
-  async verifyAccount(payload: { userName: string; code: string }): Promise<LoginResponse> {
-    return this.request<LoginResponse>('/auth/verify', {
+  async verifyAccount(payload: { userName: string; code: string }): Promise<{ message: string; timestamp?: string; path?: string }> {
+    return this.request<{ message: string; timestamp?: string; path?: string }>('/auth/verify', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
