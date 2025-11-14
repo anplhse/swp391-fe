@@ -13,7 +13,7 @@ interface AssignedTask {
   customerName: string;
   serviceType: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'assigned' | 'in_progress' | 'paused' | 'completed' | 'cancelled';
+  status: 'unassigned' | 'pending' | 'in_progress' | 'completed';
   progress: number;
   assignedDate: string;
   startTime?: string;
@@ -70,17 +70,16 @@ export default function AssignedTasksPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'assigned':
-        return <Badge variant="secondary">Đã giao</Badge>;
+    const normalized = (status || '').toLowerCase();
+    switch (normalized) {
+      case 'unassigned':
+        return <Badge variant="outline">Chưa phân công</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">Chờ bắt đầu</Badge>;
       case 'in_progress':
         return <Badge variant="destructive">Đang thực hiện</Badge>;
-      case 'paused':
-        return <Badge className="bg-yellow-500">Tạm dừng</Badge>;
       case 'completed':
         return <Badge className="bg-green-500">Hoàn thành</Badge>;
-      case 'cancelled':
-        return <Badge variant="outline">Đã hủy</Badge>;
       default:
         return <Badge variant="outline">Không xác định</Badge>;
     }
@@ -114,15 +113,8 @@ export default function AssignedTasksPage() {
     );
   };
 
-  const handlePauseTask = (taskId: string) => {
-    setTasks(prev =>
-      prev.map(task =>
-        task.id === taskId
-          ? { ...task, status: 'paused' as const }
-          : task
-      )
-    );
-  };
+  // Note: Pause functionality removed as it's not in JobStatus enum
+  // JobStatus only has: UNASSIGNED, PENDING, IN_PROGRESS, COMPLETED
 
   const handleResumeTask = (taskId: string) => {
     setTasks(prev =>
@@ -149,8 +141,8 @@ export default function AssignedTasksPage() {
     );
   };
 
-  const assignedTasks = filteredTasks.filter(task => task.status === 'assigned');
-  const inProgressTasks = filteredTasks.filter(task => task.status === 'in_progress' || task.status === 'paused');
+  const pendingTasks = filteredTasks.filter(task => task.status === 'pending' || task.status === 'unassigned');
+  const inProgressTasks = filteredTasks.filter(task => task.status === 'in_progress');
   const completedTasks = filteredTasks.filter(task => task.status === 'completed');
 
   return (
@@ -181,24 +173,24 @@ export default function AssignedTasksPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
-            <SelectItem value="assigned">Đã giao</SelectItem>
+            <SelectItem value="unassigned">Chưa phân công</SelectItem>
+            <SelectItem value="pending">Chờ bắt đầu</SelectItem>
             <SelectItem value="in_progress">Đang thực hiện</SelectItem>
-            <SelectItem value="paused">Tạm dừng</SelectItem>
             <SelectItem value="completed">Hoàn thành</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <Tabs defaultValue="assigned" className="space-y-4">
+      <Tabs defaultValue="pending" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="assigned">Đã giao ({assignedTasks.length})</TabsTrigger>
+          <TabsTrigger value="pending">Chờ xử lý ({pendingTasks.length})</TabsTrigger>
           <TabsTrigger value="in_progress">Đang thực hiện ({inProgressTasks.length})</TabsTrigger>
           <TabsTrigger value="completed">Hoàn thành ({completedTasks.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="assigned" className="space-y-4">
+        <TabsContent value="pending" className="space-y-4">
           <div className="grid gap-4">
-            {assignedTasks.map((task) => (
+            {pendingTasks.map((task) => (
               <Card key={task.id}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -333,21 +325,18 @@ export default function AssignedTasksPage() {
                     </div>
                   )}
                   <div className="flex gap-2 pt-2">
-                    {task.status === 'in_progress' ? (
-                      <Button size="sm" onClick={() => handlePauseTask(task.id)}>
-                        <Pause className="w-4 h-4 mr-1" />
-                        Tạm dừng
-                      </Button>
-                    ) : (
+                    {(task.status === 'pending' || task.status === 'unassigned') && (
                       <Button size="sm" onClick={() => handleResumeTask(task.id)}>
                         <Play className="w-4 h-4 mr-1" />
-                        Tiếp tục
+                        Bắt đầu
                       </Button>
                     )}
-                    <Button size="sm" onClick={() => handleCompleteTask(task.id)}>
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      Hoàn thành
-                    </Button>
+                    {task.status === 'in_progress' && (
+                      <Button size="sm" onClick={() => handleCompleteTask(task.id)}>
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Hoàn thành
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm">
                       Chi tiết
                     </Button>

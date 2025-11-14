@@ -35,7 +35,7 @@ const vehicleSchema = z.object({
     const num = Number(val);
     return !isNaN(num) && num >= 0 && num <= 100;
   }, 'Pin phải từ 0 đến 100'),
-  userId: z.string().min(1, 'Chủ xe là bắt buộc'),
+  phoneNumber: z.string().min(1, 'Số điện thoại là bắt buộc'),
 });
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
@@ -67,8 +67,10 @@ export default function VehicleManagementPage() {
   const { toast } = useToast();
   const [vehicleModels, setVehicleModels] = useState<Array<{ id: number; brandName: string; modelName: string; status: string }>>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
-  const [users, setUsers] = useState<Array<{ id: number; fullName: string; email: string }>>([]);
+  const [users, setUsers] = useState<Array<{ id: number; fullName: string; email: string; phoneNumber: string }>>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<{ id: number; fullName: string; email: string; phoneNumber: string } | null>(null);
+  const [isSearchingUser, setIsSearchingUser] = useState(false);
 
   const form = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
@@ -81,7 +83,7 @@ export default function VehicleManagementPage() {
       purchaseDate: '',
       mileage: '',
       batteryDegradation: '',
-      userId: '',
+      phoneNumber: '',
     }
   });
 
@@ -166,6 +168,7 @@ export default function VehicleManagementPage() {
 
   const handleAddVehicle = () => {
     setEditingVehicle(null);
+    setSelectedUser(null);
     form.reset({
       name: '',
       plate: '',
@@ -175,7 +178,7 @@ export default function VehicleManagementPage() {
       purchaseDate: '',
       mileage: '',
       batteryDegradation: '',
-      userId: '',
+      phoneNumber: '',
     });
     setIsDialogOpen(true);
   };
@@ -191,7 +194,7 @@ export default function VehicleManagementPage() {
       purchaseDate: vehicle.lastService,
       mileage: vehicle.mileage.toString(),
       batteryDegradation: vehicle.battery?.toString() || '',
-      userId: '',
+      phoneNumber: '',
     });
     setIsDialogOpen(true);
   };
@@ -245,6 +248,17 @@ export default function VehicleManagementPage() {
           return;
         }
 
+        // Find user by phone number
+        const foundUser = users.find(u => u.phoneNumber === data.phoneNumber);
+        if (!foundUser) {
+          toast({
+            title: "Lỗi",
+            description: "Không tìm thấy khách hàng với số điện thoại này.",
+            variant: "destructive"
+          });
+          return;
+        }
+
         // Validate purchase date - không được trong tương lai
         if (data.purchaseDate) {
           const selectedDate = new Date(data.purchaseDate);
@@ -279,7 +293,7 @@ export default function VehicleManagementPage() {
           distanceTraveledKm: distanceKm,
           batteryDegradation: degradation,
           purchasedAt: purchasedAtIsoZ,
-          userId: Number(data.userId),
+          userId: foundUser.id,
           vehicleModelId: selectedModel.id,
         };
 
@@ -587,30 +601,46 @@ export default function VehicleManagementPage() {
                     />
                     <FormField
                       control={form.control}
-                      name="userId"
+                      name="phoneNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Chủ xe *</FormLabel>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder={usersLoading ? 'Đang tải danh sách...' : 'Chọn chủ xe'} />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {usersLoading && (
-                                <div className="px-3 py-2 text-sm text-muted-foreground">Đang tải...</div>
+                          <FormLabel>Số điện thoại khách hàng *</FormLabel>
+                          <FormControl>
+                            <div className="space-y-2">
+                              <Input
+                                placeholder=" "
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  const phone = e.target.value.trim();
+                                  if (phone) {
+                                    setIsSearchingUser(true);
+                                    const foundUser = users.find(u => u.phoneNumber === phone);
+                                    setSelectedUser(foundUser || null);
+                                    setIsSearchingUser(false);
+                                  } else {
+                                    setSelectedUser(null);
+                                  }
+                                }}
+                              />
+                              {isSearchingUser && (
+                                <p className="text-sm text-muted-foreground">Đang tìm kiếm...</p>
                               )}
-                              {!usersLoading && users.map((user) => (
-                                <SelectItem key={user.id} value={String(user.id)}>
-                                  {user.fullName} ({user.email})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                              {selectedUser && !isSearchingUser && (
+                                <div className="p-2 bg-green-50 border border-green-200 rounded-md">
+                                  <p className="text-sm font-medium text-green-800">
+                                    {selectedUser.fullName}
+                                  </p>
+                                  <p className="text-xs text-green-600">{selectedUser.email}</p>
+                                </div>
+                              )}
+                              {field.value && !selectedUser && !isSearchingUser && (
+                                <p className="text-sm text-red-600">
+                                  Không tìm thấy khách hàng với số điện thoại này
+                                </p>
+                              )}
+                            </div>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

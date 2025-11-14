@@ -26,6 +26,7 @@ const BookingStatusPage = lazy(() => import("../pages/customer/BookingStatusPage
 const BookingsAndHistoryPage = lazy(() => import("../pages/customer/BookingsAndHistoryPage"));
 const CustomerDashboard = lazy(() => import("../pages/customer/CustomerDashboard"));
 const PaymentPage = lazy(() => import("../pages/customer/PaymentPage"));
+const PaymentResultPage = lazy(() => import("../pages/customer/PaymentResultPage"));
 const CustomerVehicleManagementPage = lazy(() => import("../pages/customer/VehicleManagementPage"));
 const VehicleProfilePage = lazy(() => import("../pages/customer/VehicleProfilePage"));
 
@@ -84,6 +85,7 @@ export default function AppRoutes() {
           <Route path="customer/vehicles" element={<ProtectedRoute requiredUserType="customer"><CustomerVehicleManagementPage /></ProtectedRoute>} />
           <Route path="customer/vehicle/:vehicleId" element={<ProtectedRoute requiredUserType="customer"><VehicleProfilePage /></ProtectedRoute>} />
           <Route path="customer/payment" element={<ProtectedRoute requiredUserType="customer"><PaymentPage /></ProtectedRoute>} />
+          <Route path="payment-result" element={<PaymentResultPage />} />
 
           {/* Service Center routes */}
           <Route path="service/staff" element={<ProtectedRoute requiredRole="staff"><StaffDashboard /></ProtectedRoute>} />

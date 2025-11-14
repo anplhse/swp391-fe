@@ -37,7 +37,7 @@ interface BookingData {
   };
   date: string;
   time: string;
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'paid' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
   center: string;
   technician?: string;
   notes?: string;
@@ -99,6 +99,14 @@ export default function BookingStatusPage() {
           description: 'Lịch hẹn đã được xác nhận, sẵn sàng thực hiện',
           progress: 50
         };
+      case 'paid':
+        return {
+          label: 'Đã thanh toán',
+          color: 'default',
+          icon: CreditCard,
+          description: 'Đã thanh toán trước, sẵn sàng thực hiện dịch vụ',
+          progress: 60
+        };
       case 'in_progress':
         return {
           label: 'Đang thực hiện',
@@ -121,6 +129,14 @@ export default function BookingStatusPage() {
           color: 'destructive',
           icon: AlertCircle,
           description: 'Lịch hẹn đã bị hủy',
+          progress: 0
+        };
+      case 'rejected':
+        return {
+          label: 'Từ chối',
+          color: 'destructive',
+          icon: AlertCircle,
+          description: 'Lịch hẹn đã bị từ chối bởi trung tâm',
           progress: 0
         };
       default:

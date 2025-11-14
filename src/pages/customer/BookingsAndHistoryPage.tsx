@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { authService } from '@/lib/auth';
+import { bookingApi } from '@/lib/bookingUtils';
 import { ColumnDef } from '@tanstack/react-table';
 import {
   AlertCircle,
@@ -15,14 +17,13 @@ import {
   Eye,
   Search,
   Trash2,
-  Wrench
+  Wrench,
+  X
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiClient } from '@/lib/api';
-import { authService } from '@/lib/auth';
 
-type BookingStatus = 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+type BookingStatus = 'pending' | 'confirmed' | 'paid' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
 
 interface PlainService {
   id: string;
@@ -72,7 +73,7 @@ export default function BookingsAndHistoryPage() {
       try {
         const currentUser = authService.getAuthState().user;
         if (!currentUser) return;
-        const data = await apiClient.getCustomerBookings(currentUser.id);
+        const data = await bookingApi.getCustomerBookings(currentUser.id);
         const mapped: BookingRecord[] = data.map(b => {
           // Split date/time from scheduleDateTime.value
           const dt = b.scheduleDateTime?.value || '';
@@ -82,10 +83,12 @@ export default function BookingsAndHistoryPage() {
             switch (normalized) {
               case 'pending': return 'pending';
               case 'confirmed': return 'confirmed';
+              case 'paid': return 'paid';
               case 'in_progress': return 'in_progress';
               case 'maintenance_complete': return 'completed';
               case 'completed': return 'completed';
               case 'cancelled': return 'cancelled';
+              case 'rejected': return 'rejected';
               default: return 'pending';
             }
           };
@@ -127,8 +130,6 @@ export default function BookingsAndHistoryPage() {
       const matchText = [
         b.id,
         b.service?.name,
-        b.vehicle?.name,
-        b.vehicle?.plate,
         b.center,
         b.date,
         b.time,
@@ -152,12 +153,16 @@ export default function BookingsAndHistoryPage() {
         return <Badge variant="outline" className="gap-1"><AlertCircle className="w-3 h-3" />Chờ xác nhận</Badge>;
       case 'confirmed':
         return <Badge variant="default" className="gap-1"><CheckCircle2 className="w-3 h-3" />Đã xác nhận</Badge>;
+      case 'paid':
+        return <Badge variant="default" className="bg-blue-600 hover:bg-blue-700 gap-1"><CheckCircle2 className="w-3 h-3" />Đã thanh toán</Badge>;
       case 'in_progress':
         return <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" />Đang thực hiện</Badge>;
       case 'completed':
         return <Badge variant="default" className="bg-green-600 hover:bg-green-700 gap-1"><CheckCircle2 className="w-3 h-3" />Hoàn thành</Badge>;
       case 'cancelled':
         return <Badge variant="destructive" className="gap-1"><AlertCircle className="w-3 h-3" />Đã hủy</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive" className="gap-1"><X className="w-3 h-3" />Từ chối</Badge>;
       default:
         return null;
     }
@@ -186,13 +191,10 @@ export default function BookingsAndHistoryPage() {
   // Define columns for unified table
   const bookingColumns: ColumnDef<BookingRecord>[] = useMemo(() => [
     {
-      accessorKey: 'vehicle',
-      header: 'Xe',
+      accessorKey: 'id',
+      header: 'Booking ID',
       cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.vehicle.name}</div>
-          <div className="text-sm text-muted-foreground">{row.original.vehicle.plate}</div>
-        </div>
+        <div className="font-medium font-mono">{row.original.id}</div>
       ),
     },
     {
@@ -273,7 +275,7 @@ export default function BookingsAndHistoryPage() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Mã lịch hẹn, dịch vụ, biển số..."
+              placeholder="Mã lịch hẹn, dịch vụ..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -289,9 +291,11 @@ export default function BookingsAndHistoryPage() {
               <SelectItem value="all">Tất cả</SelectItem>
               <SelectItem value="pending">Chờ xác nhận</SelectItem>
               <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+              <SelectItem value="paid">Đã thanh toán</SelectItem>
               <SelectItem value="in_progress">Đang thực hiện</SelectItem>
               <SelectItem value="completed">Hoàn thành</SelectItem>
               <SelectItem value="cancelled">Đã hủy</SelectItem>
+              <SelectItem value="rejected">Từ chối</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { bookingApi } from '@/lib/bookingUtils';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createColumnHelper } from '@tanstack/react-table';
@@ -301,11 +302,11 @@ export function BookingForm({ services }: BookingFormProps) {
       setIsLoadingSlots(true);
       try {
         // Load working hours
-        const workingHoursData = await apiClient.getWorkingHours();
+        const workingHoursData = await bookingApi.getWorkingHours();
         setWorkingHours(workingHoursData.enumValue || []);
 
         // Load available slots
-        const slots = await apiClient.getAvailableSlots();
+        const slots = await bookingApi.getAvailableSlots();
         setSlotsData(slots);
 
         // Calculate available dates from slots
@@ -442,7 +443,7 @@ export function BookingForm({ services }: BookingFormProps) {
 
       // Call backend to create booking
       try {
-        const created = await apiClient.createBooking({
+        const created = await bookingApi.createBooking({
           customerId: Number(customerId),
           vehicleVin: data.vin,
           scheduleDateTime: {
@@ -455,7 +456,7 @@ export function BookingForm({ services }: BookingFormProps) {
 
         // Reload slots data from API to reflect the new booking
         try {
-          const updatedSlots = await apiClient.getAvailableSlots();
+          const updatedSlots = await bookingApi.getAvailableSlots();
           setSlotsData(updatedSlots);
           // Recalculate available dates
           const dates: Date[] = updatedSlots.map(slot => new Date(slot.date));

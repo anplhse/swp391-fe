@@ -2,9 +2,9 @@ import { DataTable } from '@/components/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { apiClient } from '@/lib/api';
+import { bookingApi } from '@/lib/bookingUtils';
 import { ColumnDef } from '@tanstack/react-table';
-import { CheckCircle, X } from 'lucide-react';
+import { CheckCircle, X, CreditCard } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -56,6 +56,7 @@ type FallbackService = {
 export default function BookingConfirmationPage() {
   const [booking, setBooking] = useState<ApiBooking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -67,7 +68,7 @@ export default function BookingConfirmationPage() {
         const latestId = localStorage.getItem('latestBookingId');
         if (idFromState || latestId) {
           const id = idFromState ?? Number(latestId);
-          const data = await apiClient.getBookingById(Number(id));
+          const data = await bookingApi.getBookingById(Number(id));
           setBooking(data);
         } else {
           // Fallback (cũ) để không trắng trang nếu thiếu id
@@ -126,6 +127,32 @@ export default function BookingConfirmationPage() {
     });
   };
 
+  const handlePayment = useCallback(async () => {
+    if (!booking || !booking.invoice?.id) {
+      toast({
+        title: 'Lỗi',
+        description: 'Không tìm thấy thông tin hóa đơn để thanh toán.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    try {
+      const result = await bookingApi.createPayment(booking.invoice.id);
+      // Redirect to payment URL
+      window.location.href = result.paymentUrl;
+    } catch (error) {
+      console.error('Payment creation failed', error);
+      toast({
+        title: 'Lỗi',
+        description: error instanceof Error ? error.message : 'Không thể tạo thanh toán. Vui lòng thử lại.',
+        variant: 'destructive',
+      });
+      setIsProcessingPayment(false);
+    }
+  }, [booking, toast]);
+
   const formatPrice = useCallback((price: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -139,12 +166,16 @@ export default function BookingConfirmationPage() {
         return <Badge variant="secondary">Chờ xác nhận</Badge>;
       case 'CONFIRMED':
         return <Badge variant="default">Đã xác nhận</Badge>;
+      case 'PAID':
+        return <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">Đã thanh toán</Badge>;
       case 'IN_PROGRESS':
         return <Badge variant="destructive">Đang thực hiện</Badge>;
       case 'MAINTENANCE_COMPLETE':
         return <Badge variant="default" className="bg-green-600 hover:bg-green-700">Hoàn thành</Badge>;
       case 'CANCELLED':
-        return <Badge variant="outline">Đã hủy</Badge>;
+        return <Badge variant="destructive">Đã hủy</Badge>;
+      case 'REJECTED':
+        return <Badge variant="destructive">Từ chối</Badge>;
       default:
         return <Badge variant="outline">Không xác định</Badge>;
     }
@@ -253,11 +284,19 @@ export default function BookingConfirmationPage() {
       {/* Header */}
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center mb-4">
-          <CheckCircle className="w-12 h-12 text-green-500 mr-3" />
-          <h1 className="text-3xl font-bold">Đặt lịch thành công!</h1>
+          {booking.bookingStatus === 'REJECTED' ? (
+            <X className="w-12 h-12 text-red-500 mr-3" />
+          ) : (
+            <CheckCircle className="w-12 h-12 text-green-500 mr-3" />
+          )}
+          <h1 className="text-3xl font-bold">
+            {booking.bookingStatus === 'REJECTED' ? 'Lịch hẹn đã bị từ chối' : 'Đặt lịch thành công!'}
+          </h1>
         </div>
         <p className="text-muted-foreground text-lg">
-          Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi. Thông tin chi tiết lịch hẹn như sau:
+          {booking.bookingStatus === 'REJECTED'
+            ? 'Rất tiếc, lịch hẹn của bạn đã bị từ chối bởi trung tâm. Vui lòng liên hệ để biết thêm chi tiết hoặc đặt lịch mới.'
+            : 'Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi. Thông tin chi tiết lịch hẹn như sau:'}
         </p>
       </div>
 
@@ -301,7 +340,17 @@ export default function BookingConfirmationPage() {
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        {booking.bookingStatus !== 'CANCELLED' && (
+        {booking.bookingStatus === 'CONFIRMED' && (
+          <Button 
+            onClick={handlePayment} 
+            disabled={isProcessingPayment}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <CreditCard className="w-4 h-4 mr-2" />
+            {isProcessingPayment ? 'Đang xử lý...' : 'Thanh toán'}
+          </Button>
+        )}
+        {booking.bookingStatus !== 'CANCELLED' && booking.bookingStatus !== 'REJECTED' && (
           <>
             <Button variant="outline" onClick={handleEditBooking}>
               Chỉnh sửa lịch hẹn

@@ -5,12 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Edit, Search } from 'lucide-react';
+import { CheckCircle2, Edit, Eye, Package, Search, XCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 interface Appointment {
   id: string;
+  customerName?: string;
   services: Array<{
     id: string;
     name: string;
@@ -27,7 +28,7 @@ interface Appointment {
   };
   date: string;
   time: string;
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'paid' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
   center: string;
   technician?: string;
   notes?: string;
@@ -42,13 +43,17 @@ interface AppointmentTableProps {
   onEdit: (appointment: Appointment) => void;
   onConfirm: (id: string) => void;
   onCancel: (id: string) => void;
+  onViewDetails?: (id: string) => void;
+  onCheckParts?: (id: string) => void;
+  partsCheckResult?: Record<string, boolean>;
+  isLoadingParts?: Record<string, boolean>;
   showActions?: boolean;
 }
 
 // Filter form schema
 const filterSchema = z.object({
   search: z.string().optional(),
-  status: z.enum(['all', 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled'])
+  status: z.enum(['all', 'pending', 'confirmed', 'paid', 'in_progress', 'completed', 'cancelled'])
 });
 type FilterForm = z.infer<typeof filterSchema>;
 
@@ -57,6 +62,10 @@ export function AppointmentTable({
   onEdit,
   onConfirm,
   onCancel,
+  onViewDetails,
+  onCheckParts,
+  partsCheckResult = {},
+  isLoadingParts = {},
   showActions = true
 }: AppointmentTableProps) {
   const filterForm = useForm<FilterForm>({
@@ -67,11 +76,14 @@ export function AppointmentTable({
   const watchFilters = filterForm.watch();
   const filteredAppointments = appointments.filter(appointment => {
     const term = (watchFilters.search || '').toLowerCase().trim();
-    const serviceNames = appointment.services.map(s => s.name).join(' ').toLowerCase();
     const matchesSearch = term === '' ||
+      appointment.id.toLowerCase().includes(term) ||
+      appointment.date.toLowerCase().includes(term) ||
+      appointment.time.toLowerCase().includes(term) ||
+      (appointment.customerName && appointment.customerName.toLowerCase().includes(term)) ||
       appointment.vehicle.plate.toLowerCase().includes(term) ||
-      appointment.vehicle.name.toLowerCase().includes(term) ||
-      serviceNames.includes(term);
+      appointment.vehicle.model.toLowerCase().includes(term) ||
+      (appointment.technician && appointment.technician.toLowerCase().includes(term));
 
     const matchesStatus = watchFilters.status === 'all' || appointment.status === watchFilters.status;
 
@@ -79,19 +91,32 @@ export function AppointmentTable({
   });
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    const normalized = (status || '').toLowerCase();
+    switch (normalized) {
       case 'pending':
+      case 'chờ xác nhận':
         return <Badge variant="secondary">Chờ xác nhận</Badge>;
       case 'confirmed':
+      case 'đã xác nhận':
         return <Badge variant="default">Đã xác nhận</Badge>;
+      case 'paid':
+      case 'đã thanh toán':
+        return <Badge variant="default" className="bg-blue-500">Đã thanh toán</Badge>;
       case 'in_progress':
+      case 'đang thực hiện':
         return <Badge variant="destructive">Đang thực hiện</Badge>;
       case 'completed':
+      case 'hoàn thành':
+      case 'maintenance_complete':
         return <Badge className="bg-green-500">Hoàn thành</Badge>;
       case 'cancelled':
-        return <Badge variant="outline">Đã hủy</Badge>;
+      case 'đã hủy':
+        return <Badge variant="destructive">Đã hủy</Badge>;
+      case 'rejected':
+      case 'từ chối':
+        return <Badge variant="destructive">Từ chối</Badge>;
       default:
-        return <Badge variant="outline">Không xác định</Badge>;
+        return <Badge variant="outline">{status || 'Không xác định'}</Badge>;
     }
   };
 
@@ -123,6 +148,7 @@ export function AppointmentTable({
                     <SelectItem value="all">Tất cả</SelectItem>
                     <SelectItem value="pending">Chờ xác nhận</SelectItem>
                     <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                    <SelectItem value="paid">Đã thanh toán</SelectItem>
                     <SelectItem value="in_progress">Đang thực hiện</SelectItem>
                     <SelectItem value="completed">Hoàn thành</SelectItem>
                     <SelectItem value="cancelled">Đã hủy</SelectItem>
@@ -139,39 +165,91 @@ export function AppointmentTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Ngày</TableHead>
-              <TableHead>Giờ</TableHead>
-              <TableHead>Khách/xe</TableHead>
-              <TableHead>Dịch vụ</TableHead>
-              <TableHead>KTV</TableHead>
+              <TableHead>Booking ID</TableHead>
+              <TableHead>Ngày giờ</TableHead>
+              <TableHead>Tên khách</TableHead>
+              <TableHead>VIN</TableHead>
+              <TableHead>Model</TableHead>
               <TableHead>Trạng thái</TableHead>
+              <TableHead>Kỹ thuật viên</TableHead>
               {showActions && <TableHead className="text-right">Thao tác</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredAppointments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={showActions ? 7 : 6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={showActions ? 8 : 7} className="text-center py-8 text-muted-foreground">
                   Không tìm thấy lịch hẹn nào
                 </TableCell>
               </TableRow>
             ) : (
               filteredAppointments.map(appointment => (
                 <TableRow key={appointment.id}>
-                  <TableCell>{new Date(appointment.date).toLocaleDateString('vi-VN')}</TableCell>
-                  <TableCell>{appointment.time}</TableCell>
-                  <TableCell>{appointment.vehicle.name} - {appointment.vehicle.plate}</TableCell>
-                  <TableCell>{appointment.services.map(s => s.name).join(', ')}</TableCell>
-                  <TableCell>{appointment.technician || '—'}</TableCell>
+                  <TableCell className="font-medium">#{appointment.id}</TableCell>
+                  <TableCell>
+                    {new Date(appointment.date).toLocaleDateString('vi-VN')} {appointment.time}
+                  </TableCell>
+                  <TableCell>{appointment.customerName || '—'}</TableCell>
+                  <TableCell className="text-xs font-mono">{appointment.vehicle.plate || '—'}</TableCell>
+                  <TableCell>{appointment.vehicle.model || '—'}</TableCell>
                   <TableCell>{getStatusBadge(appointment.status)}</TableCell>
+                  <TableCell>{appointment.technician || '—'}</TableCell>
                   {showActions && (
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-2 flex-wrap">
                         {appointment.status === 'pending' && (
                           <>
-                            <Button size="sm" onClick={() => onConfirm(appointment.id)}>Xác nhận</Button>
-                            <Button size="sm" variant="outline" onClick={() => onCancel(appointment.id)}>Hủy</Button>
+                            {onCheckParts && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => onCheckParts(appointment.id)}
+                                disabled={isLoadingParts[appointment.id]}
+                              >
+                                <Package className="w-4 h-4 mr-1" />
+                                {isLoadingParts[appointment.id] ? 'Đang kiểm tra...' : 'Kiểm tra phụ tùng'}
+                              </Button>
+                            )}
+                            {partsCheckResult[appointment.id] === true && (
+                              <Button
+                                size="sm"
+                                onClick={() => onConfirm(appointment.id)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle2 className="w-4 h-4 mr-1" />
+                                Xác nhận
+                              </Button>
+                            )}
+                            {partsCheckResult[appointment.id] === false && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => onCancel(appointment.id)}
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Từ chối
+                              </Button>
+                            )}
+                            {partsCheckResult[appointment.id] === undefined && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => onCancel(appointment.id)}
+                              >
+                                Từ chối
+                              </Button>
+                            )}
                           </>
+                        )}
+                        {onViewDetails && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onViewDetails(appointment.id)}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            Chi tiết
+                          </Button>
                         )}
                         <Button size="sm" variant="outline" onClick={() => onEdit(appointment)}>
                           <Edit className="w-4 h-4" />
