@@ -9,7 +9,9 @@ import { useState } from 'react';
 
 interface MaintenanceTask {
   id: string;
+  bookingId: number;
   vehiclePlate: string;
+  vehicleModel: string;
   customerName: string;
   serviceType: string;
   technician: string;
@@ -18,13 +20,12 @@ interface MaintenanceTask {
   startTime?: string;
   estimatedEndTime?: string;
   actualEndTime?: string;
-  steps: {
-    id: string;
+  services: Array<{
+    id: number;
     name: string;
     description: string;
-    status: 'pending' | 'in_progress' | 'completed';
-    duration: number;
-  }[];
+  }>;
+  invoiceStatus?: string;
   notes?: string;
 }
 

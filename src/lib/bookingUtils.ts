@@ -434,4 +434,47 @@ export const bookingApi = {
       method: 'GET',
     });
   },
+
+  async startMaintenance(bookingId: number): Promise<{
+    id: number;
+    customerId: number;
+    customerName: string;
+    vehicleVin: string;
+    vehicleModel: string;
+    scheduleDateTime: {
+      format: string;
+      value: string;
+      timezone: string;
+    };
+    bookingStatus: string;
+    createdAt: string;
+    updatedAt: string;
+    catalogDetails: Array<{
+      id: number;
+      catalogId: number;
+      serviceName: string;
+      description: string;
+    }>;
+    invoice: {
+      id: number;
+      invoiceNumber: string;
+      issueDate: string;
+      dueDate: string;
+      totalAmount: number;
+      status: string;
+      createdAt: string;
+      invoiceLines: Array<{
+        id: number;
+        itemDescription: string;
+        itemType: string;
+        quantity: number;
+        unitPrice: number;
+        totalPrice: number;
+      }>;
+    };
+  }> {
+    return request(`/bookings/${bookingId}/start-maintenance`, {
+      method: 'PUT',
+    });
+  },
 };

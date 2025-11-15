@@ -3,12 +3,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
+import { bookingApi } from '@/lib/bookingUtils';
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface MaintenanceTask {
   id: string;
+  bookingId: number;
   vehiclePlate: string;
+  vehicleModel: string;
   customerName: string;
   serviceType: string;
   technician: string;
@@ -17,25 +21,71 @@ interface MaintenanceTask {
   startTime?: string;
   estimatedEndTime?: string;
   actualEndTime?: string;
-  steps: {
-    id: string;
+  services: Array<{
+    id: number;
     name: string;
     description: string;
-    status: 'pending' | 'in_progress' | 'completed';
-    duration: number;
-  }[];
+  }>;
+  invoiceStatus?: string;
   notes?: string;
 }
 
 export default function MaintenanceProcessPage() {
   const [tasks, setTasks] = useState<MaintenanceTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<MaintenanceTask | null>(null);
+  const [isStarting, setIsStarting] = useState<{ [key: string]: boolean }>({});
+  const { toast } = useToast();
+
+  const loadTasks = useCallback(async () => {
+    try {
+      const bookings = await bookingApi.getAllBookings();
+      
+      // Filter bookings that are CONFIRMED or PAID (ready to start) or IN_PROGRESS
+      const maintenanceTasks = bookings
+        .filter(b => ['CONFIRMED', 'PAID', 'IN_PROGRESS'].includes(b.bookingStatus))
+        .map(b => {
+          const dt = b.scheduleDateTime?.value || '';
+          const toStatus = (s: string): MaintenanceTask['status'] => {
+            const normalized = (s || '').toUpperCase();
+            if (normalized === 'IN_PROGRESS') return 'in_progress';
+            if (normalized === 'CONFIRMED' || normalized === 'PAID') return 'pending';
+            return 'pending';
+          };
+
+          return {
+            id: String(b.id),
+            bookingId: b.id,
+            vehiclePlate: b.vehicleVin,
+            vehicleModel: b.vehicleModel,
+            customerName: b.customerName,
+            serviceType: (b.catalogDetails || []).map(c => c.serviceName).join(', ') || 'Bảo dưỡng',
+            technician: b.assignedTechnicianName || 'Chưa phân công',
+            status: toStatus(b.bookingStatus),
+            progress: b.bookingStatus === 'IN_PROGRESS' ? 50 : 0,
+            startTime: b.bookingStatus === 'IN_PROGRESS' ? b.updatedAt : undefined,
+            services: (b.catalogDetails || []).map(c => ({
+              id: c.id,
+              name: c.serviceName,
+              description: c.description,
+            })),
+            notes: '',
+          };
+        });
+
+      setTasks(maintenanceTasks);
+    } catch (error) {
+      console.error('Failed to load maintenance tasks:', error);
+      toast({
+        title: 'Lỗi',
+        description: 'Không thể tải danh sách quy trình bảo dưỡng',
+        variant: 'destructive',
+      });
+    }
+  }, [toast]);
 
   useEffect(() => {
-    // Tasks should be loaded from API
-    // TODO: Load tasks from API
-    setTasks([]);
-  }, []);
+    loadTasks();
+  }, [loadTasks]);
 
   const getStepStatusIcon = (status: string) => {
     switch (status) {
@@ -48,20 +98,40 @@ export default function MaintenanceProcessPage() {
     }
   };
 
-  const handleStartTask = (taskId: string) => {
-    setTasks(tasks.map(task =>
-      task.id === taskId
-        ? { ...task, status: 'in_progress' as const, startTime: new Date().toISOString() }
-        : task
-    ));
+  const handleStartTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    setIsStarting(prev => ({ ...prev, [taskId]: true }));
+
+    try {
+      await bookingApi.startMaintenance(task.bookingId);
+      
+      toast({
+        title: 'Thành công',
+        description: `Đã bắt đầu bảo dưỡng cho booking #${task.bookingId}`,
+      });
+
+      // Reload tasks to get updated status
+      await loadTasks();
+    } catch (error) {
+      console.error('Failed to start maintenance:', error);
+      toast({
+        title: 'Lỗi',
+        description: 'Không thể bắt đầu bảo dưỡng',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsStarting(prev => ({ ...prev, [taskId]: false }));
+    }
   };
 
   const handleCompleteTask = (taskId: string) => {
-    setTasks(tasks.map(task =>
-      task.id === taskId
-        ? { ...task, status: 'completed' as const, progress: 100, actualEndTime: new Date().toISOString() }
-        : task
-    ));
+    // TODO: Implement complete maintenance API
+    toast({
+      title: 'Chức năng đang phát triển',
+      description: 'API hoàn thành bảo dưỡng đang được phát triển',
+    });
   };
 
   const handleViewDetails = (task: MaintenanceTask) => {
@@ -107,24 +177,15 @@ export default function MaintenanceProcessPage() {
               </div>
 
               <div>
-                <h4 className="font-medium text-sm text-muted-foreground mb-3">Các bước thực hiện</h4>
+                <h4 className="font-medium text-sm text-muted-foreground mb-3">Dịch vụ</h4>
                 <div className="space-y-3">
-                  {selectedTask.steps.map((step) => (
-                    <div key={step.id} className="border rounded-lg p-4">
+                  {selectedTask.services.map((service) => (
+                    <div key={service.id} className="border rounded-lg p-4">
                       <div className="flex items-center gap-3 mb-2">
-                        {getStepStatusIcon(step.status)}
-                        <span className="font-medium">{step.name}</span>
-                        <Badge variant={step.status === 'completed' ? 'default' : step.status === 'in_progress' ? 'secondary' : 'outline'}>
-                          {step.status === 'completed' ? 'Hoàn thành' : step.status === 'in_progress' ? 'Đang thực hiện' : 'Chờ xử lý'}
-                        </Badge>
+                        <CheckCircle className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{service.name}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2">{step.description}</p>
-                      <div className="flex items-center gap-4 text-sm">
-                        <span>Thời gian dự kiến: {step.duration} phút</span>
-                        {step.status === 'completed' && (
-                          <span className="text-green-600">✓ Đã hoàn thành</span>
-                        )}
-                      </div>
+                      <p className="text-sm text-muted-foreground">{service.description}</p>
                     </div>
                   ))}
                 </div>

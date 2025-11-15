@@ -1,16 +1,15 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export default function Contact() {
   const navigate = useNavigate();
@@ -37,12 +36,12 @@ export default function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); // Prevent default form submission
-    
+
     toast.info('EV Service Center', {
       description: 'Đang gửi thông tin... Vui lòng đợi trong giây lát.',
       duration: 3000,
     });
-    
+
     try {
       const response = await fetch('https://formsubmit.co/ajax/dengocrong123@gmail.com', {
         method: 'POST',
@@ -58,13 +57,13 @@ export default function Contact() {
           'Yêu cầu': formData.message,
         })
       });
-      
+
       if (response.ok) {
         toast.success('EV Service Center', {
           description: 'Cảm ơn bạn đã liên hệ! Chúng tôi đã nhận được thông tin và sẽ phản hồi sớm nhất.',
           duration: 5000,
         });
-        
+
         // Reset form
         setFormData({
           name: '',
@@ -83,12 +82,12 @@ export default function Contact() {
       });
     }
   };
-  
+
   return (
     <div className="min-h-screen text-foreground relative overflow-x-hidden">
       {/* Animated Gradient Background */}
       <div className="fixed inset-0 z-0">
-        <div 
+        <div
           className="absolute inset-0"
           style={{
             background: 'linear-gradient(-45deg, hsl(14, 100%, 68%), hsl(26, 100%, 74%), hsl(16, 100%, 78%), hsl(24, 100%, 83%))',
@@ -114,10 +113,10 @@ export default function Contact() {
                 <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
               </svg>
             </div>
-            <span className="font-semibold text-gray-800">EV Service Center</span>
+            <span className="font-semibold text-gray-800">VinFast Service Workshop</span>
           </div>
           <div className="flex items-center gap-3 relative z-30">
-            <Button 
+            <Button
               onClick={() => navigate('/login')}
               className="bg-primary hover:bg-primary-hover text-primary-foreground font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
@@ -147,9 +146,9 @@ export default function Contact() {
                 Những câu hỏi vẫn chưa giải đáp được thắc mắc của bạn?
               </p>
               <h3 className="text-xl font-bold mb-6 text-gray-900">LIÊN HỆ NGAY VỚI CHÚNG TÔI!</h3>
-              
+
               {/* Zalo Button */}
-              <a 
+              <a
                 href="https://zalo.me/0396727248"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -189,46 +188,46 @@ export default function Contact() {
 
           {/* Right Side - Contact Form */}
           <div className="bg-white rounded-2xl p-8 shadow-2xl border border-gray-200">
-            <form 
-              className="space-y-4" 
+            <form
+              className="space-y-4"
               onSubmit={handleSubmit}
             >
               <div>
-                <Input 
+                <Input
                   name="Họ tên"
-                  placeholder="Họ và tên của bạn" 
+                  placeholder="Họ và tên của bạn"
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
                   required
                 />
               </div>
               <div>
-                <Input 
+                <Input
                   name="Email"
-                  placeholder="Email của bạn" 
+                  placeholder="Email của bạn"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
                 />
               </div>
               <div>
-                <Input 
+                <Input
                   name="Số điện thoại"
-                  placeholder="Số điện thoại của bạn" 
+                  placeholder="Số điện thoại của bạn"
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
                 />
               </div>
               <div>
-                <select 
+                <select
                   name="Dịch vụ"
                   className="w-full bg-white border border-gray-300 text-gray-900 rounded-md px-3 py-2 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
                   value={formData.service}
-                  onChange={(e) => setFormData({...formData, service: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, service: e.target.value })}
                 >
                   <option value="">—Vui lòng chọn—</option>
                   <option value="Dịch vụ sửa chữa">Dịch vụ sửa chữa</option>
@@ -239,16 +238,16 @@ export default function Contact() {
                 </select>
               </div>
               <div>
-                <Textarea 
+                <Textarea
                   name="Yêu cầu"
-                  placeholder="Yêu cầu của bạn (Nếu có)..." 
+                  placeholder="Yêu cầu của bạn (Nếu có)..."
                   rows={4}
                   value={formData.message}
-                  onChange={(e) => setFormData({...formData, message: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 resize-none"
                 />
               </div>
-              <Button 
+              <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
