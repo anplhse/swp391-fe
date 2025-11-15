@@ -320,7 +320,7 @@ export default function Services() {
 
         {/* CTA Section */}
         <div className="mt-20 md:mt-24 mb-12" style={{ animation: 'fadeInUp 3s ease-out' }}>
-          <div className="bg-primary rounded-3xl p-12 md:p-16 shadow-2xl text-center hover:shadow-[0_30px_70px_rgba(255,126,95,0.4)] transition-all duration-500 hover:scale-[1.02]">
+            <div className="bg-primary rounded-3xl p-12 md:p-16 shadow-2xl text-center hover:shadow-[0_30px_70px_rgba(255,126,95,0.4)] transition-all duration-500 hover:scale-[1.02]">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6" style={{ 
               textShadow: '0 2px 8px rgba(0,0,0,0.2)'
             }}>
