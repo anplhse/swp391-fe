@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { authService } from '@/lib/auth';
+import { showApiErrorToast } from '@/lib/responseHandler';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -60,8 +61,7 @@ export default function Verify() {
         navigate('/login', { replace: true });
       }, 1500);
     } catch (e) {
-      const err = e as Error;
-      toast({ title: 'Xác minh thất bại', description: err.message || 'Vui lòng thử lại', variant: 'destructive' });
+      showApiErrorToast(e, toast, 'Vui lòng thử lại');
     } finally {
       setIsVerifying(false);
     }

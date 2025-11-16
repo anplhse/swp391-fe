@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { showApiErrorToast } from '@/lib/responseHandler';
 import { Eye, EyeOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -83,12 +84,7 @@ export default function ResetPasswordPage() {
         navigate('/login');
       }, 2000);
     } catch (error) {
-      const err = error instanceof Error ? error : new Error('Có lỗi xảy ra');
-      toast({
-        title: 'Đặt lại mật khẩu thất bại',
-        description: err.message || 'Không thể đặt lại mật khẩu. Token có thể đã hết hạn. Vui lòng thử lại.',
-        variant: 'destructive',
-      });
+      showApiErrorToast(error, toast, 'Không thể đặt lại mật khẩu. Token có thể đã hết hạn. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }

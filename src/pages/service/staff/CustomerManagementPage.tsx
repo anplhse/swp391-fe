@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -126,15 +127,12 @@ export default function CustomerManagementPage() {
           throw new Error('ID tài khoản không hợp lệ');
         }
 
-        await apiClient.updateUserProfile(userId, {
+        const response = await apiClient.updateUserProfile(userId, {
           fullName: data.fullName,
           phoneNumber: data.phone
         });
 
-        toast({
-          title: "Cập nhật thành công",
-          description: "Thông tin khách hàng đã được cập nhật."
-        });
+        showApiResponseToast(response, toast, "Thông tin khách hàng đã được cập nhật.");
       } else {
         // Tạo tài khoản mới
         if (!data.email || !data.roleDisplayName || !data.password) {
@@ -146,7 +144,7 @@ export default function CustomerManagementPage() {
           return;
         }
 
-        await apiClient.createUserProfile({
+        const response = await apiClient.createUserProfile({
           email: data.email,
           fullName: data.fullName,
           phoneNumber: data.phone,
@@ -154,10 +152,7 @@ export default function CustomerManagementPage() {
           password: data.password
         });
 
-        toast({
-          title: "Tạo tài khoản thành công",
-          description: "Tài khoản mới đã được tạo."
-        });
+        showApiResponseToast(response, toast, "Tài khoản mới đã được tạo.");
       }
 
       // Reload danh sách để lấy dữ liệu mới nhất
@@ -177,12 +172,7 @@ export default function CustomerManagementPage() {
       setIsDialogOpen(false);
     } catch (error: unknown) {
       console.error('Failed to update user profile', error);
-      const errorMessage = error instanceof Error ? error.message : "Không thể cập nhật thông tin. Vui lòng thử lại.";
-      toast({
-        title: "Lỗi",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      showApiErrorToast(error, toast, "Không thể cập nhật thông tin. Vui lòng thử lại.");
     }
   };
 

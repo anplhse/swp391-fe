@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { bookingApi } from '@/lib/bookingUtils';
+import { showApiErrorToast } from '@/lib/responseHandler';
 import { CheckCircle, X, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';

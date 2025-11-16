@@ -106,7 +106,7 @@ export function MaintenanceProcessTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Dịch vụ</TableHead>
+              <TableHead>Đơn</TableHead>
               <TableHead>Xe</TableHead>
               <TableHead>Khách hàng</TableHead>
               <TableHead>Kỹ thuật viên</TableHead>
@@ -125,7 +125,7 @@ export function MaintenanceProcessTable({
             ) : (
               filteredTasks.map((task) => (
                 <TableRow key={task.id}>
-                  <TableCell className="font-medium">{task.serviceType}</TableCell>
+                  <TableCell className="font-medium">#{task.bookingId}</TableCell>
                   <TableCell>{task.vehiclePlate}</TableCell>
                   <TableCell>{task.customerName}</TableCell>
                   <TableCell>{task.technician}</TableCell>

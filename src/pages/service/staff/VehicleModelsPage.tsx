@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
 import { Eye, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -62,7 +63,7 @@ export default function VehicleModelsPage() {
         setModels(data);
       } catch (e) {
         console.error('Failed to load vehicle models', e);
-        toast({ title: 'Không tải được danh sách model', variant: 'destructive' });
+        showApiErrorToast(e, toast, 'Không tải được danh sách model');
       }
     })();
     return () => { mounted = false; };
@@ -124,10 +125,7 @@ export default function VehicleModelsPage() {
       setModelDetail(detail);
     } catch (error) {
       console.error('Failed to load model detail', error);
-      toast({
-        title: 'Không tải được chi tiết model',
-        variant: 'destructive',
-      });
+      showApiErrorToast(error, toast, 'Không tải được chi tiết model');
     } finally {
       setIsLoadingDetail(false);
     }
@@ -213,11 +211,7 @@ export default function VehicleModelsPage() {
       });
     } catch (error) {
       console.error('Failed to create model', error);
-      toast({
-        title: 'Thêm mới thất bại',
-        description: 'Không thể thêm model. Vui lòng thử lại.',
-        variant: 'destructive',
-      });
+      showApiErrorToast(error, toast, 'Không thể thêm model. Vui lòng thử lại.');
     } finally {
       setIsSaving(false);
     }
@@ -267,11 +261,7 @@ export default function VehicleModelsPage() {
       setEditingModel(null);
     } catch (error) {
       console.error('Failed to update model', error);
-      toast({
-        title: 'Cập nhật thất bại',
-        description: 'Không thể cập nhật model. Vui lòng thử lại.',
-        variant: 'destructive',
-      });
+      showApiErrorToast(error, toast, 'Không thể cập nhật model. Vui lòng thử lại.');
     } finally {
       setIsSaving(false);
     }

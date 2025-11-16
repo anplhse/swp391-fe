@@ -5,6 +5,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { showApiErrorToast } from '@/lib/responseHandler';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -124,11 +125,7 @@ export default function PartsManagementPage() {
         setParts(mappedParts);
       } catch (error) {
         console.error('Error loading parts:', error);
-        toast({
-          title: 'Lỗi',
-          description: 'Không thể tải danh sách phụ tùng',
-          variant: 'destructive',
-        });
+        showApiErrorToast(error, toast, 'Không thể tải danh sách phụ tùng');
       }
     })();
 

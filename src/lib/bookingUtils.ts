@@ -1,5 +1,7 @@
 // Utility functions for booking management
 import API from '@/config/API';
+import { createErrorFromResponse } from './responseHandler';
+
 const API_BASE_URL = API.API_URL;
 
 // Helper function to make API requests
@@ -27,20 +29,8 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   const response = await fetch(url, config);
 
   if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    let message = `HTTP error! status: ${response.status}`;
-    let parsed: unknown = undefined;
-    try { parsed = text ? JSON.parse(text) : undefined; } catch (e) { /* ignore invalid json */ }
-
-    if (parsed && typeof parsed === 'object') {
-      const errObj = parsed as Record<string, unknown>;
-      if (typeof errObj.message === 'string' && errObj.message) {
-        message = errObj.message;
-      } else if (typeof errObj.error === 'string' && errObj.error) {
-        message = errObj.error;
-      }
-    }
-    throw new Error(message);
+    // Use centralized error handler to extract message from BE
+    throw await createErrorFromResponse(response);
   }
 
   return await response.json();

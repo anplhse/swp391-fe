@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
 import { bookingApi } from '@/lib/bookingUtils';
+import { extractErrorMessage } from '@/lib/responseHandler';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createColumnHelper } from '@tanstack/react-table';
@@ -123,18 +124,6 @@ export function BookingForm({ services }: BookingFormProps) {
     return parseInt(hourStr.split(':')[0], 10);
   }, []);
 
-  // Convert hour number to time slot format "07:00 - 08:00"
-  const formatTimeSlot = useCallback((hour: string, nextHour?: string): string => {
-    if (nextHour) {
-      return `${hour} - ${nextHour}`;
-    }
-    // If no next hour, assume 1 hour duration
-    const hourNum = hourStringToNumber(hour);
-    const nextHourNum = hourNum + 1;
-    const nextHourStr = `${nextHourNum.toString().padStart(2, '0')}:00`;
-    return `${hour} - ${nextHourStr}`;
-  }, [hourStringToNumber]);
-
   const loadTimeSlots = useCallback(
     async (date: Date) => {
       if (!workingHours.length) {
@@ -145,25 +134,24 @@ export function BookingForm({ services }: BookingFormProps) {
       setIsLoadingTimeSlots(true);
       const dateKey = format(date, 'yyyy-MM-dd');
 
-      // Find booked hours for this date
+      // Find booked hours for this date from API
       const daySlot = slotsData.find(s => s.date === dateKey);
       const bookedHours = daySlot?.bookedHours || [];
       const bookedHoursSet = new Set(bookedHours);
 
       // Generate available time slots from working hours
+      // BE handles: max 5 customers per slot, 1 booking per customer per day
       const available: string[] = [];
-      for (let i = 0; i < workingHours.length; i++) {
-        const hour = workingHours[i];
+      for (const hour of workingHours) {
         const hourNum = hourStringToNumber(hour);
 
-        // Skip if this hour is booked
+        // Skip if this hour is fully booked (BE returns it in bookedHours)
         if (bookedHoursSet.has(hourNum)) {
           continue;
         }
 
-        // Format as time slot (e.g., "07:00 - 08:00")
-        const nextHour = i < workingHours.length - 1 ? workingHours[i + 1] : undefined;
-        available.push(formatTimeSlot(hour, nextHour));
+        // Add hour as-is (e.g., "07:00")
+        available.push(hour);
       }
 
       setAvailableTimeSlots(available);
@@ -174,7 +162,7 @@ export function BookingForm({ services }: BookingFormProps) {
       }
       setIsLoadingTimeSlots(false);
     },
-    [workingHours, slotsData, form, hourStringToNumber, formatTimeSlot]
+    [workingHours, slotsData, form, hourStringToNumber]
   );
 
   const handleVinLookup = useCallback(async (vin: string) => {
@@ -404,22 +392,8 @@ export function BookingForm({ services }: BookingFormProps) {
   const onSubmit = async (data: BookingFormData) => {
     try {
       const dateString = format(data.selectedDate, 'yyyy-MM-dd');
-
-      // Check if slot is still available from API data
-      const daySlot = slotsData.find(s => s.date === dateString);
-      const bookedHours = daySlot?.bookedHours || [];
-      const slotMatch = data.selectedTimeSlot.match(/\d{2}:\d{2}/);
-      const slotStart = slotMatch ? slotMatch[0] : '08:00';
-      const hourNum = hourStringToNumber(slotStart);
-
-      if (bookedHours.includes(hourNum)) {
-        toast({
-          title: 'Lỗi',
-          description: 'Khung giờ này đã được đặt. Vui lòng chọn khung giờ khác.',
-          variant: 'destructive'
-        });
-        return;
-      }
+      // selectedTimeSlot is now just "07:00" format
+      const slotStart = data.selectedTimeSlot;
 
       // Calculate total price and selected services
       const selectedServices = services.filter(s => data.services.includes(s.id));
@@ -474,13 +448,14 @@ export function BookingForm({ services }: BookingFormProps) {
           localStorage.setItem('latestBookingId', String(created.id));
         }
       } catch (err) {
-        // Revert local slot booking on failure
+        // Use centralized error handler to extract message from BE
+        const errorMessage = extractErrorMessage(err);
         toast({
           title: 'Lỗi',
-          description: 'Không thể đặt lịch với hệ thống. Vui lòng thử lại.',
+          description: errorMessage,
           variant: 'destructive'
         });
-        throw err;
+        return; // Stop execution, don't continue to success flow
       }
 
       // Create booking data
@@ -529,10 +504,13 @@ export function BookingForm({ services }: BookingFormProps) {
         });
       }
     } catch (error) {
-      console.error('Booking error:', error);
+      // This outer catch is for unexpected errors only
+      // Normal API errors are already handled in the inner catch block
+      console.error('Unexpected booking error:', error);
+      const errorMessage = extractErrorMessage(error);
       toast({
         title: 'Lỗi',
-        description: 'Không thể đặt lịch, vui lòng thử lại',
+        description: errorMessage,
         variant: 'destructive'
       });
     }

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { showApiErrorToast } from '@/lib/responseHandler';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -33,12 +34,7 @@ export default function ForgotPasswordPage() {
         description: 'Vui lòng kiểm tra email để nhận link đặt lại mật khẩu.',
       });
     } catch (error) {
-      const err = error instanceof Error ? error : new Error('Có lỗi xảy ra');
-      toast({
-        title: 'Gửi email thất bại',
-        description: err.message || 'Không thể gửi email. Vui lòng thử lại.',
-        variant: 'destructive',
-      });
+      showApiErrorToast(error, toast, 'Không thể gửi email. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }

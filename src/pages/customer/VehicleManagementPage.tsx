@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
 import { authService } from '@/lib/auth';
+import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
 import {
   Plus
 } from 'lucide-react';
@@ -104,7 +105,6 @@ export default function VehicleManagementPage() {
           ? 'Phiên đăng nhập hết hạn hoặc không có quyền. Vui lòng đăng nhập lại.'
           : 'Không tải được danh sách model');
         if (msg.includes('status: 401') || msg.includes('status: 403')) {
-          // Điều hướng về login
           navigate('/login');
         }
       } finally {
@@ -162,11 +162,7 @@ export default function VehicleManagementPage() {
         console.error('Failed to load user vehicles', e);
         const msg = e instanceof Error ? e.message : String(e);
         if (msg.includes('status: 401') || msg.includes('status: 403')) {
-          toast({
-            title: 'Không thể tải danh sách xe',
-            description: 'Phiên đăng nhập hết hạn hoặc không có quyền. Vui lòng đăng nhập lại.',
-            variant: 'destructive',
-          });
+          showApiErrorToast(e, toast, 'Phiên đăng nhập hết hạn hoặc không có quyền. Vui lòng đăng nhập lại.');
           navigate('/login');
         }
       }
@@ -312,11 +308,7 @@ export default function VehicleManagementPage() {
       });
     } catch (error) {
       console.error('Error adding vehicle:', error);
-      toast({
-        title: "Thêm xe thất bại",
-        description: "Có lỗi xảy ra khi thêm xe. Vui lòng thử lại.",
-        variant: "destructive",
-      });
+      showApiErrorToast(error, toast, "Có lỗi xảy ra khi thêm xe. Vui lòng thử lại.");
     }
   };
 
@@ -367,11 +359,7 @@ export default function VehicleManagementPage() {
       });
     } catch (error) {
       console.error('Update vehicle failed', error);
-      toast({
-        title: 'Cập nhật thất bại',
-        description: 'Không thể cập nhật xe. Vui lòng thử lại.',
-        variant: 'destructive',
-      });
+      showApiErrorToast(error, toast, 'Không thể cập nhật xe. Vui lòng thử lại.');
     }
   };
 

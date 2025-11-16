@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { authService } from '@/lib/auth';
+import { showApiErrorToast } from '@/lib/responseHandler';
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -67,17 +68,8 @@ export default function Login() {
 
       navigate(targetRoute);
     } catch (error) {
-      const err = error as Error;
-      console.error('Login error:', err);
-
-      // Hiển thị error message từ backend
-      const errorMessage = err?.message || "Có lỗi xảy ra khi đăng nhập";
-
-      toast({
-        title: "Đăng nhập thất bại",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      console.error('Login error:', error);
+      showApiErrorToast(error, toast, "Có lỗi xảy ra khi đăng nhập");
     } finally {
       setIsLoggingIn(false);
     }
@@ -104,8 +96,7 @@ export default function Login() {
       toast({ title: 'Đăng ký thành công', description: res.message || 'Vui lòng kiểm tra email để xác minh tài khoản.' });
       navigate('/verify', { state: { userName: pendingEmail } });
     } catch (e) {
-      const err = e as Error;
-      toast({ title: 'Đăng ký thất bại', description: err.message || 'Có lỗi xảy ra khi đăng ký', variant: 'destructive' });
+      showApiErrorToast(e, toast, 'Có lỗi xảy ra khi đăng ký');
     }
   };
 

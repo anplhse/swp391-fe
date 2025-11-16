@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { showApiErrorToast } from '@/lib/responseHandler';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -150,11 +151,7 @@ export default function ServiceManagementPage() {
         setServices(mappedServices);
       } catch (error) {
         console.error('Error loading maintenance catalogs:', error);
-        toast({
-          title: 'Lỗi',
-          description: 'Không thể tải danh sách dịch vụ',
-          variant: 'destructive',
-        });
+        showApiErrorToast(error, toast, 'Không thể tải danh sách dịch vụ');
       }
     })();
 

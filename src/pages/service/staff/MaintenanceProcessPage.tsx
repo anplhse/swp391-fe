@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { bookingApi } from '@/lib/bookingUtils';
+import { showApiErrorToast } from '@/lib/responseHandler';
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -40,15 +41,15 @@ export default function MaintenanceProcessPage() {
     try {
       const bookings = await bookingApi.getAllBookings();
       
-      // Filter bookings that are CONFIRMED or PAID (ready to start) or IN_PROGRESS
+      // Filter bookings that are PAID (ready to start) or IN_PROGRESS
       const maintenanceTasks = bookings
-        .filter(b => ['CONFIRMED', 'PAID', 'IN_PROGRESS'].includes(b.bookingStatus))
+        .filter(b => ['PAID', 'IN_PROGRESS'].includes(b.bookingStatus))
         .map(b => {
           const dt = b.scheduleDateTime?.value || '';
           const toStatus = (s: string): MaintenanceTask['status'] => {
             const normalized = (s || '').toUpperCase();
             if (normalized === 'IN_PROGRESS') return 'in_progress';
-            if (normalized === 'CONFIRMED' || normalized === 'PAID') return 'pending';
+            if (normalized === 'PAID') return 'pending';
             return 'pending';
           };
 
@@ -75,11 +76,7 @@ export default function MaintenanceProcessPage() {
       setTasks(maintenanceTasks);
     } catch (error) {
       console.error('Failed to load maintenance tasks:', error);
-      toast({
-        title: 'Lỗi',
-        description: 'Không thể tải danh sách quy trình bảo dưỡng',
-        variant: 'destructive',
-      });
+      showApiErrorToast(error, toast, 'Không thể tải danh sách quy trình bảo dưỡng');
     }
   }, [toast]);
 
@@ -116,11 +113,7 @@ export default function MaintenanceProcessPage() {
       await loadTasks();
     } catch (error) {
       console.error('Failed to start maintenance:', error);
-      toast({
-        title: 'Lỗi',
-        description: 'Không thể bắt đầu bảo dưỡng',
-        variant: 'destructive',
-      });
+      showApiErrorToast(error, toast, 'Không thể bắt đầu bảo dưỡng');
     } finally {
       setIsStarting(prev => ({ ...prev, [taskId]: false }));
     }

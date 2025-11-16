@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, MapPin, Phone, Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -241,12 +242,7 @@ export default function PersonnelManagementPage() {
       setIsDialogOpen(false);
     } catch (error: unknown) {
       console.error('Failed to save employee', error);
-      const errorMessage = error instanceof Error ? error.message : (editingEmployee ? "Không thể cập nhật thông tin. Vui lòng thử lại." : "Không thể thêm nhân viên. Vui lòng thử lại.");
-      toast({
-        title: "Lỗi",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      showApiErrorToast(error, toast, editingEmployee ? "Không thể cập nhật thông tin. Vui lòng thử lại." : "Không thể thêm nhân viên. Vui lòng thử lại.");
     }
   };
 

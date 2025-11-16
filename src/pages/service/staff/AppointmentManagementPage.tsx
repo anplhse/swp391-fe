@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { bookingApi } from '@/lib/bookingUtils';
+import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -164,11 +165,7 @@ export default function AppointmentManagementPage() {
         setAppointments(mapped);
       } catch (error) {
         console.error('Failed to load bookings:', error);
-        toast({
-          title: 'Lỗi',
-          description: 'Không thể tải danh sách lịch hẹn',
-          variant: 'destructive',
-        });
+        showApiErrorToast(error, toast, 'Không thể tải danh sách lịch hẹn');
         if (mounted) {
           setAppointments([]);
         }
@@ -196,12 +193,7 @@ export default function AppointmentManagementPage() {
       });
     } catch (error) {
       console.error('Failed to check parts:', error);
-      const err = error instanceof Error ? error : new Error('Có lỗi xảy ra');
-      toast({
-        title: 'Lỗi',
-        description: err.message || 'Không thể kiểm tra phụ tùng',
-        variant: 'destructive',
-      });
+      showApiErrorToast(error, toast, 'Không thể kiểm tra phụ tùng');
     } finally {
       setIsLoadingParts(prev => ({ ...prev, [id]: false }));
     }
@@ -266,11 +258,7 @@ export default function AppointmentManagementPage() {
     } catch (error) {
       console.error('Failed to load bookings:', error);
       if (showErrorToast) {
-        toast({
-          title: 'Lỗi',
-          description: 'Không thể tải danh sách lịch hẹn',
-          variant: 'destructive',
-        });
+        showApiErrorToast(error, toast, 'Không thể tải danh sách lịch hẹn');
       }
       setAppointments([]);
     }
@@ -311,11 +299,7 @@ export default function AppointmentManagementPage() {
         } catch (paymentError) {
           console.error('Failed to create payment:', paymentError);
           // Still show success for booking confirmation, but warn about payment
-          toast({
-            title: 'Xác nhận thành công',
-            description: `Booking #${id} đã được xác nhận, nhưng có lỗi khi tạo thanh toán.`,
-            variant: 'default',
-          });
+          showApiErrorToast(paymentError, toast, `Booking #${id} đã được xác nhận, nhưng có lỗi khi tạo thanh toán.`);
         }
       } else {
         toast({
@@ -328,12 +312,7 @@ export default function AppointmentManagementPage() {
       await loadAppointments(false);
     } catch (error) {
       console.error('Failed to confirm booking:', error);
-      const err = error instanceof Error ? error : new Error('Có lỗi xảy ra');
-      toast({
-        title: 'Lỗi',
-        description: err.message || 'Không thể xác nhận booking',
-        variant: 'destructive',
-      });
+      showApiErrorToast(error, toast, 'Không thể xác nhận booking');
     }
   };
 
@@ -349,12 +328,7 @@ export default function AppointmentManagementPage() {
       setSelectedBooking(detail);
     } catch (error) {
       console.error('Failed to load booking details:', error);
-      const err = error instanceof Error ? error : new Error('Có lỗi xảy ra');
-      toast({
-        title: 'Lỗi',
-        description: err.message || 'Không thể tải chi tiết booking',
-        variant: 'destructive',
-      });
+      showApiErrorToast(error, toast, 'Không thể tải chi tiết booking');
       setIsDetailDialogOpen(false);
     } finally {
       setIsLoadingDetail(false);
@@ -367,7 +341,7 @@ export default function AppointmentManagementPage() {
       if (isNaN(bookingId)) {
         throw new Error('ID booking không hợp lệ');
       }
-      await bookingApi.rejectBooking(bookingId);
+      const result = await bookingApi.rejectBooking(bookingId);
 
       // Clear parts check result
       setPartsCheckResult(prev => {
@@ -379,18 +353,11 @@ export default function AppointmentManagementPage() {
       // Reload appointments to get updated data including jobs
       await loadAppointments(false);
 
-      toast({
-        title: 'Từ chối thành công',
-        description: `Booking #${id} đã bị từ chối.`,
-      });
+      // Show success message from backend
+      showApiResponseToast(result, toast, 'Từ chối thành công');
     } catch (error) {
       console.error('Failed to reject booking:', error);
-      const err = error instanceof Error ? error : new Error('Có lỗi xảy ra');
-      toast({
-        title: 'Lỗi',
-        description: err.message || 'Không thể từ chối booking',
-        variant: 'destructive',
-      });
+      showApiErrorToast(error, toast, 'Không thể từ chối booking');
     }
   };
 

@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { bookingApi } from '@/lib/bookingUtils';
+import { showApiErrorToast } from '@/lib/responseHandler';
 import { ColumnDef } from '@tanstack/react-table';
 import { CheckCircle, X, CreditCard } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -98,7 +99,7 @@ export default function BookingConfirmationPage() {
         }
       } catch (e) {
         console.error('Load booking failed', e);
-        toast({ title: 'Lỗi', description: 'Không tải được thông tin lịch hẹn', variant: 'destructive' });
+        showApiErrorToast(e, toast, 'Không tải được thông tin lịch hẹn');
       } finally {
         setIsLoading(false);
       }

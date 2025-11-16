@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { showApiErrorToast } from '@/lib/responseHandler';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   AlertCircle,
@@ -120,7 +121,7 @@ export default function VehicleProfilePage() {
       setIsEditDialogOpen(false);
     } catch (e) {
       console.error('Failed to update vehicle', e);
-      toast({ title: 'Cập nhật thất bại', description: 'Không thể cập nhật xe.', variant: 'destructive' });
+      showApiErrorToast(e, toast, 'Không thể cập nhật xe.');
     }
   };
 

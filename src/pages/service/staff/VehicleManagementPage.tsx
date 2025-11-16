@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -297,7 +298,7 @@ export default function VehicleManagementPage() {
           vehicleModelId: selectedModel.id,
         };
 
-        await apiClient.addVehicle(vehicleData);
+        const response = await apiClient.addVehicle(vehicleData);
 
         // Reload vehicles list
         const list = await apiClient.getAllVehicles();
@@ -320,20 +321,15 @@ export default function VehicleManagementPage() {
         }));
         setVehicles(mapped);
 
-        toast({
-          title: "Thêm xe thành công",
-          description: "Xe mới đã được thêm vào hệ thống."
-        });
+        // Use centralized response handler to show message from BE
+        showApiResponseToast(response, toast, "Xe mới đã được thêm vào hệ thống");
       }
 
       setIsDialogOpen(false);
     } catch (error) {
       console.error('Failed to save vehicle', error);
-      toast({
-        title: editingVehicle ? "Cập nhật xe thất bại" : "Thêm xe thất bại",
-        description: "Có lỗi xảy ra. Vui lòng thử lại.",
-        variant: "destructive"
-      });
+      // Use centralized error handler to show message from BE
+      showApiErrorToast(error, toast, editingVehicle ? "Cập nhật xe thất bại" : "Thêm xe thất bại");
     }
   };
 

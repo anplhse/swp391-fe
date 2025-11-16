@@ -1,5 +1,7 @@
 // src/lib/api.ts
 import API from '@/config/API';
+import { parseErrorResponse } from './responseHandler';
+
 const API_BASE_URL = API.API_URL;
 export interface LoginRequest {
   userName: string;
@@ -82,8 +84,8 @@ class ApiClient {
             };
             const retryResponse = await fetch(url, retryConfig);
             if (!retryResponse.ok) {
-              const retryErrorData = await retryResponse.json().catch(() => ({}));
-              throw new Error(retryErrorData.message || `HTTP error! status: ${retryResponse.status}`);
+              const message = await parseErrorResponse(retryResponse);
+              throw new Error(message);
             }
             return await retryResponse.json();
           }
@@ -91,37 +93,8 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        const text = await response.text().catch(() => '');
-        let message = `HTTP error! status: ${response.status}`;
-        let parsed: unknown = undefined;
-        try { parsed = text ? JSON.parse(text) : undefined; } catch (e) { /* ignore invalid json */ }
-
-        // Try to extract error message from various backend response formats
-        if (parsed && typeof parsed === 'object') {
-          const errObj = parsed as Record<string, unknown>;
-
-          // Check common error message fields
-          if (typeof errObj.message === 'string' && errObj.message) {
-            message = errObj.message;
-          } else if (typeof errObj.error === 'string' && errObj.error) {
-            message = errObj.error;
-          } else if (typeof errObj.errorMessage === 'string' && errObj.errorMessage) {
-            message = errObj.errorMessage;
-          } else if (Array.isArray(errObj.errors) && errObj.errors.length > 0) {
-            // Handle validation errors array
-            const firstError = errObj.errors[0];
-            if (typeof firstError === 'string') {
-              message = firstError;
-            } else if (typeof firstError === 'object' && firstError && 'message' in firstError && typeof (firstError as { message?: unknown }).message === 'string') {
-              message = (firstError as { message: string }).message;
-            }
-          }
-        }
-
-        // Always append status for downstream handlers
-        if (!message.includes(`status: ${response.status}`)) {
-          message = `${message} (status: ${response.status})`;
-        }
+        // Use centralized error handler to extract message from BE
+        const message = await parseErrorResponse(response);
         throw new Error(message);
       }
 
