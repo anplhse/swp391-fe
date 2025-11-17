@@ -49,10 +49,7 @@ const TechnicianMaintenanceProcessPage = lazy(() => import("../pages/service/tec
 const VehicleStatusPage = lazy(() => import("../pages/service/technician/VehicleStatusPage"));
 
 // Admin pages (lazy)
-const FinanceManagementPage = lazy(() => import("../pages/service/admin/FinanceManagementPage"));
 const PersonnelManagementPage = lazy(() => import("../pages/service/admin/PersonnelManagementPage"));
-const QuotationsPage = lazy(() => import("../pages/service/admin/QuotationsPage"));
-const ReportsPage = lazy(() => import("../pages/service/admin/ReportsPage"));
 const VehicleModelsPage = lazy(() => import("../pages/service/staff/VehicleModelsPage"));
 
 export default function AppRoutes() {
@@ -103,9 +100,6 @@ export default function AppRoutes() {
 
           <Route path="service/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
           <Route path="service/personnel" element={<ProtectedRoute requiredRole="admin"><PersonnelManagementPage /></ProtectedRoute>} />
-          <Route path="service/finance" element={<ProtectedRoute requiredRole="admin"><FinanceManagementPage /></ProtectedRoute>} />
-          <Route path="service/reports" element={<ProtectedRoute requiredRole="admin"><ReportsPage /></ProtectedRoute>} />
-          <Route path="service/quotations" element={<ProtectedRoute requiredRole="admin"><QuotationsPage /></ProtectedRoute>} />
           <Route path="service/vehicle-models" element={<ProtectedRoute requiredRole="staff"><VehicleModelsPage /></ProtectedRoute>} />
         </Route>
 

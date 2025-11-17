@@ -4,11 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Car, CheckCircle, ClipboardList, Clock, Pause, Play, User } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { bookingApi } from '@/lib/bookingUtils';
+import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
+import { AlertCircle, Car, CheckCircle, ClipboardList, Clock, Play, User } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface AssignedTask {
   id: string;
+  jobId: number;
+  bookingId: number;
   vehiclePlate: string;
   customerName: string;
   serviceType: string;
@@ -41,12 +46,54 @@ export default function AssignedTasksPage() {
   const [tasks, setTasks] = useState<AssignedTask[]>([]);
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isStarting, setIsStarting] = useState<Record<string, boolean>>({});
+  const { toast } = useToast();
+
+  const loadTasks = useCallback(async () => {
+    try {
+      const jobs = await bookingApi.getJobs();
+
+      // Map jobs to AssignedTask format
+      const mappedTasks: AssignedTask[] = jobs.map(job => {
+        const toStatus = (s: string): AssignedTask['status'] => {
+          const normalized = s.toUpperCase();
+          if (normalized === 'UNASSIGNED') return 'unassigned';
+          if (normalized === 'PENDING') return 'pending';
+          if (normalized === 'IN_PROGRESS') return 'in_progress';
+          if (normalized === 'COMPLETED') return 'completed';
+          return 'pending';
+        };
+
+        return {
+          id: String(job.id),
+          jobId: job.id,
+          bookingId: job.bookingId,
+          vehiclePlate: `Booking #${job.bookingId}`,
+          customerName: job.technicianName || 'N/A',
+          serviceType: job.notes || 'Bảo dưỡng',
+          priority: 'medium' as const,
+          status: toStatus(job.status),
+          progress: job.status === 'COMPLETED' ? 100 : job.status === 'IN_PROGRESS' ? 50 : 0,
+          assignedDate: job.createdAt,
+          startTime: job.startTime || undefined,
+          estimatedDuration: 60,
+          steps: [],
+          notes: job.notes,
+          tools: [],
+          parts: [],
+        };
+      });
+
+      setTasks(mappedTasks);
+    } catch (error) {
+      console.error('Failed to load jobs:', error);
+      showApiErrorToast(error, toast, 'Không thể tải danh sách công việc');
+    }
+  }, [toast]);
 
   useEffect(() => {
-    // Tasks should be loaded from API
-    // TODO: Load tasks from API
-    setTasks([]);
-  }, []);
+    loadTasks();
+  }, [loadTasks]);
 
   const filteredTasks = tasks.filter(task => {
     const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
@@ -88,9 +135,9 @@ export default function AssignedTasksPage() {
   const getStepStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
+        return <CheckCircle className="w-4 h-4 text-accent" />;
       case 'in_progress':
-        return <Clock className="w-4 h-4 text-blue-600" />;
+        return <Clock className="w-4 h-4 text-primary" />;
       case 'pending':
         return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
       default:
@@ -98,47 +145,41 @@ export default function AssignedTasksPage() {
     }
   };
 
-  const handleStartTask = (taskId: string) => {
-    setTasks(prev =>
-      prev.map(task =>
-        task.id === taskId
-          ? {
-            ...task,
-            status: 'in_progress' as const,
-            startTime: new Date().toISOString(),
-            progress: 0
-          }
-          : task
-      )
-    );
+  const handleStartTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    setIsStarting(prev => ({ ...prev, [taskId]: true }));
+
+    try {
+      const result = await bookingApi.startJob(task.jobId);
+
+      showApiResponseToast(result, toast, 'Đã bắt đầu công việc');
+
+      // Reload tasks to get updated status
+      await loadTasks();
+    } catch (error) {
+      console.error('Failed to start job:', error);
+      showApiErrorToast(error, toast, 'Không thể bắt đầu công việc');
+    } finally {
+      setIsStarting(prev => ({ ...prev, [taskId]: false }));
+    }
   };
 
   // Note: Pause functionality removed as it's not in JobStatus enum
   // JobStatus only has: UNASSIGNED, PENDING, IN_PROGRESS, COMPLETED
 
-  const handleResumeTask = (taskId: string) => {
-    setTasks(prev =>
-      prev.map(task =>
-        task.id === taskId
-          ? { ...task, status: 'in_progress' as const }
-          : task
-      )
-    );
+  const handleResumeTask = async (taskId: string) => {
+    // Resume is same as start
+    await handleStartTask(taskId);
   };
 
   const handleCompleteTask = (taskId: string) => {
-    setTasks(prev =>
-      prev.map(task =>
-        task.id === taskId
-          ? {
-            ...task,
-            status: 'completed' as const,
-            progress: 100,
-            actualDuration: task.estimatedDuration
-          }
-          : task
-      )
-    );
+    // TODO: Implement complete job API
+    toast({
+      title: 'Chức năng đang phát triển',
+      description: 'API hoàn thành công việc đang được phát triển',
+    });
   };
 
   const pendingTasks = filteredTasks.filter(task => task.status === 'pending' || task.status === 'unassigned');
@@ -250,9 +291,13 @@ export default function AssignedTasksPage() {
                     </div>
                   </div>
                   <div className="flex gap-2 pt-2">
-                    <Button size="sm" onClick={() => handleStartTask(task.id)}>
+                    <Button
+                      size="sm"
+                      onClick={() => handleStartTask(task.id)}
+                      disabled={isStarting[task.id]}
+                    >
                       <Play className="w-4 h-4 mr-1" />
-                      Bắt đầu
+                      {isStarting[task.id] ? 'Đang bắt đầu...' : 'Bắt đầu'}
                     </Button>
                     <Button variant="outline" size="sm">
                       Chi tiết
@@ -326,9 +371,13 @@ export default function AssignedTasksPage() {
                   )}
                   <div className="flex gap-2 pt-2">
                     {(task.status === 'pending' || task.status === 'unassigned') && (
-                      <Button size="sm" onClick={() => handleResumeTask(task.id)}>
+                      <Button
+                        size="sm"
+                        onClick={() => handleResumeTask(task.id)}
+                        disabled={isStarting[task.id]}
+                      >
                         <Play className="w-4 h-4 mr-1" />
-                        Bắt đầu
+                        {isStarting[task.id] ? 'Đang bắt đầu...' : 'Bắt đầu'}
                       </Button>
                     )}
                     {task.status === 'in_progress' && (

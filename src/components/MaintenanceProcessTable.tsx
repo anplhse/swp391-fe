@@ -34,6 +34,7 @@ interface MaintenanceProcessTableProps {
   onStartTask: (taskId: string) => void;
   onCompleteTask: (taskId: string) => void;
   onViewDetails: (task: MaintenanceTask) => void;
+  onAssignTechnician?: (task: MaintenanceTask) => void;
   showActions?: boolean;
 }
 
@@ -42,6 +43,7 @@ export function MaintenanceProcessTable({
   onStartTask,
   onCompleteTask,
   onViewDetails,
+  onAssignTechnician,
   showActions = true
 }: MaintenanceProcessTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -139,7 +141,12 @@ export function MaintenanceProcessTable({
                   {showActions && (
                     <TableCell>
                       <div className="flex gap-2">
-                        {task.status === 'pending' && (
+                        {task.status === 'pending' && task.technician === 'Chưa phân công' && onAssignTechnician && (
+                          <Button size="sm" variant="secondary" onClick={() => onAssignTechnician(task)}>
+                            Gán KTV
+                          </Button>
+                        )}
+                        {task.status === 'pending' && task.technician !== 'Chưa phân công' && (
                           <Button size="sm" onClick={() => onStartTask(task.id)}>
                             Bắt đầu
                           </Button>

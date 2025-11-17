@@ -139,6 +139,7 @@ export default function AppointmentManagementPage() {
 
           return {
             id: String(b.id),
+            customerName: b.customerName,
             services: (b.catalogDetails || []).map(cd => ({
               id: String(cd.id),
               name: cd.serviceName,
@@ -156,7 +157,7 @@ export default function AppointmentManagementPage() {
             time: time || '00:00',
             status: toStatus(b.bookingStatus),
             center: 'Trung tâm bảo dưỡng Hà Nội',
-            technician: b.assignedTechnicianName || undefined,
+            technician: b.technicianName || b.assignedTechnicianName || undefined,
             createdAt: b.createdAt,
             estimatedDuration: '1h',
           };
@@ -248,7 +249,7 @@ export default function AppointmentManagementPage() {
           time: time || '00:00',
           status: toStatus(b.bookingStatus),
           center: 'Trung tâm bảo dưỡng Hà Nội',
-          technician: b.assignedTechnicianName || undefined,
+          technician: b.technicianName || b.assignedTechnicianName || undefined,
           createdAt: b.createdAt,
           estimatedDuration: '1h',
         };

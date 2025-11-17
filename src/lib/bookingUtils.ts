@@ -223,6 +223,8 @@ export const bookingApi = {
     updatedAt: string;
     assignedTechnicianId?: number | null;
     assignedTechnicianName?: string | null;
+    technicianId?: number | null;
+    technicianName?: string | null;
   }>> {
     return request(`/bookings/customer/${customerId}`, {
       method: 'GET',
@@ -246,6 +248,8 @@ export const bookingApi = {
     updatedAt: string;
     assignedTechnicianId?: number | null;
     assignedTechnicianName?: string | null;
+    technicianId?: number | null;
+    technicianName?: string | null;
     catalogDetails: Array<{
       id: number;
       catalogId: number;
@@ -260,6 +264,7 @@ export const bookingApi = {
       totalAmount: number;
       status: string;
       createdAt: string;
+      paidAt: string;
       invoiceLines: Array<{
         id: number;
         itemDescription: string;
@@ -372,6 +377,8 @@ export const bookingApi = {
     updatedAt: string;
     assignedTechnicianId?: number | null;
     assignedTechnicianName?: string | null;
+    technicianId?: number | null;
+    technicianName?: string | null;
     catalogDetails?: Array<{
       id: number;
       catalogId: number;
@@ -465,6 +472,171 @@ export const bookingApi = {
   }> {
     return request(`/bookings/${bookingId}/start-maintenance`, {
       method: 'PUT',
+    });
+  },
+
+  // Get available technicians for a specific schedule time
+  async getAvailableTechnicians(scheduleTime: string): Promise<Array<{
+    id: number;
+    fullName: string;
+    emailAddress: string;
+    phoneNumber: string;
+    role: string;
+    status: string;
+  }>> {
+    // Format: "2025-11-17 13:00:00"
+    const encodedTime = encodeURIComponent(scheduleTime);
+    return request(`/jobs/available-technicians?scheduleTime=${encodedTime}&format=custom`, {
+      method: 'GET',
+    });
+  },
+
+  // Assign technician to booking
+  async assignTechnician(bookingId: number, technicianId: number): Promise<{
+    id: number;
+    customerId: number;
+    customerName: string;
+    vehicleVin: string;
+    vehicleModel: string;
+    scheduleDateTime: {
+      format: string;
+      value: string;
+      timezone: string;
+    };
+    bookingStatus: string;
+    createdAt: string;
+    updatedAt: string;
+    catalogDetails: Array<{
+      id: number;
+      catalogId: number;
+      serviceName: string;
+      description: string;
+    }>;
+    invoice: {
+      id: number;
+      invoiceNumber: string;
+      issueDate: string;
+      dueDate: string;
+      totalAmount: number;
+      status: string;
+      createdAt: string;
+      paidAt: string | null;
+      invoiceLines: Array<{
+        id: number;
+        itemDescription: string;
+        itemType: string;
+        quantity: number;
+        unitPrice: number;
+        totalPrice: number;
+      }>;
+    };
+  }> {
+    return request(`/bookings/${bookingId}/assign-technician?technicianId=${technicianId}`, {
+      method: 'PUT',
+    });
+  },
+
+  // Technician starts a job
+  async startJob(jobId: number): Promise<{
+    id: number;
+    bookingId: number;
+    technicianId: number;
+    technicianName: string;
+    startTime: string;
+    estEndTime: string;
+    actualEndTime: string | null;
+    status: string;
+    notes: string;
+    createdAt: string;
+    updatedAt: string;
+  }> {
+    return request(`/jobs/${jobId}/start`, {
+      method: 'PUT',
+    });
+  },
+
+  // Admin Dashboard APIs
+  async getDashboardUserCounts(): Promise<{
+    totalActiveCustomer: number;
+    totalActiveEmployee: number;
+  }> {
+    return request('/dashboard/user-counts', {
+      method: 'GET',
+    });
+  },
+
+  async getDashboardTopPerformance(): Promise<Array<{
+    technicianId: number;
+    technicianName: string;
+    completedJobCount: number;
+    performanceScorePercentage: number;
+  }>> {
+    return request('/dashboard/top-performance', {
+      method: 'GET',
+    });
+  },
+
+  async getDashboardRevenue(): Promise<{
+    period: string;
+    totalRevenue: number;
+    percentageChangeVsPreviousPeriod: number;
+  }> {
+    return request('/dashboard/revenue', {
+      method: 'GET',
+    });
+  },
+
+  async getDashboardRevenueLast6Months(): Promise<Array<{
+    period: string;
+    totalRevenue: number;
+  }>> {
+    return request('/dashboard/charts/revenue-last-6-months', {
+      method: 'GET',
+    });
+  },
+
+  // TODO: Add these APIs when backend is ready
+  // async getDashboardRevenueLast3Months(): Promise<Array<{
+  //   period: string;
+  //   totalRevenue: number;
+  // }>> {
+  //   return request('/dashboard/charts/revenue-last-3-months', {
+  //     method: 'GET',
+  //   });
+  // },
+
+  // async getDashboardRevenueLastYear(): Promise<Array<{
+  //   period: string;
+  //   totalRevenue: number;
+  // }>> {
+  //   return request('/dashboard/charts/revenue-last-year', {
+  //     method: 'GET',
+  //   });
+  // },
+
+  async getDashboardBookingCounts(): Promise<{
+    totalCompleteBooking: number;
+    totalNotCompleteBooking: number;
+  }> {
+    return request('/dashboard/booking-counts', {
+      method: 'GET',
+    });
+  },
+
+  async getDashboardAlerts(): Promise<Array<{
+    alertMessage: string;
+    alertType: string;
+  }>> {
+    return request('/dashboard/alert', {
+      method: 'GET',
+    });
+  },
+
+  async getDashboardAlertCounts(): Promise<{
+    totalAlert: number;
+  }> {
+    return request('/dashboard/alert-counts', {
+      method: 'GET',
     });
   },
 };

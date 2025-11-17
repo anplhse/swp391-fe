@@ -5,14 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { bookingApi } from '@/lib/bookingUtils';
 import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, MapPin, Phone, Plus, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -76,9 +79,17 @@ interface Shift {
   maxEmployees: number;
 }
 
+interface TopPerformance {
+  technicianId: number;
+  technicianName: string;
+  completedJobCount: number;
+  performanceScorePercentage: number;
+}
+
 export default function PersonnelManagementPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
+  const [topPerformance, setTopPerformance] = useState<TopPerformance[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -95,6 +106,20 @@ export default function PersonnelManagementPage() {
       roleDisplayName: ''
     }
   });
+
+  const loadTopPerformance = useCallback(async () => {
+    try {
+      const data = await bookingApi.getDashboardTopPerformance();
+      setTopPerformance(data);
+    } catch (error) {
+      console.error('Failed to load top performance:', error);
+      showApiErrorToast(error, toast, 'Không thể tải dữ liệu hiệu suất');
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    loadTopPerformance();
+  }, [loadTopPerformance]);
 
   useEffect(() => {
     let mounted = true;
@@ -322,6 +347,79 @@ export default function PersonnelManagementPage() {
             Thêm nhân viên
           </Button>
         </div>
+
+        {/* Top Performance Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Kỹ thuật viên xuất sắc</CardTitle>
+            <CardDescription>
+              Top kỹ thuật viên có hiệu suất cao nhất
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {topPerformance.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]">Hạng</TableHead>
+                    <TableHead>Tên kỹ thuật viên</TableHead>
+                    <TableHead className="text-center">Công việc hoàn thành</TableHead>
+                    <TableHead className="text-right">Điểm hiệu suất</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {topPerformance.map((tech, index) => (
+                    <TableRow key={tech.technicianId}>
+                      <TableCell>
+                        <div className="flex items-center justify-center">
+                          {index === 0 && (
+                            <Badge className="bg-accent text-accent-foreground hover:bg-accent/80">
+                              🥇
+                            </Badge>
+                          )}
+                          {index === 1 && (
+                            <Badge className="bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                              🥈
+                            </Badge>
+                          )}
+                          {index === 2 && (
+                            <Badge className="bg-primary text-primary-foreground hover:bg-primary/80">
+                              🥉
+                            </Badge>
+                          )}
+                          {index > 2 && (
+                            <span className="text-muted-foreground">#{index + 1}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {tech.technicianName}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline">{tech.completedJobCount}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Progress
+                            value={tech.performanceScorePercentage}
+                            className="h-2 w-[100px]"
+                          />
+                          <span className="text-sm font-medium w-[60px] text-right">
+                            {tech.performanceScorePercentage.toFixed(1)}%
+                          </span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                Chưa có dữ liệu hiệu suất
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="flex gap-4">
           <div className="relative flex-1">

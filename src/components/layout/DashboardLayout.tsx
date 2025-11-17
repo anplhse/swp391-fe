@@ -140,9 +140,6 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
         return [
           { to: '/service/admin', icon: LayoutDashboard, label: 'Dashboard' },
           { to: '/service/personnel', icon: Users, label: 'Quản lý nhân sự' },
-          { to: '/service/finance', icon: DollarSign, label: 'Quản lý tài chính' },
-          { to: '/service/reports', icon: BarChart3, label: 'Báo cáo & thống kê' },
-          { to: '/service/quotations', icon: FileText, label: 'Báo giá & hóa đơn' },
         ];
       default:
         return [

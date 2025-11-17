@@ -166,7 +166,7 @@ export function AppointmentTable({
           <TableHeader>
             <TableRow>
               <TableHead>Booking ID</TableHead>
-              <TableHead>Ngày giờ</TableHead>
+              <TableHead>Ngày tạo lịch hẹn</TableHead>
               <TableHead>Tên khách</TableHead>
               <TableHead>VIN</TableHead>
               <TableHead>Model</TableHead>

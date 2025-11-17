@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { bookingApi } from '@/lib/bookingUtils';
 import { showApiErrorToast } from '@/lib/responseHandler';
 import { ColumnDef } from '@tanstack/react-table';
-import { CheckCircle, X, CreditCard } from 'lucide-react';
+import { CheckCircle, CreditCard, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -23,6 +23,8 @@ type ApiBooking = {
   bookingStatus: string;
   createdAt: string;
   updatedAt: string;
+  technicianId?: number | null;
+  technicianName?: string | null;
   catalogDetails?: Array<{
     id: number;
     catalogId: number;
@@ -37,6 +39,7 @@ type ApiBooking = {
     totalAmount: number;
     status: string;
     createdAt: string;
+    paidAt: string;
     invoiceLines: Array<{
       id: number;
       itemDescription: string;
@@ -203,14 +206,27 @@ export default function BookingConfirmationPage() {
   const bookingInfoData = useMemo(() => {
     if (!booking) return [];
     const [dateStr = '', timeStr = ''] = (booking.scheduleDateTime?.value || '').split(' ');
-    return [
+    const data = [
+      { label: 'Booking ID', value: <span className="font-mono font-semibold">#{booking.id}</span> },
       { label: 'Trạng thái', value: getStatusBadge(booking.bookingStatus) },
+      { label: 'Khách hàng', value: booking.customerName },
       { label: 'VIN', value: <span className="font-mono">{booking.vehicleVin}</span> },
-      { label: 'Xe', value: booking.vehicleModel },
+      { label: 'Model xe', value: booking.vehicleModel },
       { label: 'Ngày hẹn', value: dateStr ? new Date(dateStr).toLocaleDateString('vi-VN') : '—' },
       { label: 'Giờ hẹn', value: timeStr || '—' },
-      { label: 'Tạo lúc', value: new Date(booking.createdAt).toLocaleString('vi-VN') },
     ];
+
+    // Add technician info if available
+    if (booking.technicianName) {
+      data.push({ label: 'Kỹ thuật viên', value: booking.technicianName });
+    }
+
+    data.push(
+      { label: 'Tạo lúc', value: new Date(booking.createdAt).toLocaleString('vi-VN') },
+      { label: 'Cập nhật lúc', value: new Date(booking.updatedAt).toLocaleString('vi-VN') }
+    );
+
+    return data;
   }, [booking, getStatusBadge]);
 
   const servicesColumns: ColumnDef<{
@@ -234,6 +250,15 @@ export default function BookingConfirmationPage() {
     totalPrice: number;
   }>[] = useMemo(
     () => [
+      {
+        accessorKey: 'itemType',
+        header: 'Loại',
+        cell: ({ row }) => (
+          <Badge variant={row.getValue('itemType') === 'SERVICE' ? 'default' : 'secondary'}>
+            {row.getValue('itemType') === 'SERVICE' ? 'Dịch vụ' : 'Linh kiện'}
+          </Badge>
+        ),
+      },
       { accessorKey: 'itemDescription', header: 'Hạng mục' },
       {
         accessorKey: 'quantity',
@@ -323,7 +348,31 @@ export default function BookingConfirmationPage() {
       {/* Invoice Lines */}
       {booking.invoice && (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Chi phí dự kiến</h2>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <h2 className="text-xl font-semibold">Hóa đơn chi tiết</h2>
+            <div className="text-sm space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Số hóa đơn:</span>
+                <span className="font-mono font-medium">{booking.invoice.invoiceNumber}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Trạng thái:</span>
+                <Badge variant={booking.invoice.status === 'PAID' ? 'default' : 'secondary'} className={booking.invoice.status === 'PAID' ? 'bg-green-600 hover:bg-green-700' : ''}>
+                  {booking.invoice.status === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                </Badge>
+              </div>
+              {booking.invoice.paidAt && (
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Thanh toán lúc:</span>
+                  <span className="font-medium">{new Date(booking.invoice.paidAt).toLocaleString('vi-VN')}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Ngày tạo:</span>
+                <span>{new Date(booking.invoice.issueDate).toLocaleString('vi-VN')}</span>
+              </div>
+            </div>
+          </div>
           <DataTable
             columns={invoiceLinesColumns}
             data={booking.invoice.invoiceLines}
@@ -332,7 +381,7 @@ export default function BookingConfirmationPage() {
             <div className="w-full max-w-md space-y-2 p-4 border rounded-lg bg-muted/50">
               <div className="flex justify-between text-lg font-semibold">
                 <span>Tổng cộng:</span>
-                <span>{formatPrice(booking.invoice.totalAmount)}</span>
+                <span className="text-green-600">{formatPrice(booking.invoice.totalAmount)}</span>
               </div>
             </div>
           </div>
@@ -342,8 +391,8 @@ export default function BookingConfirmationPage() {
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         {booking.bookingStatus === 'CONFIRMED' && (
-          <Button 
-            onClick={handlePayment} 
+          <Button
+            onClick={handlePayment}
             disabled={isProcessingPayment}
             className="bg-green-600 hover:bg-green-700"
           >
