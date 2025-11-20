@@ -113,7 +113,7 @@ export default function Contact() {
                 <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
               </svg>
             </div>
-            <span className="font-semibold text-gray-800">VinFast Service Workshop</span>
+            <span className="font-sans font-semibold text-gray-800">VinFast Service Workshop</span>
           </div>
           <div className="flex items-center gap-3 relative z-30">
             <Button
@@ -127,7 +127,7 @@ export default function Contact() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-14 relative z-20">
-        <h1 className="text-3xl md:text-4xl font-bold mb-4 text-center text-gray-900"
+        <h1 className="text-3xl md:text-4xl font-sans font-bold mb-4 text-center text-gray-900"
           style={{
             textShadow: '2px 2px 4px rgba(0,0,0,0.1)',
           }}
@@ -141,18 +141,18 @@ export default function Contact() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Side - Contact Methods */}
           <div className="space-y-4">
-            <div className="bg-card border border-gray-200 rounded-2xl p-6 shadow-xl">
-              <p className="text-gray-700 font-medium mb-6">
+            <div className="bg-card border border-gray-200 rounded-2xl p-6 shadow-2xl">
+              <p className="text-gray-700 font-sans font-medium mb-6">
                 Những câu hỏi vẫn chưa giải đáp được thắc mắc của bạn?
               </p>
-              <h3 className="text-xl font-bold mb-6 text-gray-900">LIÊN HỆ NGAY VỚI CHÚNG TÔI!</h3>
+              <h3 className="text-xl font-sans font-bold mb-6 text-gray-900">LIÊN HỆ NGAY VỚI CHÚNG TÔI!</h3>
 
               {/* Zalo Button */}
               <a
                 href="https://zalo.me/0396727248"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-semibold py-4 px-6 rounded-xl mb-4 flex items-center justify-between shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-sans font-semibold py-4 px-6 rounded-xl mb-4 flex items-center justify-between shadow-lg hover:shadow-2xl transition-smooth"
               >
                 <span>Nhắn tin qua Zalo</span>
                 <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
@@ -161,7 +161,7 @@ export default function Contact() {
               </a>
 
               {/* Hotline Button */}
-              <button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-xl mb-4 flex items-center justify-between shadow-lg hover:shadow-xl transition-all duration-300">
+              <button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-sans font-semibold py-4 px-6 rounded-xl mb-4 flex items-center justify-between shadow-lg hover:shadow-2xl transition-smooth">
                 <div>
                   <div>Gọi ngay hotline</div>
                   <div className="text-sm">0396727248</div>
@@ -176,7 +176,7 @@ export default function Contact() {
                 href="https://m.me/tran.tuan.895160"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-between"
+                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-sans font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-2xl transition-smooth flex items-center justify-between"
               >
                 <span>Nhắn tin qua Messenger</span>
                 <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
@@ -249,7 +249,7 @@ export default function Contact() {
               </div>
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-sans font-bold py-3 rounded-xl shadow-lg hover:shadow-2xl transition-smooth"
               >
                 GỬI NGAY CHO CHÚNG TÔI
               </Button>
@@ -259,14 +259,14 @@ export default function Contact() {
 
         {/* FAQ Section */}
         <div className="mt-16">
-          <h2 className="text-3xl font-bold text-center mb-8 text-gray-900"
+          <h2 className="text-3xl font-sans font-bold text-center mb-8 text-gray-900"
             style={{
               textShadow: '2px 2px 4px rgba(0,0,0,0.1)',
             }}
           >
             CÂU HỎI THƯỜNG GẶP
           </h2>
-          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 border border-gray-200">
             <Accordion type="single" collapsible className="w-full">
               {[
                 { q: 'Làm thế nào để đặt lịch bảo dưỡng xe điện?', a: 'Bạn có thể đặt lịch trực tuyến qua website, gọi hotline, hoặc nhắn tin qua Zalo/Messenger. Hệ thống sẽ tự động nhắc lịch bảo dưỡng định kỳ mỗi 10.000 km hoặc 6 tháng.' },
@@ -276,7 +276,7 @@ export default function Contact() {
                 { q: 'Trung tâm có cung cấp xe thay thế trong thời gian sửa chữa không?', a: 'Có, đối với các trường hợp sửa chữa lâu (trên 1 ngày), chúng tôi cung cấp dịch vụ xe thay thế để bạn không bị gián đoạn công việc và sinh hoạt.' }
               ].map((faq, i) => (
                 <AccordionItem key={i} value={`item-${i + 1}`}>
-                  <AccordionTrigger className="text-left font-semibold text-gray-900">
+                  <AccordionTrigger className="text-left font-sans font-semibold text-gray-900">
                     {faq.q}
                   </AccordionTrigger>
                   <AccordionContent className="text-gray-700">
