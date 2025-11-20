@@ -1,8 +1,30 @@
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 export default function CustomerDashboard() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Đăng xuất thành công",
+        description: "Hẹn gặp lại bạn!",
+      });
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Lỗi đăng xuất",
+        description: "Có lỗi xảy ra khi đăng xuất",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -18,20 +40,23 @@ export default function CustomerDashboard() {
             <span className="font-semibold text-gray-800">VinFast Service Workshop</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-            <a href="/about" className="hover:text-foreground">Giới thiệu</a>
-            <a href="/services" className="hover:text-foreground">Dịch vụ</a>
-            <a href="/pricing" className="hover:text-foreground">Bảng giá</a>
-            <a href="/blog" className="hover:text-foreground">Blog</a>
-            <a href="/contact" className="hover:text-foreground">Liên hệ</a>
+            <button onClick={() => navigate('/customer')} className="hover:text-foreground">Trang chủ</button>
+            <button onClick={() => navigate('/customer/vehicles')} className="hover:text-foreground">Xe của tôi</button>
+            <button onClick={() => navigate('/customer/bookings')} className="hover:text-foreground">Lịch hẹn</button>
+            <button onClick={() => navigate('/customer/booking')} className="hover:text-foreground">Đặt lịch</button>
           </nav>
           <div className="flex items-center gap-3">
-            <Button onClick={() => navigate('/customer/bookings')} className="px-4">Quản lý lịch hẹn</Button>
-            <Button variant="outline" className="px-4" onClick={() => navigate('/')}>Đăng xuất</Button>
+            {user && (
+              <div className="hidden md:block text-sm">
+                <span className="font-semibold text-foreground">{user.fullName}</span>
+              </div>
+            )}
+            <Button variant="outline" className="px-4" onClick={handleLogout}>Đăng xuất</Button>
           </div>
         </div>
       </header>
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 pt-2">
+      <section className="mx-auto max-w-6xl px-4 pt-6 md:pt-8">
         <img
           src="/a.jpg"
           alt="Hình minh họa trung tâm dịch vụ"
@@ -51,7 +76,6 @@ export default function CustomerDashboard() {
               <img src="/f.jpg" alt="Đặt lịch" className="w-full h-40 md:h-44 object-cover rounded-xl mb-5" width="640" height="224" loading="lazy" />
               <h3 className="text-xl font-semibold mb-2">Đặt lịch</h3>
               <p className="text-base text-muted-foreground">Đặt lịch online, hiển thị khung giờ trống theo thời gian thực.</p>
-              <div className="mt-4"><Button size="sm" onClick={() => navigate('/customer/booking')}>Đặt lịch ngay</Button></div>
             </div>
             <div className="rounded-2xl p-6 bg-card border shadow">
               <img src="/e.jpg" alt="Tiếp nhận xe" className="w-full h-40 md:h-44 object-cover rounded-xl mb-5" width="640" height="224" loading="lazy" />
@@ -124,29 +148,28 @@ export default function CustomerDashboard() {
                 </div>
                 <span className="font-semibold">VinFast Service Workshop</span>
               </div>
-              <p className="text-sm text-muted-foreground">Nền tảng quản lý gara ô tô toàn diện.</p>
+              <p className="text-sm text-muted-foreground">Nền tảng quản lý bảo dưỡng xe VinFast</p>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Thông tin</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="/about" className="hover:text-foreground">Giới thiệu</a></li>
-                <li><a href="/pricing" className="hover:text-foreground">Bảng giá</a></li>
-                <li><a href="/blog" className="hover:text-foreground">Blog</a></li>
+                <li><button onClick={() => navigate('/customer')} className="hover:text-foreground">Trang chủ</button></li>
+                <li><button onClick={() => navigate('/customer/vehicles')} className="hover:text-foreground">Xe của tôi</button></li>
+                <li><button onClick={() => navigate('/customer/bookings')} className="hover:text-foreground">Lịch hẹn</button></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Chức năng</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="/services" className="hover:text-foreground">Đặt lịch</a></li>
-                <li><a href="/services" className="hover:text-foreground">Tiếp nhận xe</a></li>
-                <li><a href="/services" className="hover:text-foreground">Theo dõi tiến độ sửa chữa</a></li>
-                <li><a href="/services" className="hover:text-foreground">Quản lý xe của khách</a></li>
+                <li><button onClick={() => navigate('/customer/booking')} className="hover:text-foreground">Đặt lịch ngay</button></li>
+                <li><button onClick={() => navigate('/customer/bookings')} className="hover:text-foreground">Quản lý lịch hẹn</button></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Liên hệ</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="/contact" className="hover:text-foreground">Form liên hệ</a></li>
+                <li>Email: dengocrong123@gmail.com</li>
+                <li>Hotline: 0396727248</li>
               </ul>
             </div>
           </div>

@@ -27,7 +27,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { authService } from '@/lib/auth';
-import { BarChart3, Bell, Calendar, Car, ClipboardList, DollarSign, FileText, History, LayoutDashboard, LogOut, Package, Settings, User, Users, Wrench } from 'lucide-react';
+import { Bell, Calendar, Car, ClipboardList, History, LayoutDashboard, LogOut, Package, Settings, User, Users, Wrench } from 'lucide-react';
 import { ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
@@ -166,7 +166,7 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Điều hướng</SidebarGroupLabel>
+            <SidebarGroupLabel>Quản lý chính</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {menuItems.map((item, idx) => (
