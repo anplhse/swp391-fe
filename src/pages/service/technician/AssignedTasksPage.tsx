@@ -106,7 +106,7 @@ export default function AssignedTasksPage() {
       case 'urgent':
         return <Badge variant="destructive">Khẩn cấp</Badge>;
       case 'high':
-        return <Badge className="bg-orange-500">Cao</Badge>;
+        return <Badge className="bg-primary text-primary-foreground">Cao</Badge>;
       case 'medium':
         return <Badge variant="default">Trung bình</Badge>;
       case 'low':

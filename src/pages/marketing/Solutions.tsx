@@ -144,9 +144,9 @@ export default function Solutions() {
       `}</style>
 
       {/* Decorative clouds */}
-      <div className="absolute top-10 left-10 w-32 h-32 bg-white/20 rounded-full blur-3xl" style={{ animation: 'float 6s ease-in-out infinite' }}></div>
-      <div className="absolute top-40 right-20 w-40 h-40 bg-white/20 rounded-full blur-3xl" style={{ animation: 'float 8s ease-in-out infinite 1s' }}></div>
-      <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-white/20 rounded-full blur-3xl" style={{ animation: 'float 7s ease-in-out infinite 2s' }}></div>
+      <div className="absolute top-10 left-10 w-32 h-32 bg-card/20 rounded-full blur-3xl" style={{ animation: 'float 6s ease-in-out infinite' }}></div>
+      <div className="absolute top-40 right-20 w-40 h-40 bg-card/20 rounded-full blur-3xl" style={{ animation: 'float 8s ease-in-out infinite 1s' }}></div>
+      <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-card/20 rounded-full blur-3xl" style={{ animation: 'float 7s ease-in-out infinite 2s' }}></div>
       
       {/* Header Navigation */}
       <header className="w-full bg-white relative z-30 rounded-b-3xl shadow-xl pt-4 pb-4">
@@ -185,14 +185,13 @@ export default function Solutions() {
         {/* Header Section */}
         <div className="text-center space-y-4" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
           <div className="inline-block mb-4">
-            <span className="px-5 py-2 bg-white/20 backdrop-blur-sm text-white text-sm font-semibold rounded-full border border-white/30 shadow-lg">
+            <span className="px-5 py-2 bg-card/20 backdrop-blur-sm text-primary-foreground text-sm font-semibold rounded-full border border-border/30 shadow-lg">
               🚗 Xe điện VinFast
             </span>
           </div>
           <h1 
-            className="text-5xl md:text-7xl font-black mb-5 text-white"
+            className="text-5xl md:text-7xl font-black mb-5 text-primary-foreground"
             style={{ 
-              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif",
               letterSpacing: '-0.03em',
               textShadow: '0 4px 20px rgba(0,0,0,0.3), 0 0 40px rgba(255,255,255,0.1)',
               animation: 'pulse 3s ease-in-out infinite'
@@ -207,13 +206,13 @@ export default function Solutions() {
           {vehicleModels.map((vehicle, index) => (
             <div
               key={index}
-              className={`rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 ${
+              className={`rounded-xl overflow-hidden bg-card shadow-lg hover:shadow-xl transition-smooth ${
                 vehicle.status === 'INACTIVE' ? 'opacity-60' : ''
               }`}
             >
               {/* Vehicle Image with Overlay Info */}
               <div 
-                className="relative h-64 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 cursor-pointer group overflow-hidden"
+                className="relative h-64 bg-gradient-to-br from-muted to-muted cursor-pointer group overflow-hidden"
                 onMouseEnter={() => setHoveredVehicle(index)}
                 onMouseLeave={() => setHoveredVehicle(null)}
               >
@@ -227,7 +226,7 @@ export default function Solutions() {
                 />
                 
                 {vehicle.status === 'INACTIVE' && (
-                  <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold z-10">
+                  <div className="absolute top-4 right-4 bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-sm font-semibold z-10">
                     Ngừng sản xuất
                   </div>
                 )}
@@ -268,9 +267,9 @@ export default function Solutions() {
               </div>
 
               {/* Vehicle Title - Always visible */}
-              <div className="p-6 bg-white dark:bg-gray-800">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{vehicle.model}</h3>
-                <p className="text-gray-600 dark:text-gray-400">{vehicle.brand}</p>
+              <div className="p-6 bg-card">
+                <h3 className="text-2xl font-bold text-foreground">{vehicle.model}</h3>
+                <p className="text-muted-foreground">{vehicle.brand}</p>
               </div>
             </div>
           ))}

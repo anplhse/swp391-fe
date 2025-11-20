@@ -39,12 +39,9 @@ export default function About() {
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
-      <header className="w-full bg-card relative z-30 rounded-b-3xl shadow-xl pt-4 pb-4 border-b-2 border-primary/30">
+      <header className="w-full bg-card relative z-30 rounded-b-3xl shadow-xl pt-4 pb-4">
         <div className="mx-auto max-w-6xl px-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 relative z-30 bg-secondary px-4 py-2 rounded-2xl shadow-lg border border-border"
-            style={{
-              boxShadow: 'var(--shadow-md), inset 0 1px 0 hsl(var(--primary-foreground) / 0.5)',
-            }}
+          <div className="flex items-center gap-3 relative z-30 bg-gradient-to-r from-secondary/50 to-secondary px-4 py-2 rounded-2xl shadow-lg border border-border"
           >
             <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center shadow-md">
               <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
@@ -80,7 +77,7 @@ export default function About() {
             </Button>
             <Button 
               onClick={() => navigate('/login')}
-              className="bg-primary hover:bg-primary-hover text-primary-foreground font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-smooth"
             >
               Đăng nhập
             </Button>
@@ -116,15 +113,15 @@ export default function About() {
         </div>
         
         <div className="space-y-28 md:space-y-36 relative z-20 -mt-16 md:-mt-20">
-          <div className="bg-card/95 backdrop-blur-sm rounded-3xl p-8 md:p-12 shadow-2xl border-2 border-border/50 hover:shadow-[0_20px_60px_hsl(var(--foreground)/0.3)] transition-all duration-500 hover:scale-[1.01]" style={{ animation: 'fadeInUp 1.4s ease-out' }}>
+          <div className="bg-card/95 backdrop-blur-sm rounded-3xl p-8 md:p-12 shadow-2xl border-2 border-border hover:shadow-2xl transition-smooth hover:scale-[1.01]" style={{ animation: 'fadeInUp 1.4s ease-out' }}>
             <div className="flex items-start gap-6">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-hover flex items-center justify-center flex-shrink-0 shadow-xl" style={{ animation: 'pulse 2s ease-in-out infinite' }}>
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-primary to-destructive flex items-center justify-center flex-shrink-0 shadow-xl" style={{ animation: 'pulse 2s ease-in-out infinite' }}>
                 <svg className="w-8 h-8 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
+                <h3 className="text-3xl font-bold text-foreground mb-4">
                   Nền tảng web quản lý toàn diện
                 </h3>
                 <p className="text-muted-foreground leading-relaxed text-lg">
@@ -134,8 +131,8 @@ export default function About() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-              <div className="group bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl p-7 shadow-lg border-2 border-primary/30 hover:shadow-2xl hover:border-primary transition-all duration-500 hover:-translate-y-3 hover:scale-105 cursor-pointer" style={{ animation: 'fadeInUp 1.6s ease-out' }}>
-                <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-xl">
+              <div className="group bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl p-7 shadow-lg border-2 border-primary/30 hover:shadow-2xl hover:border-primary transition-smooth hover:-translate-y-3 hover:scale-105 cursor-pointer" style={{ animation: 'fadeInUp 1.6s ease-out' }}>
+                <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-smooth shadow-xl">
                   <svg className="w-7 h-7 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -144,8 +141,8 @@ export default function About() {
                 <p className="text-muted-foreground text-base leading-relaxed">Đặt lịch online 24/7, xác nhận ngay</p>
               </div>
 
-              <div className="group bg-gradient-to-br from-accent/10 to-accent/20 rounded-2xl p-7 shadow-lg border-2 border-accent/30 hover:shadow-2xl hover:border-accent transition-all duration-500 hover:-translate-y-3 hover:scale-105 cursor-pointer" style={{ animation: 'fadeInUp 1.8s ease-out' }}>
-                <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-xl">
+              <div className="group bg-gradient-to-br from-accent/10 to-accent/20 rounded-2xl p-7 shadow-lg border-2 border-accent/30 hover:shadow-2xl hover:border-accent transition-smooth hover:-translate-y-3 hover:scale-105 cursor-pointer" style={{ animation: 'fadeInUp 1.8s ease-out' }}>
+                <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-smooth shadow-xl">
                   <svg className="w-7 h-7 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -154,8 +151,8 @@ export default function About() {
                 <p className="text-muted-foreground text-base leading-relaxed">Cập nhật trạng thái từng bước</p>
               </div>
 
-              <div className="group bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl p-7 shadow-lg border-2 border-primary/30 hover:shadow-2xl hover:border-primary transition-all duration-500 hover:-translate-y-3 hover:scale-105 cursor-pointer" style={{ animation: 'fadeInUp 2s ease-out' }}>
-                <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-xl">
+              <div className="group bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl p-7 shadow-lg border-2 border-primary/30 hover:shadow-2xl hover:border-primary transition-smooth hover:-translate-y-3 hover:scale-105 cursor-pointer" style={{ animation: 'fadeInUp 2s ease-out' }}>
+                <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-smooth shadow-xl">
                   <svg className="w-7 h-7 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -191,8 +188,8 @@ export default function About() {
                       {[
                         { icon: '✓', bg: 'bg-primary', title: 'Tiếp nhận xe', sub: 'Hoàn thành 09:30', opacity: 'opacity-100' },
                         { icon: '●', bg: 'bg-primary animate-pulse', title: 'Đang kiểm tra', sub: 'KTV: Nguyễn Văn A', opacity: 'opacity-100' },
-                        { icon: '○', bg: 'bg-gray-300', title: 'Bảo dưỡng', sub: 'Dự kiến: 45 phút', opacity: 'opacity-50' },
-                        { icon: '○', bg: 'bg-gray-300', title: 'Hoàn tất', sub: 'Chờ xử lý', opacity: 'opacity-50' }
+                        { icon: '○', bg: 'bg-muted', title: 'Bảo dưỡng', sub: 'Dự kiến: 45 phút', opacity: 'opacity-50' },
+                        { icon: '○', bg: 'bg-muted', title: 'Hoàn tất', sub: 'Chờ xử lý', opacity: 'opacity-50' }
                       ].map((step, i) => (
                         <div key={i} className={`flex items-center gap-3 ${step.opacity}`}>
                           <div className={`w-8 h-8 rounded-full ${step.bg} flex items-center justify-center text-primary-foreground text-xs font-bold shadow-md`}>
@@ -211,7 +208,7 @@ export default function About() {
                     </div>
                   </div>
                 </div>
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-16 h-1 bg-gray-700 rounded-full"></div>
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-16 h-1 bg-foreground/50 rounded-full"></div>
               </div>
             </div>
 
@@ -355,9 +352,9 @@ export default function About() {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="group bg-card/95 backdrop-blur-sm rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:scale-105 border-2 border-border/50 hover:border-primary">
+            <div className="group bg-card/95 backdrop-blur-sm rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-smooth hover:-translate-y-2 hover:scale-105 border-2 border-border hover:border-primary">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-primary-foreground text-2xl font-bold shadow-lg">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-accent flex items-center justify-center text-primary-foreground text-2xl font-bold shadow-lg">
                   A
                 </div>
                 <div>
@@ -367,7 +364,7 @@ export default function About() {
               </div>
               <div className="flex gap-1 mb-3">
                 {[1,2,3,4,5].map(i => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <svg key={i} className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 ))}
@@ -375,7 +372,7 @@ export default function About() {
               <p className="text-muted-foreground leading-relaxed italic">"Đặt lịch siêu nhanh, không phải chờ đợi. Tôi yên tâm hơn nhiều khi biết xe đang được xử lý!"</p>
             </div>
 
-            <div className="group bg-card/95 backdrop-blur-md rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-2 border-border/50 hover:border-accent">
+            <div className="group bg-card/95 backdrop-blur-md rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-smooth hover:-translate-y-2 border-2 border-border hover:border-accent">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 rounded-full bg-accent flex items-center justify-center text-primary-foreground text-2xl font-bold shadow-lg">
                   T
@@ -387,7 +384,7 @@ export default function About() {
               </div>
               <div className="flex gap-1 mb-3">
                 {[1,2,3,4,5].map(i => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <svg key={i} className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 ))}
@@ -395,7 +392,7 @@ export default function About() {
               <p className="text-muted-foreground leading-relaxed italic">"Theo dõi tiến độ realtime quá tiện! Không còn lo lắng xe đang ở đâu nữa."</p>
             </div>
 
-            <div className="group bg-card/95 backdrop-blur-md rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-2 border-border/50 hover:border-primary">
+            <div className="group bg-card/95 backdrop-blur-md rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-smooth hover:-translate-y-2 border-2 border-border hover:border-primary">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-2xl font-bold shadow-lg">
                   H
@@ -407,7 +404,7 @@ export default function About() {
               </div>
               <div className="flex gap-1 mb-3">
                 {[1,2,3,4,5].map(i => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <svg key={i} className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 ))}
@@ -419,9 +416,9 @@ export default function About() {
 
         {/* CTA Section */}
         <div className="mt-40 md:mt-52 mb-12" style={{ animation: 'fadeInUp 2.4s ease-out' }}>
-          <div className="bg-primary rounded-3xl p-12 md:p-16 shadow-2xl text-center hover:shadow-[0_30px_70px_hsl(var(--primary)/0.4)] transition-all duration-500 hover:scale-[1.02]">
+          <div className="bg-primary rounded-3xl p-12 md:p-16 shadow-2xl text-center hover:shadow-2xl transition-smooth hover:scale-[1.02]">
             <h2 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-6" style={{ 
-              textShadow: '0 2px 8px hsl(var(--foreground) / 0.2)'
+              textShadow: '0 2px 8px rgba(0,0,0,0.2)'
             }}>
               Sẵn sàng trải nghiệm?
             </h2>
@@ -431,13 +428,14 @@ export default function About() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button 
                 onClick={() => navigate('/login')}
-                className="bg-card text-primary hover:bg-muted font-bold px-8 py-6 text-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 border-0"
+                className="bg-card text-primary hover:bg-card/90 font-bold px-8 py-6 text-lg rounded-2xl shadow-xl hover:shadow-2xl transition-smooth hover:scale-110"
               >
                 🚀 Bắt đầu ngay
               </Button>
               <Button 
                 onClick={() => navigate('/services')}
-                className="bg-card/30 backdrop-blur-sm text-primary-foreground hover:bg-card hover:text-primary font-bold px-8 py-6 text-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 border-0"
+                variant="outline"
+                className="bg-card/30 backdrop-blur-sm text-primary-foreground hover:bg-card hover:text-primary font-bold px-8 py-6 text-lg rounded-2xl shadow-xl hover:shadow-2xl transition-smooth hover:scale-110"
               >
                 📖 Tìm hiểu thêm
               </Button>

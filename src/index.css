@@ -2,55 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 
-  VinFast Service Workshop Design System
-  Enhanced with modern OKLCH color space for better consistency
-  Maintains backward compatibility with existing HSL-based components
-*/
-
 @layer base {
+  * {
+    @apply border-border;
+  }
+
   :root {
-    /* Core Colors - OKLCH for better perceptual uniformity */
-    --background: 20 100% 98%; /* #fff9f5 - Warm white */
-    --foreground: 346 8% 22%; /* #3d3436 - Dark gray */
+    --background: oklch(0.9922 0.0088 56.32);
+    --foreground: oklch(0.3353 0.0132 2.7676);
 
-    --card: 0 0% 100%; /* #ffffff - Pure white */
-    --card-foreground: 346 8% 22%;
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.3353 0.0132 2.7676);
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 346 8% 22%;
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.3353 0.0132 2.7676);
 
-    /* Primary Colors - Sunset Orange Theme */
-    --primary: 14 100% 68%; /* #ff7e5f - Vibrant orange */
-    --primary-foreground: 0 0% 100%; /* #ffffff */
-    --primary-hover: 12 100% 60%; /* Darker orange for hover */
-    --primary-glow: 14 100% 80%; /* Lighter glow effect */
+    --primary: oklch(0.7357 0.1641 34.7091);
+    --primary-foreground: oklch(1 0 0);
 
-    /* Secondary Colors */
-    --secondary: 8 100% 96%; /* #ffedea - Soft peach */
-    --secondary-foreground: 10 47% 48%; /* #b35340 - Muted terracotta */
+    --secondary: oklch(0.9596 0.02 28.9029);
+    --secondary-foreground: oklch(0.5587 0.1294 32.7364);
 
-    /* Muted Colors */
-    --muted: 14 100% 97%; /* #fff0eb - Very light orange */
-    --muted-foreground: 24 5% 45%; /* #78716C - Warm gray */
+    --muted: oklch(0.9656 0.0176 39.4009);
+    --muted-foreground: oklch(0.5534 0.0116 58.0708);
 
-    /* Accent Colors */
-    --accent: 26 100% 74%; /* #feb47b - Golden orange */
-    --accent-foreground: 346 8% 22%; /* #3d3436 */
+    --accent: oklch(0.8278 0.1131 57.9984);
+    --accent-foreground: oklch(0.3353 0.0132 2.7676);
 
-    /* Status Colors */
-    --warning: 35 91% 62%; /* Yellow-orange */
-    --warning-foreground: 0 0% 100%;
+    --destructive: oklch(0.6122 0.2082 22.241);
+    --destructive-foreground: oklch(1 0 0);
 
-    --destructive: 356 78% 56%; /* #e63946 - Red */
-    --destructive-foreground: 0 0% 100%;
+    --border: oklch(0.9296 0.037 38.6868);
+    --input: oklch(0.9296 0.037 38.6868);
+    --ring: oklch(0.7357 0.1641 34.7091);
 
-    /* Border & Input */
-    --border: 15 100% 92%; /* #ffe0d6 - Light orange border */
-    --input: 15 100% 92%;
-    --ring: 14 100% 68%;
+    --chart-1: oklch(0.7357 0.1641 34.7091);
+    --chart-2: oklch(0.8278 0.1131 57.9984);
+    --chart-3: oklch(0.8773 0.0763 54.9314);
+    --chart-4: oklch(0.82 0.1054 40.8859);
+    --chart-5: oklch(0.6368 0.1306 32.0721);
 
-    /* Enhanced Shadow System (from new palette) */
+    --sidebar: oklch(0.9656 0.0176 39.4009);
+    --sidebar-foreground: oklch(0.3353 0.0132 2.7676);
+    --sidebar-primary: oklch(0.7357 0.1641 34.7091);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.8278 0.1131 57.9984);
+    --sidebar-accent-foreground: oklch(0.3353 0.0132 2.7676);
+    --sidebar-border: oklch(0.9296 0.037 38.6868);
+    --sidebar-ring: oklch(0.7357 0.1641 34.7091);
+
+    --font-sans: "Montserrat", sans-serif;
+    --font-serif: "Merriweather", serif;
+    --font-mono: "Ubuntu Mono", monospace;
+
+    --radius: 0.625rem;
+
     --shadow-2xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
     --shadow-xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
     --shadow-sm: 0px 6px 12px -3px hsl(0 0% 0% / 0.09),
@@ -64,125 +70,77 @@
     --shadow-xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.09),
       0px 8px 10px -4px hsl(0 0% 0% / 0.09);
     --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.22);
-    --shadow-electric: 0 0 20px hsl(26 100% 74% / 0.3);
-
-    /* Typography - Modern font system */
-    --font-sans: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI",
-      sans-serif;
-    --font-serif: "Merriweather", Georgia, serif;
-    --font-mono: "Ubuntu Mono", "Courier New", monospace;
-
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-
-    /* Border Radius System */
-    --radius: 0.625rem; /* 10px - Slightly larger for modern look */
-
-    /* Sidebar Design System */
-    --sidebar-background: 14 100% 97%; /* #fff0eb */
-    --sidebar-foreground: 346 8% 22%; /* #3d3436 */
-    --sidebar-primary: 14 100% 68%; /* #ff7e5f */
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 26 100% 74%; /* #feb47b */
-    --sidebar-accent-foreground: 346 8% 22%;
-    --sidebar-accent-hover: 26 100% 80%; /* Lighter accent for hover */
-    --sidebar-accent-active: 14 100% 68%; /* Primary color for active */
-    --sidebar-border: 15 100% 92%; /* #ffe0d6 */
-    --sidebar-ring: 14 100% 68%;
-
-    /* Chart Colors - Harmonious orange palette */
-    --chart-1: 14 100% 68%; /* #ff7e5f - Primary orange */
-    --chart-2: 26 100% 74%; /* #feb47b - Golden orange */
-    --chart-3: 24 100% 83%; /* #ffcaa7 - Light peach */
-    --chart-4: 16 100% 78%; /* #ffad8f - Soft coral */
-    --chart-5: 10 55% 57%; /* #ce6a57 - Muted terracotta */
   }
 
-  /* Dark Mode - Enhanced for better contrast */
   .dark {
-    --background: 222 47% 4%; /* Very dark blue-gray */
-    --foreground: 210 40% 98%; /* Almost white */
+    --background: oklch(0.2569 0.0169 352.4042);
+    --foreground: oklch(0.9397 0.0119 51.3156);
 
-    --card: 222 47% 6%; /* Slightly lighter than background */
-    --card-foreground: 210 40% 98%;
+    --card: oklch(0.3184 0.0176 341.4465);
+    --card-foreground: oklch(0.9397 0.0119 51.3156);
 
-    --popover: 222 47% 6%;
-    --popover-foreground: 210 40% 98%;
+    --popover: oklch(0.3184 0.0176 341.4465);
+    --popover-foreground: oklch(0.9397 0.0119 51.3156);
 
-    /* Primary Colors - Warmer orange for dark mode */
-    --primary: 22 90% 58%; /* Warm orange */
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 20 90% 50%;
-    --primary-glow: 22 90% 75%;
+    --primary: oklch(0.7357 0.1641 34.7091);
+    --primary-foreground: oklch(1 0 0);
 
-    /* Secondary Colors */
-    --secondary: 217 33% 17%; /* Dark blue-gray */
-    --secondary-foreground: 210 40% 98%;
+    --secondary: oklch(0.3637 0.0203 342.2664);
+    --secondary-foreground: oklch(0.9397 0.0119 51.3156);
 
-    /* Muted Colors */
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%; /* Medium gray */
+    --muted: oklch(0.3184 0.0176 341.4465);
+    --muted-foreground: oklch(0.8378 0.0237 52.6346);
 
-    /* Accent Colors */
-    --accent: 330 75% 55%; /* Pink-red accent */
-    --accent-foreground: 0 0% 100%;
+    --accent: oklch(0.8278 0.1131 57.9984);
+    --accent-foreground: oklch(0.2569 0.0169 352.4042);
 
-    /* Status Colors */
-    --warning: 35 91% 62%;
-    --warning-foreground: 0 0% 100%;
+    --destructive: oklch(0.6122 0.2082 22.241);
+    --destructive-foreground: oklch(1 0 0);
 
-    --destructive: 0 63% 31%; /* Darker red for dark mode */
-    --destructive-foreground: 210 40% 98%;
+    --border: oklch(0.3637 0.0203 342.2664);
+    --input: oklch(0.3637 0.0203 342.2664);
+    --ring: oklch(0.7357 0.1641 34.7091);
 
-    /* Border & Input */
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 22 90% 58%;
+    --chart-1: oklch(0.7357 0.1641 34.7091);
+    --chart-2: oklch(0.8278 0.1131 57.9984);
+    --chart-3: oklch(0.8773 0.0763 54.9314);
+    --chart-4: oklch(0.82 0.1054 40.8859);
+    --chart-5: oklch(0.6368 0.1306 32.0721);
 
-    /* Enhanced Shadow System for Dark Mode */
-    --shadow-2xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.3);
-    --shadow-xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.3);
-    --shadow-sm: 0px 6px 12px -3px hsl(0 0% 0% / 0.4),
-      0px 1px 2px -4px hsl(0 0% 0% / 0.4);
-    --shadow: 0px 6px 12px -3px hsl(0 0% 0% / 0.4),
-      0px 1px 2px -4px hsl(0 0% 0% / 0.4);
-    --shadow-md: 0px 6px 12px -3px hsl(0 0% 0% / 0.4),
-      0px 2px 4px -4px hsl(0 0% 0% / 0.4);
-    --shadow-lg: 0px 6px 12px -3px hsl(0 0% 0% / 0.4),
-      0px 4px 6px -4px hsl(0 0% 0% / 0.4);
-    --shadow-xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.4),
-      0px 8px 10px -4px hsl(0 0% 0% / 0.4);
-    --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.6);
-    --shadow-electric: 0 0 30px hsl(330 75% 55% / 0.5);
+    --sidebar: oklch(0.2569 0.0169 352.4042);
+    --sidebar-foreground: oklch(0.9397 0.0119 51.3156);
+    --sidebar-primary: oklch(0.7357 0.1641 34.7091);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.8278 0.1131 57.9984);
+    --sidebar-accent-foreground: oklch(0.2569 0.0169 352.4042);
+    --sidebar-border: oklch(0.3637 0.0203 342.2664);
+    --sidebar-ring: oklch(0.7357 0.1641 34.7091);
 
-    /* Sidebar for Dark Mode */
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-accent-hover: 240 3.7% 20%;
-    --sidebar-accent-active: 224.3 76.3% 48%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 22 90% 58%;
+    --font-sans: Montserrat, sans-serif;
+    --font-serif: Merriweather, serif;
+    --font-mono: Ubuntu Mono, monospace;
+
+    --radius: 0.625rem;
+
+    --shadow-2xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
+    --shadow-xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
+    --shadow-sm: 0px 6px 12px -3px hsl(0 0% 0% / 0.09),
+      0px 1px 2px -4px hsl(0 0% 0% / 0.09);
+    --shadow: 0px 6px 12px -3px hsl(0 0% 0% / 0.09),
+      0px 1px 2px -4px hsl(0 0% 0% / 0.09);
+    --shadow-md: 0px 6px 12px -3px hsl(0 0% 0% / 0.09),
+      0px 2px 4px -4px hsl(0 0% 0% / 0.09);
+    --shadow-lg: 0px 6px 12px -3px hsl(0 0% 0% / 0.09),
+      0px 4px 6px -4px hsl(0 0% 0% / 0.09);
+    --shadow-xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.09),
+      0px 8px 10px -4px hsl(0 0% 0% / 0.09);
+    --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.22);
   }
-}
-
-@layer base {
-  /* Font imports - Modern typography system */
-  @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
-  @import url("https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300..900;1,300..900&display=swap");
 
   html,
   body,
   #root {
     height: 100%;
-  }
-
-  * {
-    @apply border-border;
   }
 
   html {
@@ -197,116 +155,5 @@
     width: 100%;
     overflow-x: hidden;
     overflow-y: auto;
-  }
-}
-
-@layer components {
-  /* Sidebar inset layout: let library control sizing to avoid jump */
-  /* Removed width/margin overrides to prevent content shifting when collapsing */
-  .container {
-    max-width: none;
-    width: 100%;
-    padding: 0 1rem;
-  }
-  /* Glass effect */
-  .glass {
-    @apply bg-white/10 backdrop-blur-lg border border-white/20;
-  }
-
-  .glass-dark {
-    @apply bg-black/10 backdrop-blur-lg border border-white/10;
-  }
-
-  /* Electric glow effect */
-  .glow-electric {
-    box-shadow: var(--shadow-electric);
-  }
-
-  /* Smooth transitions */
-  .transition-smooth {
-    transition: var(--transition-smooth);
-  }
-
-  .transition-bounce {
-    transition: var(--transition-bounce);
-  }
-
-  /* Gradient helpers removed */
-
-  /* App-specific styles (moved from App.css) */
-  #root {
-    width: 100%;
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
-  }
-
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
-  }
-
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
-  }
-
-  .logo.react:hover {
-    filter: drop-shadow(0 0 2em #61dafbaa);
-  }
-
-  @keyframes logo-spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    a:nth-of-type(2) .logo {
-      animation: logo-spin infinite 20s linear;
-    }
-  }
-
-  .card {
-    padding: 2em;
-  }
-
-  .read-the-docs {
-    color: #888;
-  }
-
-  /* Full width and responsive utilities */
-  .full-width {
-    width: 100vw;
-    margin-left: calc(50% - 50vw);
-  }
-
-  .container-full {
-    width: 100%;
-    max-width: none;
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-
-  /* Smooth scrolling for better UX */
-  .scroll-container {
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Prevent horizontal scroll on mobile */
-  @media (max-width: 768px) {
-    body {
-      overflow-x: hidden;
-    }
-
-    .container-full {
-      padding-left: 0.5rem;
-      padding-right: 0.5rem;
-    }
   }
 }

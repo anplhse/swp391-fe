@@ -369,10 +369,10 @@ export default function BookingStatusPage() {
                 )}
 
                 {bookingData.status === 'in_progress' && (
-                  <div className="text-center p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                    <Wrench className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                    <p className="text-sm text-orange-700 font-medium">Đang thực hiện dịch vụ</p>
-                    <p className="text-xs text-orange-600 mt-1">Kỹ thuật viên đang bảo dưỡng xe của bạn</p>
+                  <div className="text-center p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                    <Wrench className="w-8 h-8 text-primary mx-auto mb-2" />
+                    <p className="text-sm text-primary font-medium">Đang thực hiện dịch vụ</p>
+                    <p className="text-xs text-primary/80 mt-1">Kỹ thuật viên đang bảo dưỡng xe của bạn</p>
                   </div>
                 )}
 
@@ -422,8 +422,8 @@ export default function BookingStatusPage() {
           <div className="space-y-4">
             {/* Bước 1: Đặt lịch */}
             <div className="flex items-center gap-3 p-3 border rounded-lg">
-              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                <CheckCircle2 className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4 text-primary-foreground" />
               </div>
               <div className="flex-1">
                 <h4 className="font-medium">Đặt lịch thành công</h4>
@@ -436,8 +436,8 @@ export default function BookingStatusPage() {
             {/* Bước 2: Xác nhận */}
             {bookingData.status !== 'pending' && (
               <div className="flex items-center gap-3 p-3 border rounded-lg">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium">Trung tâm đã xác nhận</h4>
@@ -451,8 +451,8 @@ export default function BookingStatusPage() {
             {/* Bước 3: Thực hiện */}
             {bookingData.status === 'in_progress' && (
               <div className="flex items-center gap-3 p-3 border rounded-lg">
-                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                  <Wrench className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                  <Wrench className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium">Đang thực hiện dịch vụ</h4>
@@ -466,8 +466,8 @@ export default function BookingStatusPage() {
             {/* Bước 4: Hoàn thành */}
             {bookingData.status === 'completed' && (
               <div className="flex items-center gap-3 p-3 border rounded-lg">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium">Dịch vụ hoàn thành</h4>
@@ -480,13 +480,13 @@ export default function BookingStatusPage() {
 
             {/* Bước 5: Thanh toán */}
             {bookingData.status === 'completed' && (
-              <div className="flex items-center gap-3 p-3 border rounded-lg bg-green-50">
-                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
-                  <CreditCard className="w-4 h-4 text-white" />
+              <div className="flex items-center gap-3 p-3 border rounded-lg bg-accent/10">
+                <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
+                  <CreditCard className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-medium text-green-800">Chờ thanh toán</h4>
-                  <p className="text-sm text-green-600">
+                  <h4 className="font-medium text-accent">Chờ thanh toán</h4>
+                  <p className="text-sm text-accent/80">
                     Vui lòng thanh toán để hoàn tất quy trình
                   </p>
                 </div>
@@ -495,13 +495,13 @@ export default function BookingStatusPage() {
 
             {/* Hủy bỏ */}
             {bookingData.status === 'cancelled' && (
-              <div className="flex items-center gap-3 p-3 border rounded-lg bg-red-50">
-                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                  <AlertCircle className="w-4 h-4 text-white" />
+              <div className="flex items-center gap-3 p-3 border rounded-lg bg-destructive/10">
+                <div className="w-8 h-8 bg-destructive rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-4 h-4 text-destructive-foreground" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-medium text-red-800">Lịch hẹn đã bị hủy</h4>
-                  <p className="text-sm text-red-600">
+                  <h4 className="font-medium text-destructive">Lịch hẹn đã bị hủy</h4>
+                  <p className="text-sm text-destructive/80">
                     Lịch hẹn đã bị hủy, vui lòng đặt lịch mới nếu cần
                   </p>
                 </div>

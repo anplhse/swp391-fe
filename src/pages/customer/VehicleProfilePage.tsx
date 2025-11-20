@@ -354,7 +354,7 @@ export default function VehicleProfilePage() {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-white" />
+                <Wrench className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{serviceHistory.length}</p>
@@ -364,7 +364,7 @@ export default function VehicleProfilePage() {
 
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-white" />
+                <CreditCard className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{totalCost.toLocaleString('vi-VN')} VND</p>
@@ -374,7 +374,7 @@ export default function VehicleProfilePage() {
 
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-white" />
+                <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{serviceHistory.filter(s => s.status === 'completed').length}</p>
@@ -384,7 +384,7 @@ export default function VehicleProfilePage() {
 
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
-                <Clock className="w-5 h-5 text-white" />
+                <Clock className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{serviceHistory.filter(s => s.status !== 'completed').length}</p>
@@ -532,15 +532,15 @@ export default function VehicleProfilePage() {
                     <p className="text-sm text-muted-foreground mb-2">Kiểm tra cơ bản</p>
                     <div className="space-y-1 text-sm">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                        <CheckCircle2 className="w-3 h-3 text-accent" />
                         <span>Kiểm tra lốp</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                        <CheckCircle2 className="w-3 h-3 text-accent" />
                         <span>Kiểm tra phanh</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                        <CheckCircle2 className="w-3 h-3 text-accent" />
                         <span>Kiểm tra đèn</span>
                       </div>
                     </div>
@@ -551,15 +551,15 @@ export default function VehicleProfilePage() {
                     <p className="text-sm text-muted-foreground mb-2">Bảo dưỡng toàn diện</p>
                     <div className="space-y-1 text-sm">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                        <CheckCircle2 className="w-3 h-3 text-accent" />
                         <span>Kiểm tra pin</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                        <CheckCircle2 className="w-3 h-3 text-accent" />
                         <span>Thay dầu phanh</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                        <CheckCircle2 className="w-3 h-3 text-accent" />
                         <span>Cập nhật phần mềm</span>
                       </div>
                     </div>

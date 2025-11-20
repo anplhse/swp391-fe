@@ -31,19 +31,19 @@ export default function CustomerDashboard() {
       {/* Header (giống trang gốc) */}
       <header className="w-full border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 bg-gradient-to-r from-orange-50 to-orange-100 px-4 py-2 rounded-2xl shadow-lg border border-orange-200">
+          <div className="flex items-center gap-3 bg-gradient-to-r from-secondary/50 to-secondary px-4 py-2 rounded-2xl shadow-lg border border-border">
             <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center shadow-md">
               <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
               </svg>
             </div>
-            <span className="font-sans font-semibold text-gray-800">VinFast Service Workshop</span>
+            <span className="font-semibold text-foreground">VinFast Service Workshop</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-            <button onClick={() => navigate('/customer')} className="hover:text-foreground">Trang chủ</button>
-            <button onClick={() => navigate('/customer/vehicles')} className="hover:text-foreground">Xe của tôi</button>
-            <button onClick={() => navigate('/customer/bookings')} className="hover:text-foreground">Lịch hẹn</button>
-            <button onClick={() => navigate('/customer/booking')} className="hover:text-foreground">Đặt lịch</button>
+            <button onClick={() => navigate('/customer')} className="hover:bg-accent hover:text-accent-foreground px-3 py-1.5 rounded-md transition-colors">Trang chủ</button>
+            <button onClick={() => navigate('/customer/vehicles')} className="hover:bg-accent hover:text-accent-foreground px-3 py-1.5 rounded-md transition-colors">Xe của tôi</button>
+            <button onClick={() => navigate('/customer/bookings')} className="hover:bg-accent hover:text-accent-foreground px-3 py-1.5 rounded-md transition-colors">Lịch hẹn</button>
+            <button onClick={() => navigate('/customer/booking')} className="hover:bg-accent hover:text-accent-foreground px-3 py-1.5 rounded-md transition-colors">Đặt lịch</button>
           </nav>
           <div className="flex items-center gap-3">
             {user && (
@@ -153,16 +153,16 @@ export default function CustomerDashboard() {
             <div>
               <h4 className="font-sans font-semibold mb-3">Thông tin</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><button onClick={() => navigate('/customer')} className="hover:text-foreground">Trang chủ</button></li>
-                <li><button onClick={() => navigate('/customer/vehicles')} className="hover:text-foreground">Xe của tôi</button></li>
-                <li><button onClick={() => navigate('/customer/bookings')} className="hover:text-foreground">Lịch hẹn</button></li>
+                <li><button onClick={() => navigate('/customer')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Trang chủ</button></li>
+                <li><button onClick={() => navigate('/customer/vehicles')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Xe của tôi</button></li>
+                <li><button onClick={() => navigate('/customer/bookings')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Lịch hẹn</button></li>
               </ul>
             </div>
             <div>
               <h4 className="font-sans font-semibold mb-3">Chức năng</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><button onClick={() => navigate('/customer/booking')} className="hover:text-foreground">Đặt lịch ngay</button></li>
-                <li><button onClick={() => navigate('/customer/bookings')} className="hover:text-foreground">Quản lý lịch hẹn</button></li>
+                <li><button onClick={() => navigate('/customer/booking')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Đặt lịch ngay</button></li>
+                <li><button onClick={() => navigate('/customer/bookings')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Quản lý lịch hẹn</button></li>
               </ul>
             </div>
             <div>

@@ -80,14 +80,13 @@ export default function Blog() {
         {/* Hero Section */}
         <div className="mb-16 md:mb-20 text-center" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
           <div className="inline-block mb-4">
-            <span className="px-5 py-2 bg-primary-foreground/20 backdrop-blur-sm text-primary-foreground text-sm font-semibold rounded-full border border-primary-foreground/30 shadow-lg">
+            <span className="px-5 py-2 bg-card/20 backdrop-blur-sm text-primary-foreground text-sm font-semibold rounded-full border border-border/30 shadow-lg">
               📚 Kiến thức xe điện
             </span>
           </div>
           <h1 
             className="text-5xl md:text-7xl font-black mb-5 text-primary-foreground"
             style={{ 
-              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif",
               letterSpacing: '-0.03em',
               textShadow: '0 4px 20px rgba(0,0,0,0.3), 0 0 40px rgba(255,255,255,0.1)',
               animation: 'pulse 3s ease-in-out infinite'
@@ -100,17 +99,17 @@ export default function Blog() {
         {/* Featured Post */}
         <div className="mb-20 md:mb-28" style={{ animation: 'fadeInUp 1.2s ease-out' }}>
           <div className="flex items-center gap-3 mb-6">
-            <div className="h-1 w-12 bg-gradient-to-r from-primary to-primary-hover rounded-full"></div>
+            <div className="h-1 w-12 bg-gradient-to-r from-primary to-primary rounded-full"></div>
             <h2 className="text-3xl font-bold text-primary-foreground">Bài Viết Nổi Bật</h2>
           </div>
           <a 
             href="http://cartimes.tapchicongthuong.vn/6-meo-giup-keo-dai-tuoi-tho-pin-xe-dien-mot-cach-hieu-qua-16642.htm"
             target="_blank"
             rel="noopener noreferrer"
-            className="group block rounded-3xl overflow-hidden bg-card shadow-2xl hover:shadow-[0_25px_80px_hsl(var(--foreground)/0.2)] transition-all duration-500 hover:-translate-y-2"
+            className="group block rounded-3xl overflow-hidden bg-card shadow-2xl hover:shadow-2xl transition-smooth hover:-translate-y-2"
           >
             <div className="grid md:grid-cols-2 gap-0">
-              <div className="relative overflow-hidden bg-gradient-to-br from-chart-2 to-primary min-h-[300px] flex items-center justify-center">
+              <div className="relative overflow-hidden bg-gradient-to-br from-primary to-primary min-h-[300px] flex items-center justify-center">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground to-transparent opacity-0 group-hover:opacity-20 transition-opacity duration-500" style={{ animation: 'shimmer 2s infinite' }}></div>
                 <svg className="w-32 h-32 text-primary-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -118,17 +117,17 @@ export default function Blog() {
               </div>
               <div className="p-10">
                 <div className="mb-4">
-                  <span className="inline-block bg-gradient-to-r from-primary to-primary-hover text-primary-foreground text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
+                  <span className="inline-block bg-gradient-to-r from-primary to-primary text-primary-foreground text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
                     ⚡ Bảo dưỡng
                   </span>
                 </div>
-                <h3 className="font-bold text-3xl text-foreground mb-4 leading-tight group-hover:text-primary transition-colors duration-300">
+                <h3 className="font-bold text-3xl text-foreground mb-4 leading-tight group-hover:text-primary transition-colors">
                   6 Mẹo Kéo Dài Tuổi Thọ Pin Xe Điện Hiệu Quả
                 </h3>
                 <p className="text-muted-foreground leading-relaxed mb-6">
                   Hướng dẫn chi tiết cách sạc và bảo quản để tối ưu hóa tuổi thọ pin xe điện, giúp bạn tiết kiệm chi phí và nâng cao hiệu suất sử dụng.
                 </p>
-                <div className="flex items-center text-orange-600 font-semibold group-hover:gap-3 gap-2 transition-all duration-300">
+                <div className="flex items-center text-primary font-semibold group-hover:gap-3 gap-2 transition-smooth">
                   Đọc ngay
                   <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -141,7 +140,7 @@ export default function Blog() {
 
         {/* Section Title */}
         <div className="mb-12 md:mb-16" style={{ animation: 'fadeInUp 1.4s ease-out' }}>
-          <h2 className="text-3xl font-bold text-white">Bài Viết Mới Nhất</h2>
+          <h2 className="text-3xl font-bold text-primary-foreground">Bài Viết Mới Nhất</h2>
         </div>
 
         {/* Grid layout - 3 columns */}
@@ -159,16 +158,16 @@ export default function Blog() {
               href={post.url}
               target="_blank" 
               rel="noopener noreferrer"
-              className={`group rounded-2xl p-7 bg-white/95 backdrop-blur-sm shadow-2xl hover:shadow-[0_20px_60px_rgba(255,126,95,0.3)] transition-all duration-500 hover:-translate-y-3 border-t-4 ${post.border} flex flex-col relative overflow-hidden`}
+              className={`group rounded-2xl p-7 bg-card/95 backdrop-blur-sm shadow-2xl hover:shadow-2xl transition-smooth hover:-translate-y-3 border-t-4 ${post.border} flex flex-col relative overflow-hidden`}
               style={{ animation: `fadeInUp ${post.delay} ease-out` }}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transition-opacity duration-500" style={{ animation: 'shimmer 2s infinite' }}></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-card to-transparent opacity-0 group-hover:opacity-20 transition-opacity duration-500" style={{ animation: 'shimmer 2s infinite' }}></div>
               <div className="mb-4 relative z-10">
-                <span className={`inline-block ${post.bg} text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md`}>
+                <span className={`inline-block ${post.bg} text-primary-foreground text-xs font-bold px-4 py-1.5 rounded-full shadow-md`}>
                   {post.tag}
                 </span>
               </div>
-              <h3 className="font-bold mb-3 text-lg text-foreground leading-tight min-h-[4.5rem] group-hover:text-primary transition-colors duration-300 relative z-10">
+              <h3 className="font-bold mb-3 text-lg text-foreground leading-tight min-h-[4.5rem] group-hover:text-primary transition-colors relative z-10">
                 {post.title}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 relative z-10">{post.desc}</p>
@@ -182,7 +181,7 @@ export default function Blog() {
             href="https://vinfastauto.com/vn_vi/tin-tuc" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="group relative px-8 py-4 bg-card text-foreground font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 inline-block"
+            className="group relative px-8 py-4 bg-card text-foreground font-bold rounded-xl shadow-xl hover:shadow-2xl transition-smooth hover:-translate-y-1 inline-block"
           >
             <span className="relative z-10 flex items-center gap-2">
               Xem tất cả bài viết
@@ -190,8 +189,8 @@ export default function Blog() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </span>
-            <div className="absolute inset-0 bg-primary rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <span className="absolute inset-0 flex items-center justify-center text-primary-foreground font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute inset-0 bg-primary rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <span className="absolute inset-0 flex items-center justify-center text-primary-foreground font-bold opacity-0 group-hover:opacity-100 transition-opacity">
               Xem tất cả bài viết
               <svg className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
