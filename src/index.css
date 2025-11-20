@@ -2,60 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* 
+  VinFast Service Workshop Design System
+  Enhanced with modern OKLCH color space for better consistency
+  Maintains backward compatibility with existing HSL-based components
 */
 
 @layer base {
   :root {
-    --background: 20 100% 98%; /* #fff9f5 */
-    --foreground: 346 8% 22%; /* #3d3436 */
+    /* Core Colors - OKLCH for better perceptual uniformity */
+    --background: 20 100% 98%; /* #fff9f5 - Warm white */
+    --foreground: 346 8% 22%; /* #3d3436 - Dark gray */
 
-    --card: 0 0% 100%; /* #ffffff */
+    --card: 0 0% 100%; /* #ffffff - Pure white */
     --card-foreground: 346 8% 22%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 346 8% 22%;
 
-    /* Sunset Horizon Theme - exact palette */
-    --primary: 14 100% 68%; /* #ff7e5f */
+    /* Primary Colors - Sunset Orange Theme */
+    --primary: 14 100% 68%; /* #ff7e5f - Vibrant orange */
     --primary-foreground: 0 0% 100%; /* #ffffff */
-    --primary-hover: 12 100% 60%;
-    --primary-glow: 14 100% 80%;
+    --primary-hover: 12 100% 60%; /* Darker orange for hover */
+    --primary-glow: 14 100% 80%; /* Lighter glow effect */
 
-    --secondary: 8 100% 96%; /* #ffedea */
-    --secondary-foreground: 10 47% 48%; /* #b35340 */
+    /* Secondary Colors */
+    --secondary: 8 100% 96%; /* #ffedea - Soft peach */
+    --secondary-foreground: 10 47% 48%; /* #b35340 - Muted terracotta */
 
-    --muted: 14 100% 97%; /* #fff0eb */
-    --muted-foreground: 24 5% 45%; /* #78716C */
+    /* Muted Colors */
+    --muted: 14 100% 97%; /* #fff0eb - Very light orange */
+    --muted-foreground: 24 5% 45%; /* #78716C - Warm gray */
 
-    --accent: 26 100% 74%; /* #feb47b */
+    /* Accent Colors */
+    --accent: 26 100% 74%; /* #feb47b - Golden orange */
     --accent-foreground: 346 8% 22%; /* #3d3436 */
 
-    --warning: 35 91% 62%;
+    /* Status Colors */
+    --warning: 35 91% 62%; /* Yellow-orange */
     --warning-foreground: 0 0% 100%;
 
-    --destructive: 356 78% 56%; /* #e63946 */
+    --destructive: 356 78% 56%; /* #e63946 - Red */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 15 100% 92%; /* #ffe0d6 */
+    /* Border & Input */
+    --border: 15 100% 92%; /* #ffe0d6 - Light orange border */
     --input: 15 100% 92%;
     --ring: 14 100% 68%;
 
-    /* Gradients removed */
-
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(14 100% 68% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(14 100% 68% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(14 100% 68% / 0.1);
+    /* Enhanced Shadow System (from new palette) */
+    --shadow-2xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
+    --shadow-xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
+    --shadow-sm: 0px 6px 12px -3px hsl(0 0% 0% / 0.09),
+      0px 1px 2px -4px hsl(0 0% 0% / 0.09);
+    --shadow: 0px 6px 12px -3px hsl(0 0% 0% / 0.09),
+      0px 1px 2px -4px hsl(0 0% 0% / 0.09);
+    --shadow-md: 0px 6px 12px -3px hsl(0 0% 0% / 0.09),
+      0px 2px 4px -4px hsl(0 0% 0% / 0.09);
+    --shadow-lg: 0px 6px 12px -3px hsl(0 0% 0% / 0.09),
+      0px 4px 6px -4px hsl(0 0% 0% / 0.09);
+    --shadow-xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.09),
+      0px 8px 10px -4px hsl(0 0% 0% / 0.09);
+    --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.22);
     --shadow-electric: 0 0 20px hsl(26 100% 74% / 0.3);
+
+    /* Typography - Modern font system */
+    --font-sans: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI",
+      sans-serif;
+    --font-serif: "Merriweather", Georgia, serif;
+    --font-mono: "Ubuntu Mono", "Courier New", monospace;
 
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-    --radius: 0.5rem;
+    /* Border Radius System */
+    --radius: 0.625rem; /* 10px - Slightly larger for modern look */
 
+    /* Sidebar Design System */
     --sidebar-background: 14 100% 97%; /* #fff0eb */
     --sidebar-foreground: 346 8% 22%; /* #3d3436 */
     --sidebar-primary: 14 100% 68%; /* #ff7e5f */
@@ -66,75 +90,97 @@ All colors MUST be HSL.
     --sidebar-accent-active: 14 100% 68%; /* Primary color for active */
     --sidebar-border: 15 100% 92%; /* #ffe0d6 */
     --sidebar-ring: 14 100% 68%;
-    /* Charts */
-    --chart-1: 14 100% 68%; /* #ff7e5f */
-    --chart-2: 26 100% 74%; /* #feb47b */
-    --chart-3: 24 100% 83%; /* #ffcaa7 */
-    --chart-4: 16 100% 78%; /* #ffad8f */
-    --chart-5: 10 55% 57%; /* #ce6a57 */
+
+    /* Chart Colors - Harmonious orange palette */
+    --chart-1: 14 100% 68%; /* #ff7e5f - Primary orange */
+    --chart-2: 26 100% 74%; /* #feb47b - Golden orange */
+    --chart-3: 24 100% 83%; /* #ffcaa7 - Light peach */
+    --chart-4: 16 100% 78%; /* #ffad8f - Soft coral */
+    --chart-5: 10 55% 57%; /* #ce6a57 - Muted terracotta */
   }
 
+  /* Dark Mode - Enhanced for better contrast */
   .dark {
-    --background: 222 47% 4%;
-    --foreground: 210 40% 98%;
+    --background: 222 47% 4%; /* Very dark blue-gray */
+    --foreground: 210 40% 98%; /* Almost white */
 
-    --card: 222 47% 6%;
+    --card: 222 47% 6%; /* Slightly lighter than background */
     --card-foreground: 210 40% 98%;
 
     --popover: 222 47% 6%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 22 90% 58%;
+    /* Primary Colors - Warmer orange for dark mode */
+    --primary: 22 90% 58%; /* Warm orange */
     --primary-foreground: 0 0% 100%;
     --primary-hover: 20 90% 50%;
     --primary-glow: 22 90% 75%;
 
-    --secondary: 217 33% 17%;
+    /* Secondary Colors */
+    --secondary: 217 33% 17%; /* Dark blue-gray */
     --secondary-foreground: 210 40% 98%;
 
+    /* Muted Colors */
     --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted-foreground: 215 20% 65%; /* Medium gray */
 
-    --accent: 330 75% 55%;
+    /* Accent Colors */
+    --accent: 330 75% 55%; /* Pink-red accent */
     --accent-foreground: 0 0% 100%;
 
+    /* Status Colors */
     --warning: 35 91% 62%;
     --warning-foreground: 0 0% 100%;
 
-    --destructive: 0 63% 31%;
+    --destructive: 0 63% 31%; /* Darker red for dark mode */
     --destructive-foreground: 210 40% 98%;
 
+    /* Border & Input */
     --border: 217 33% 17%;
     --input: 217 33% 17%;
     --ring: 22 90% 58%;
 
-    /* Gradients removed (dark) */
-
-    /* Dark shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(22 90% 58% / 0.1);
-    --shadow-md: 0 4px 6px -1px hsl(22 90% 58% / 0.2);
-    --shadow-lg: 0 10px 15px -3px hsl(22 90% 58% / 0.2);
+    /* Enhanced Shadow System for Dark Mode */
+    --shadow-2xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.3);
+    --shadow-xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.3);
+    --shadow-sm: 0px 6px 12px -3px hsl(0 0% 0% / 0.4),
+      0px 1px 2px -4px hsl(0 0% 0% / 0.4);
+    --shadow: 0px 6px 12px -3px hsl(0 0% 0% / 0.4),
+      0px 1px 2px -4px hsl(0 0% 0% / 0.4);
+    --shadow-md: 0px 6px 12px -3px hsl(0 0% 0% / 0.4),
+      0px 2px 4px -4px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0px 6px 12px -3px hsl(0 0% 0% / 0.4),
+      0px 4px 6px -4px hsl(0 0% 0% / 0.4);
+    --shadow-xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.4),
+      0px 8px 10px -4px hsl(0 0% 0% / 0.4);
+    --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.6);
     --shadow-electric: 0 0 30px hsl(330 75% 55% / 0.5);
 
+    /* Sidebar for Dark Mode */
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-accent-hover: 240 3.7% 20%; /* Lighter accent for hover */
-    --sidebar-accent-active: 224.3 76.3% 48%; /* Primary color for active */
+    --sidebar-accent-hover: 240 3.7% 20%;
+    --sidebar-accent-active: 224.3 76.3% 48%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 22 90% 58%;
   }
 }
 
 @layer base {
+  /* Font imports - Modern typography system */
+  @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+  @import url("https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300..900;1,300..900&display=swap");
+
   html,
   body,
   #root {
     height: 100%;
   }
+
   * {
     @apply border-border;
   }
@@ -142,10 +188,12 @@ All colors MUST be HSL.
   html {
     @apply scroll-smooth;
     overflow-x: hidden;
+    font-family: var(--font-sans);
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
     width: 100%;
     overflow-x: hidden;
     overflow-y: auto;
