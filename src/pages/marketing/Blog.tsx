@@ -8,7 +8,7 @@ export default function Blog() {
     <div 
       className="min-h-screen text-foreground relative overflow-hidden"
       style={{
-        background: 'linear-gradient(-45deg, hsl(14, 100%, 68%), hsl(26, 100%, 74%), hsl(16, 100%, 78%), hsl(24, 100%, 83%))',
+        background: 'linear-gradient(-45deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--chart-4)), hsl(var(--chart-3)))',
         backgroundSize: '400% 400%',
         animation: 'gradientShift 15s ease infinite'
       }}
@@ -22,14 +22,14 @@ export default function Blog() {
       `}</style>
 
       {/* Decorative clouds */}
-      <div className="absolute top-10 left-10 w-32 h-32 bg-white/20 rounded-full blur-3xl" style={{ animation: 'float 6s ease-in-out infinite' }}></div>
-      <div className="absolute top-40 right-20 w-40 h-40 bg-white/20 rounded-full blur-3xl" style={{ animation: 'float 8s ease-in-out infinite 1s' }}></div>
-      <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-white/20 rounded-full blur-3xl" style={{ animation: 'float 7s ease-in-out infinite 2s' }}></div>
+      <div className="absolute top-10 left-10 w-32 h-32 bg-primary-foreground/20 rounded-full blur-3xl" style={{ animation: 'float 6s ease-in-out infinite' }}></div>
+      <div className="absolute top-40 right-20 w-40 h-40 bg-primary-foreground/20 rounded-full blur-3xl" style={{ animation: 'float 8s ease-in-out infinite 1s' }}></div>
+      <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-primary-foreground/20 rounded-full blur-3xl" style={{ animation: 'float 7s ease-in-out infinite 2s' }}></div>
       
       {/* Header Navigation */}
-      <header className="w-full bg-white relative z-30 rounded-b-3xl shadow-xl pt-4 pb-4">
+      <header className="w-full bg-card relative z-30 rounded-b-3xl shadow-xl pt-4 pb-4 border-b-2 border-primary/30">
         <div className="mx-auto max-w-6xl px-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 relative z-30 bg-gradient-to-r from-orange-50 to-orange-100 px-4 py-2 rounded-2xl shadow-lg border border-gray-200"
+          <div className="flex items-center gap-3 relative z-30 bg-secondary px-4 py-2 rounded-2xl shadow-lg border border-border"
             style={{
               boxShadow: '0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
             }}
@@ -39,21 +39,21 @@ export default function Blog() {
                 <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
               </svg>
             </div>
-            <span className="font-semibold text-gray-800">VinFast Service Workshop</span>
+            <span className="font-semibold text-foreground">VinFast Service Workshop</span>
           </div>
           
           {/* Navigation Menu */}
           <nav className="hidden md:flex items-center gap-8">
-            <button onClick={() => navigate('/about')} className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <button onClick={() => navigate('/about')} className="text-foreground/80 hover:text-primary font-medium transition-colors">
               Giới thiệu
             </button>
-            <button onClick={() => navigate('/services')} className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <button onClick={() => navigate('/services')} className="text-foreground/80 hover:text-primary font-medium transition-colors">
               Dịch vụ
             </button>
-            <button onClick={() => navigate('/pricing')} className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <button onClick={() => navigate('/pricing')} className="text-foreground/80 hover:text-primary font-medium transition-colors">
               Bảng giá
             </button>
-            <button onClick={() => navigate('/contact')} className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <button onClick={() => navigate('/contact')} className="text-foreground/80 hover:text-primary font-medium transition-colors">
               Liên hệ
             </button>
           </nav>
@@ -62,7 +62,7 @@ export default function Blog() {
             <Button 
               onClick={() => navigate('/')}
               variant="outline"
-              className="font-semibold px-6 py-2 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300 hover:scale-105"
+              className="font-semibold px-6 py-2 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 hover:scale-105"
             >
               Trang chủ
             </Button>
@@ -80,12 +80,12 @@ export default function Blog() {
         {/* Hero Section */}
         <div className="mb-16 md:mb-20 text-center" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
           <div className="inline-block mb-4">
-            <span className="px-5 py-2 bg-white/20 backdrop-blur-sm text-white text-sm font-semibold rounded-full border border-white/30 shadow-lg">
+            <span className="px-5 py-2 bg-primary-foreground/20 backdrop-blur-sm text-primary-foreground text-sm font-semibold rounded-full border border-primary-foreground/30 shadow-lg">
               📚 Kiến thức xe điện
             </span>
           </div>
           <h1 
-            className="text-5xl md:text-7xl font-black mb-5 text-white"
+            className="text-5xl md:text-7xl font-black mb-5 text-primary-foreground"
             style={{ 
               fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif",
               letterSpacing: '-0.03em',
@@ -100,32 +100,32 @@ export default function Blog() {
         {/* Featured Post */}
         <div className="mb-20 md:mb-28" style={{ animation: 'fadeInUp 1.2s ease-out' }}>
           <div className="flex items-center gap-3 mb-6">
-            <div className="h-1 w-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full"></div>
-            <h2 className="text-3xl font-bold text-white">Bài Viết Nổi Bật</h2>
+            <div className="h-1 w-12 bg-gradient-to-r from-primary to-primary-hover rounded-full"></div>
+            <h2 className="text-3xl font-bold text-primary-foreground">Bài Viết Nổi Bật</h2>
           </div>
           <a 
             href="http://cartimes.tapchicongthuong.vn/6-meo-giup-keo-dai-tuoi-tho-pin-xe-dien-mot-cach-hieu-qua-16642.htm"
             target="_blank"
             rel="noopener noreferrer"
-            className="group block rounded-3xl overflow-hidden bg-white shadow-2xl hover:shadow-[0_25px_80px_rgba(0,0,0,0.2)] transition-all duration-500 hover:-translate-y-2"
+            className="group block rounded-3xl overflow-hidden bg-card shadow-2xl hover:shadow-[0_25px_80px_hsl(var(--foreground)/0.2)] transition-all duration-500 hover:-translate-y-2"
           >
             <div className="grid md:grid-cols-2 gap-0">
-              <div className="relative overflow-hidden bg-gradient-to-br from-orange-400 to-orange-600 min-h-[300px] flex items-center justify-center">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transition-opacity duration-500" style={{ animation: 'shimmer 2s infinite' }}></div>
-                <svg className="w-32 h-32 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="relative overflow-hidden bg-gradient-to-br from-chart-2 to-primary min-h-[300px] flex items-center justify-center">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground to-transparent opacity-0 group-hover:opacity-20 transition-opacity duration-500" style={{ animation: 'shimmer 2s infinite' }}></div>
+                <svg className="w-32 h-32 text-primary-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
               <div className="p-10">
                 <div className="mb-4">
-                  <span className="inline-block bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
+                  <span className="inline-block bg-gradient-to-r from-primary to-primary-hover text-primary-foreground text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
                     ⚡ Bảo dưỡng
                   </span>
                 </div>
-                <h3 className="font-bold text-3xl text-gray-900 mb-4 leading-tight group-hover:text-orange-600 transition-colors duration-300">
+                <h3 className="font-bold text-3xl text-foreground mb-4 leading-tight group-hover:text-primary transition-colors duration-300">
                   6 Mẹo Kéo Dài Tuổi Thọ Pin Xe Điện Hiệu Quả
                 </h3>
-                <p className="text-gray-600 leading-relaxed mb-6">
+                <p className="text-muted-foreground leading-relaxed mb-6">
                   Hướng dẫn chi tiết cách sạc và bảo quản để tối ưu hóa tuổi thọ pin xe điện, giúp bạn tiết kiệm chi phí và nâng cao hiệu suất sử dụng.
                 </p>
                 <div className="flex items-center text-orange-600 font-semibold group-hover:gap-3 gap-2 transition-all duration-300">
@@ -168,10 +168,10 @@ export default function Blog() {
                   {post.tag}
                 </span>
               </div>
-              <h3 className="font-bold mb-3 text-lg text-gray-900 leading-tight min-h-[4.5rem] group-hover:text-primary transition-colors duration-300 relative z-10">
+              <h3 className="font-bold mb-3 text-lg text-foreground leading-tight min-h-[4.5rem] group-hover:text-primary transition-colors duration-300 relative z-10">
                 {post.title}
               </h3>
-              <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 relative z-10">{post.desc}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 relative z-10">{post.desc}</p>
             </a>
           ))}
         </div>
@@ -182,7 +182,7 @@ export default function Blog() {
             href="https://vinfastauto.com/vn_vi/tin-tuc" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="group relative px-8 py-4 bg-white text-gray-900 font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 inline-block"
+            className="group relative px-8 py-4 bg-card text-foreground font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 inline-block"
           >
             <span className="relative z-10 flex items-center gap-2">
               Xem tất cả bài viết
@@ -191,7 +191,7 @@ export default function Blog() {
               </svg>
             </span>
             <div className="absolute inset-0 bg-primary rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <span className="absolute inset-0 flex items-center justify-center text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <span className="absolute inset-0 flex items-center justify-center text-primary-foreground font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               Xem tất cả bài viết
               <svg className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -200,6 +200,51 @@ export default function Blog() {
           </a>
         </div>
       </main>
+
+      <div className="relative z-20">
+      {/* Footer */}
+      <footer id="contact" className="border-t bg-background">
+        <div className="mx-auto max-w-6xl px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
+                  <svg className="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
+                  </svg>
+                </div>
+                <span className="font-semibold">VinFast Service Workshop</span>
+              </div>
+              <p className="text-sm text-muted-foreground">Nền tảng quản lý gara ô tô toàn diện.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Thông tin</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="/about" className="hover:text-foreground">Giới thiệu</a></li>
+                <li><a href="/pricing" className="hover:text-foreground">Bảng giá</a></li>
+                <li><a href="/blog" className="hover:text-foreground">Blog</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Chức năng</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="/services" className="hover:text-foreground">Đặt lịch</a></li>
+                <li><a href="/services" className="hover:text-foreground">Tiếp nhận xe</a></li>
+                <li><a href="/services" className="hover:text-foreground">Theo dõi tiến độ sửa chữa</a></li>
+                <li><a href="/services" className="hover:text-foreground">Quản lý xe của khách</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Liên hệ</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="/contact" className="hover:text-foreground">Form liên hệ</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-8 border-t pt-4 text-xs text-muted-foreground">© {new Date().getFullYear()} VinFast Service Workshop</div>
+        </div>
+      </footer>
+      </div>
     </div>
   );
 }
