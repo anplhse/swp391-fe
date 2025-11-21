@@ -131,7 +131,7 @@ export default function Solutions() {
     <div 
       className="min-h-screen text-foreground relative overflow-hidden"
       style={{
-        background: 'linear-gradient(-45deg, hsl(14, 100%, 68%), hsl(26, 100%, 74%), hsl(16, 100%, 78%), hsl(24, 100%, 83%))',
+        background: 'linear-gradient(-45deg, hsl(var(--chart-5)), hsl(var(--chart-4)), hsl(var(--chart-3)), hsl(var(--muted)))',
         backgroundSize: '400% 400%',
         animation: 'gradientShift 15s ease infinite'
       }}
@@ -144,30 +144,26 @@ export default function Solutions() {
       `}</style>
 
       {/* Decorative clouds */}
-      <div className="absolute top-10 left-10 w-32 h-32 bg-card/20 rounded-full blur-3xl" style={{ animation: 'float 6s ease-in-out infinite' }}></div>
-      <div className="absolute top-40 right-20 w-40 h-40 bg-card/20 rounded-full blur-3xl" style={{ animation: 'float 8s ease-in-out infinite 1s' }}></div>
-      <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-card/20 rounded-full blur-3xl" style={{ animation: 'float 7s ease-in-out infinite 2s' }}></div>
+      <div className="absolute top-10 left-10 w-32 h-32 bg-primary-foreground/20 rounded-full blur-3xl" style={{ animation: 'float 6s ease-in-out infinite' }}></div>
+      <div className="absolute top-40 right-20 w-40 h-40 bg-primary-foreground/20 rounded-full blur-3xl" style={{ animation: 'float 8s ease-in-out infinite 1s' }}></div>
+      <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-primary-foreground/20 rounded-full blur-3xl" style={{ animation: 'float 7s ease-in-out infinite 2s' }}></div>
       
       {/* Header Navigation */}
-      <header className="w-full bg-white relative z-30 rounded-b-3xl shadow-xl pt-4 pb-4">
+      <header className="w-full bg-card relative z-30 rounded-b-3xl shadow-xl pt-4 pb-4 border-b-2 border-primary/30">
         <div className="mx-auto max-w-6xl px-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 relative z-30 bg-gradient-to-r from-orange-50 to-orange-100 px-4 py-2 rounded-2xl shadow-lg border border-gray-200"
-            style={{
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
-            }}
-          >
-            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center shadow-md">
+          <div className="flex items-center gap-3 bg-gradient-to-r from-orange-50 to-orange-100 px-4 py-2 rounded-2xl shadow-xl border border-orange-200">
+            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center shadow-lg">
               <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
               </svg>
             </div>
-            <span className="font-semibold text-gray-800">VinFast Service Workshop</span>
+            <span className="font-semibold text-foreground">VinFast Service Workshop</span>
           </div>
           <div className="flex items-center gap-3 relative z-30">
             <Button 
               onClick={() => navigate('/')}
               variant="outline"
-              className="font-semibold px-6 py-2 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300 hover:scale-105"
+              className="font-semibold px-6 py-2 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 hover:scale-105"
             >
               Trang chủ
             </Button>
@@ -185,16 +181,15 @@ export default function Solutions() {
         {/* Header Section */}
         <div className="text-center space-y-4" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
           <div className="inline-block mb-4">
-            <span className="px-5 py-2 bg-card/20 backdrop-blur-sm text-primary-foreground text-sm font-semibold rounded-full border border-border/30 shadow-lg">
+            <span className="px-5 py-2 bg-card/20 backdrop-blur-sm text-black text-sm font-semibold rounded-full border border-border/30 shadow-lg">
               🚗 Xe điện VinFast
             </span>
           </div>
           <h1 
-            className="text-5xl md:text-7xl font-black mb-5 text-primary-foreground"
+            className="text-4xl md:text-6xl font-bold text-black mb-6"
             style={{ 
               letterSpacing: '-0.03em',
-              textShadow: '0 4px 20px rgba(0,0,0,0.3), 0 0 40px rgba(255,255,255,0.1)',
-              animation: 'pulse 3s ease-in-out infinite'
+              textShadow: '0 4px 20px rgba(0,0,0,0.2)'
             }}
           >
             Dòng xe VinFast chúng tôi sửa chữa
@@ -233,31 +228,31 @@ export default function Solutions() {
 
                 {/* Overlay Info - Show on hover */}
                 {hoveredVehicle === index && (
-                  <div className="absolute inset-0 bg-black/75 backdrop-blur-sm p-6 flex flex-col justify-end animate-in fade-in duration-300">
-                    <div className="text-white space-y-3">
+                  <div className="absolute inset-0 bg-foreground/75 backdrop-blur-sm p-6 flex flex-col justify-end animate-in fade-in duration-300">
+                    <div className="text-primary-foreground space-y-3">
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <div>
-                          <p className="text-white/70">Số chỗ ngồi</p>
+                          <p className="text-primary-foreground/70">Số chỗ ngồi</p>
                           <p className="font-semibold">{vehicle.seats} chỗ</p>
                         </div>
                         <div>
-                          <p className="text-white/70">Pin</p>
+                          <p className="text-primary-foreground/70">Pin</p>
                           <p className="font-semibold">{vehicle.batteryCapacity} kWh</p>
                         </div>
                         <div>
-                          <p className="text-white/70">Quãng đường</p>
+                          <p className="text-primary-foreground/70">Quãng đường</p>
                           <p className="font-semibold">{vehicle.range} km</p>
                         </div>
                         <div>
-                          <p className="text-white/70">Công suất</p>
+                          <p className="text-primary-foreground/70">Công suất</p>
                           <p className="font-semibold">{vehicle.power} kW</p>
                         </div>
                         <div>
-                          <p className="text-white/70">Tăng tốc</p>
+                          <p className="text-primary-foreground/70">Tăng tốc</p>
                           <p className="font-semibold">{vehicle.acceleration}s (0-100km/h)</p>
                         </div>
                         <div>
-                          <p className="text-white/70">Trọng lượng</p>
+                          <p className="text-primary-foreground/70">Trọng lượng</p>
                           <p className="font-semibold">{vehicle.weight} kg</p>
                         </div>
                       </div>

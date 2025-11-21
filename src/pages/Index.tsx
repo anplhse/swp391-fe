@@ -122,7 +122,7 @@ const Index = () => {
       {/* Remove Pricing section per request */}
 
       {/* Feedbacks from customers */}
-      <section id="feedbacks" className="relative z-20">
+      <section id="feedbacks" className="relative z-20 mb-32">
         <div className="mx-auto max-w-6xl px-4 py-14">
           <h2 className="text-2xl md:text-3xl font-sans font-semibold text-center mb-8">Đánh giá</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
@@ -173,7 +173,7 @@ const Index = () => {
                 </div>
                 <span className="font-sans font-semibold">VinFast Service Workshop</span>
               </div>
-              <p className="text-sm text-muted-foreground">Nền tảng quản lý gara ô tô toàn diện.</p>
+              <p className="text-sm text-muted-foreground">Nền tảng quản lý bảo dưỡng xe VinFast</p>
             </div>
             <div>
               <h4 className="font-sans font-semibold mb-3">Thông tin</h4>

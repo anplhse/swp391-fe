@@ -82,12 +82,27 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="w-full border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60 sticky top-0 z-50">
-        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 bg-secondary px-4 py-2 rounded-2xl shadow-lg border">
-            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center shadow-md">
+    <div 
+      className="min-h-screen text-foreground"
+      style={{
+        background: 'linear-gradient(-45deg, hsl(var(--chart-5)), hsl(var(--chart-4)), hsl(var(--chart-3)), hsl(var(--muted)))',
+        backgroundSize: '400% 400%',
+        animation: 'gradientShift 15s ease infinite'
+      }}
+    >
+      <style>{`
+        @keyframes gradientShift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        .transition-smooth { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+      `}</style>
+      {/* Header Navigation */}
+      <header className="w-full bg-card relative z-30 rounded-b-3xl shadow-xl pt-4 pb-4 border-b-2 border-primary/30">
+        <div className="mx-auto max-w-6xl px-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 bg-gradient-to-r from-orange-50 to-orange-100 px-4 py-2 rounded-2xl shadow-xl border border-orange-200">
+            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center shadow-lg">
               <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
               </svg>
@@ -142,7 +157,7 @@ export default function Contact() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Side - Contact Methods */}
           <div className="space-y-4">
-            <Card className="shadow-lg">
+            <Card className="bg-white/90 backdrop-blur-sm shadow-2xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 hover:scale-105 border-2 border-white hover:border-orange-200">
               <CardHeader>
                 <CardDescription>
                   Những câu hỏi vẫn chưa giải đáp được thắc mắc của bạn?
@@ -153,7 +168,7 @@ export default function Contact() {
                 {/* Zalo Button */}
                 <Button
                   asChild
-                  className="w-full"
+                  className="w-full transition-all duration-500 hover:scale-105"
                   size="lg"
                 >
                   <a
@@ -170,7 +185,7 @@ export default function Contact() {
                 {/* Hotline Button */}
                 <Button
                   variant="secondary"
-                  className="w-full"
+                  className="w-full transition-all duration-500 hover:scale-105"
                   size="lg"
                 >
                   <div className="flex items-center justify-between w-full">
@@ -186,7 +201,7 @@ export default function Contact() {
                 <Button
                   asChild
                   variant="outline"
-                  className="w-full"
+                  className="w-full transition-all duration-500 hover:scale-105"
                   size="lg"
                 >
                   <a
@@ -204,7 +219,7 @@ export default function Contact() {
           </div>
 
           {/* Right Side - Contact Form */}
-          <Card className="shadow-lg">
+          <Card className="bg-white/90 backdrop-blur-sm shadow-2xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 hover:scale-105 border-2 border-white hover:border-orange-200">
             <CardContent className="pt-6">
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div>
@@ -259,7 +274,7 @@ export default function Contact() {
                     className="resize-none"
                   />
                 </div>
-                <Button type="submit" className="w-full" size="lg">
+                <Button type="submit" className="w-full transition-all duration-500 hover:scale-105" size="lg">
                   GỬI NGAY CHO CHÚNG TÔI
                 </Button>
               </form>
@@ -272,7 +287,7 @@ export default function Contact() {
           <h2 className="text-3xl font-bold text-center mb-8">
             CÂU HỎI THƯỜNG GẶP
           </h2>
-          <Card className="shadow-lg">
+          <Card className="bg-white/90 backdrop-blur-sm shadow-2xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 border-2 border-white hover:border-orange-200">
             <CardContent className="pt-6">
               <Accordion type="single" collapsible className="w-full">
                 {[
@@ -282,8 +297,8 @@ export default function Contact() {
                   { q: 'Có cần đặt cọc khi đặt lịch không?', a: 'Không cần đặt cọc trước. Bạn chỉ thanh toán sau khi hoàn tất dịch vụ và hài lòng với chất lượng.' },
                   { q: 'Trung tâm có cung cấp xe thay thế trong thời gian sửa chữa không?', a: 'Có, đối với các trường hợp sửa chữa lâu (trên 1 ngày), chúng tôi cung cấp dịch vụ xe thay thế để bạn không bị gián đoạn công việc và sinh hoạt.' }
                 ].map((faq, i) => (
-                  <AccordionItem key={i} value={`item-${i + 1}`}>
-                    <AccordionTrigger className="text-left font-semibold">
+                  <AccordionItem key={i} value={`item-${i + 1}`} className="transition-smooth">
+                    <AccordionTrigger className="text-left font-semibold hover:text-primary transition-colors duration-300">
                       {faq.q}
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground">
@@ -311,7 +326,7 @@ export default function Contact() {
                 </div>
                 <span className="font-semibold">VinFast Service Workshop</span>
               </div>
-              <p className="text-sm text-muted-foreground">Nền tảng quản lý gara ô tô toàn diện.</p>
+              <p className="text-sm text-muted-foreground">Nền tảng quản lý bảo dưỡng xe VinFast</p>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Thông tin</h4>

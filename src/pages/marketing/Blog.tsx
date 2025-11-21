@@ -8,7 +8,7 @@ export default function Blog() {
     <div 
       className="min-h-screen text-foreground relative overflow-hidden"
       style={{
-        background: 'linear-gradient(-45deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--chart-4)), hsl(var(--chart-3)))',
+        background: 'linear-gradient(-45deg, hsl(var(--chart-5)), hsl(var(--chart-4)), hsl(var(--chart-3)), hsl(var(--muted)))',
         backgroundSize: '400% 400%',
         animation: 'gradientShift 15s ease infinite'
       }}
@@ -19,6 +19,7 @@ export default function Blog() {
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        .transition-smooth { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
       `}</style>
 
       {/* Decorative clouds */}
@@ -29,12 +30,8 @@ export default function Blog() {
       {/* Header Navigation */}
       <header className="w-full bg-card relative z-30 rounded-b-3xl shadow-xl pt-4 pb-4 border-b-2 border-primary/30">
         <div className="mx-auto max-w-6xl px-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 relative z-30 bg-secondary px-4 py-2 rounded-2xl shadow-lg border border-border"
-            style={{
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
-            }}
-          >
-            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center shadow-md">
+          <div className="flex items-center gap-3 bg-gradient-to-r from-orange-50 to-orange-100 px-4 py-2 rounded-2xl shadow-xl border border-orange-200">
+            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center shadow-lg">
               <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
               </svg>
@@ -80,16 +77,15 @@ export default function Blog() {
         {/* Hero Section */}
         <div className="mb-16 md:mb-20 text-center" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
           <div className="inline-block mb-4">
-            <span className="px-5 py-2 bg-card/20 backdrop-blur-sm text-primary-foreground text-sm font-semibold rounded-full border border-border/30 shadow-lg">
+            <span className="px-5 py-2 bg-card/20 backdrop-blur-sm text-black text-sm font-semibold rounded-full border border-border/30 shadow-lg">
               📚 Kiến thức xe điện
             </span>
           </div>
           <h1 
-            className="text-5xl md:text-7xl font-black mb-5 text-primary-foreground"
+            className="text-5xl md:text-7xl font-black mb-5 text-black"
             style={{ 
               letterSpacing: '-0.03em',
-              textShadow: '0 4px 20px rgba(0,0,0,0.3), 0 0 40px rgba(255,255,255,0.1)',
-              animation: 'pulse 3s ease-in-out infinite'
+              textShadow: '0 4px 20px rgba(0,0,0,0.2)'
             }}
           >
             Blog
@@ -100,7 +96,7 @@ export default function Blog() {
         <div className="mb-20 md:mb-28" style={{ animation: 'fadeInUp 1.2s ease-out' }}>
           <div className="flex items-center gap-3 mb-6">
             <div className="h-1 w-12 bg-gradient-to-r from-primary to-primary rounded-full"></div>
-            <h2 className="text-3xl font-bold text-primary-foreground">Bài Viết Nổi Bật</h2>
+            <h2 className="text-3xl font-bold text-black">Bài Viết Nổi Bật</h2>
           </div>
           <a 
             href="http://cartimes.tapchicongthuong.vn/6-meo-giup-keo-dai-tuoi-tho-pin-xe-dien-mot-cach-hieu-qua-16642.htm"
@@ -140,7 +136,7 @@ export default function Blog() {
 
         {/* Section Title */}
         <div className="mb-12 md:mb-16" style={{ animation: 'fadeInUp 1.4s ease-out' }}>
-          <h2 className="text-3xl font-bold text-primary-foreground">Bài Viết Mới Nhất</h2>
+          <h2 className="text-3xl font-bold text-black">Bài Viết Mới Nhất</h2>
         </div>
 
         {/* Grid layout - 3 columns */}
@@ -158,16 +154,16 @@ export default function Blog() {
               href={post.url}
               target="_blank" 
               rel="noopener noreferrer"
-              className={`group rounded-2xl p-7 bg-card/95 backdrop-blur-sm shadow-2xl hover:shadow-2xl transition-smooth hover:-translate-y-3 border-t-4 ${post.border} flex flex-col relative overflow-hidden`}
+              className={`group rounded-2xl p-7 bg-white/90 backdrop-blur-sm shadow-2xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-105 border-2 border-white hover:border-orange-200 flex flex-col relative overflow-hidden`}
               style={{ animation: `fadeInUp ${post.delay} ease-out` }}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-card to-transparent opacity-0 group-hover:opacity-20 transition-opacity duration-500" style={{ animation: 'shimmer 2s infinite' }}></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
               <div className="mb-4 relative z-10">
-                <span className={`inline-block ${post.bg} text-primary-foreground text-xs font-bold px-4 py-1.5 rounded-full shadow-md`}>
+                <span className={`inline-block ${post.bg} text-primary-foreground text-xs font-bold px-4 py-1.5 rounded-full shadow-md transition-all duration-500 group-hover:scale-110`}>
                   {post.tag}
                 </span>
               </div>
-              <h3 className="font-bold mb-3 text-lg text-foreground leading-tight min-h-[4.5rem] group-hover:text-primary transition-colors relative z-10">
+              <h3 className="font-bold mb-3 text-lg text-foreground leading-tight min-h-[4.5rem] group-hover:text-orange-500 transition-colors duration-300 relative z-10">
                 {post.title}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 relative z-10">{post.desc}</p>
@@ -214,7 +210,7 @@ export default function Blog() {
                 </div>
                 <span className="font-semibold">VinFast Service Workshop</span>
               </div>
-              <p className="text-sm text-muted-foreground">Nền tảng quản lý gara ô tô toàn diện.</p>
+              <p className="text-sm text-muted-foreground">Nền tảng quản lý bảo dưỡng xe VinFast</p>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Thông tin</h4>
