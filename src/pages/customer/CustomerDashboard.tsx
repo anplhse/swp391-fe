@@ -150,8 +150,8 @@ export default function CustomerDashboard() {
               </div>
               <p className="text-sm text-muted-foreground">Nền tảng quản lý bảo dưỡng xe VinFast</p>
             </div>
-            <div>
-              <h4 className="font-sans font-semibold mb-3">Thông tin</h4>
+            <div className="md:pl-20">
+              <h4 className="font-sans font-semibold mb-3 pt-1">Thông tin</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><button onClick={() => navigate('/customer')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Trang chủ</button></li>
                 <li><button onClick={() => navigate('/customer/vehicles')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Xe của tôi</button></li>
@@ -159,14 +159,14 @@ export default function CustomerDashboard() {
               </ul>
             </div>
             <div>
-              <h4 className="font-sans font-semibold mb-3">Chức năng</h4>
+              <h4 className="font-sans font-semibold mb-3 pt-1">Chức năng</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><button onClick={() => navigate('/customer/booking')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Đặt lịch ngay</button></li>
                 <li><button onClick={() => navigate('/customer/bookings')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Quản lý lịch hẹn</button></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-sans font-semibold mb-3">Liên hệ</h4>
+              <h4 className="font-sans font-semibold mb-3 pt-1">Liên hệ</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>Email: dengocrong123@gmail.com</li>
                 <li>Hotline: 0396727248</li>
