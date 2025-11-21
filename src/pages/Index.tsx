@@ -5,25 +5,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   return (
-    <div 
-      className="min-h-screen text-foreground relative overflow-hidden"
-      style={{
-        background: 'linear-gradient(-45deg, hsl(var(--chart-5)), hsl(var(--chart-4)), hsl(var(--chart-3)), hsl(var(--muted)))',
-        backgroundSize: '400% 400%',
-        animation: 'gradientShift 15s ease infinite'
-      }}
-    >
-      <style>{`
-        @keyframes gradientShift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-      `}</style>
-
-      {/* Decorative clouds */}
-      <div className="absolute top-10 left-10 w-32 h-32 bg-chart-2/30 rounded-full blur-3xl z-10" style={{ animation: 'float 6s ease-in-out infinite' }}></div>
-      <div className="absolute top-40 right-20 w-40 h-40 bg-accent/30 rounded-full blur-3xl z-10" style={{ animation: 'float 8s ease-in-out infinite 1s' }}></div>
-      <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-chart-5/30 rounded-full blur-3xl z-10" style={{ animation: 'float 7s ease-in-out infinite 2s' }}></div>
-
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Header */}
       <header className="w-full border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
@@ -35,45 +17,20 @@ const Index = () => {
             </div>
             <span className="font-semibold text-foreground">VinFast Service Workshop</span>
           </div>
-          
-          {/* Navigation Menu */}
-          <nav className="hidden md:flex items-center gap-8">
-            <button onClick={() => navigate('/about')} className="text-foreground/80 hover:text-primary font-medium transition-colors">
-              Giới thiệu
-            </button>
-            <button onClick={() => navigate('/services')} className="text-foreground/80 hover:text-primary font-medium transition-colors">
-              Dịch vụ
-            </button>
-            <button onClick={() => navigate('/pricing')} className="text-foreground/80 hover:text-primary font-medium transition-colors">
-              Bảng giá
-            </button>
-            <button onClick={() => navigate('/blog')} className="text-foreground/80 hover:text-primary font-medium transition-colors">
-              Blog
-            </button>
-            <button onClick={() => navigate('/contact')} className="text-foreground/80 hover:text-primary font-medium transition-colors">
-              Liên hệ
-            </button>
+          <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
+            <a href="/about" className="hover:text-foreground">Giới thiệu</a>
+            <a href="/services" className="hover:text-foreground">Dịch vụ</a>
+            <a href="/pricing" className="hover:text-foreground">Bảng giá</a>
+            <a href="/blog" className="hover:text-foreground">Blog</a>
+            <a href="/contact" className="hover:text-foreground">Liên hệ</a>
           </nav>
-          
-          <div className="flex items-center gap-3 relative z-30">
-            <Button 
-              onClick={() => navigate('/login')}
-              className="bg-primary hover:bg-primary-hover text-primary-foreground font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-            >
-              Đăng nhập
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/login', { state: { openRegister: true } })}
-              className="font-semibold px-6 py-2 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 hover:scale-105"
-            >
-              Đăng ký
-            </Button>
+          <div className="flex items-center gap-3">
+            <Button onClick={() => navigate('/login')} className="px-4">Đăng nhập</Button>
+            <Button variant="outline" onClick={() => navigate('/login', { state: { openRegister: true } })} className="px-4">Đăng ký</Button>
           </div>
         </div>
       </header>
 
-      <div className="relative z-20">
       {/* Hero image centered with top padding */}
       <section className="mx-auto max-w-6xl px-4 pt-6 md:pt-8">
         <img
@@ -89,7 +46,7 @@ const Index = () => {
       {/* Remove About section per request */}
 
       {/* Services */}
-      <section id="features" className="relative z-20">
+      <section id="features" className="bg-muted/30">
         <div className="mx-auto max-w-[90rem] px-4 py-16 md:py-20">
           <h2 className="text-2xl md:text-3xl font-sans font-semibold text-center mb-10">Dịch vụ nổi bật</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-4 gap-8">
@@ -122,7 +79,7 @@ const Index = () => {
       {/* Remove Pricing section per request */}
 
       {/* Feedbacks from customers */}
-      <section id="feedbacks" className="relative z-20 mb-32">
+      <section id="feedbacks">
         <div className="mx-auto max-w-6xl px-4 py-14">
           <h2 className="text-2xl md:text-3xl font-sans font-semibold text-center mb-8">Đánh giá</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
@@ -161,7 +118,7 @@ const Index = () => {
       </section>
 
       {/* Footer (multi-column like carCRM) */}
-      <footer id="contact" className="border-t bg-card/50 relative z-20">
+      <footer id="contact" className="border-t bg-card/50">
         <div className="mx-auto max-w-6xl px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
@@ -173,7 +130,7 @@ const Index = () => {
                 </div>
                 <span className="font-sans font-semibold">VinFast Service Workshop</span>
               </div>
-              <p className="text-sm text-muted-foreground">Nền tảng quản lý bảo dưỡng xe VinFast</p>
+              <p className="text-sm text-muted-foreground">Nền tảng quản lý gara ô tô toàn diện.</p>
             </div>
             <div className="md:pl-20">
               <h4 className="font-sans font-semibold mb-3 pt-1">Thông tin</h4>
@@ -202,7 +159,6 @@ const Index = () => {
           <div className="mt-8 border-t pt-4 text-xs text-muted-foreground">© {new Date().getFullYear()} VinFast Service Workshop</div>
         </div>
       </footer>
-      </div>
     </div>
   );
 };
