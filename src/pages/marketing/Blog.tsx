@@ -1,4 +1,9 @@
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+
 export default function Blog() {
+  const navigate = useNavigate();
+
   return (
     <div 
       className="min-h-screen text-foreground relative overflow-hidden"
@@ -21,6 +26,39 @@ export default function Blog() {
       <div className="absolute top-40 right-20 w-40 h-40 bg-white/20 rounded-full blur-3xl" style={{ animation: 'float 8s ease-in-out infinite 1s' }}></div>
       <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-white/20 rounded-full blur-3xl" style={{ animation: 'float 7s ease-in-out infinite 2s' }}></div>
       
+      {/* Header Navigation */}
+      <header className="w-full bg-white relative z-30 rounded-b-3xl shadow-xl pt-4 pb-4">
+        <div className="mx-auto max-w-6xl px-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 relative z-30 bg-gradient-to-r from-orange-50 to-orange-100 px-4 py-2 rounded-2xl shadow-lg border border-gray-200"
+            style={{
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
+            }}
+          >
+            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center shadow-md">
+              <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
+              </svg>
+            </div>
+            <span className="font-semibold text-gray-800">VinFast Service Workshop</span>
+          </div>
+          <div className="flex items-center gap-3 relative z-30">
+            <Button 
+              onClick={() => navigate('/')}
+              variant="outline"
+              className="font-semibold px-6 py-2 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300 hover:scale-105"
+            >
+              Trang chủ
+            </Button>
+            <Button 
+              onClick={() => navigate('/login')}
+              className="bg-primary hover:bg-primary-hover text-primary-foreground font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+            >
+              Đăng nhập
+            </Button>
+          </div>
+        </div>
+      </header>
+
       <main className="mx-auto max-w-7xl px-4 py-14 relative z-20">
         {/* Hero Section */}
         <div className="mb-16 md:mb-20 text-center" style={{ animation: 'fadeInUp 0.8s ease-out' }}>

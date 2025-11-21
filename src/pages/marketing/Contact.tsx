@@ -94,8 +94,18 @@ export default function Contact() {
             </div>
             <span className="font-semibold text-foreground">VinFast Service Workshop</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Button onClick={() => navigate('/login')}>
+          <div className="flex items-center gap-3 relative z-30">
+            <Button 
+              onClick={() => navigate('/')}
+              variant="outline"
+              className="font-semibold px-6 py-2 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300 hover:scale-105"
+            >
+              Trang chủ
+            </Button>
+            <Button
+              onClick={() => navigate('/login')}
+              className="bg-primary hover:bg-primary-hover text-primary-foreground font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+            >
               Đăng nhập
             </Button>
           </div>
