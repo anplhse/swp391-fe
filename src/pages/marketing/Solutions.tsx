@@ -142,16 +142,11 @@ export default function Solutions() {
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
       `}</style>
-
-      {/* Decorative clouds */}
-      <div className="absolute top-10 left-10 w-32 h-32 bg-primary-foreground/20 rounded-full blur-3xl" style={{ animation: 'float 6s ease-in-out infinite' }}></div>
-      <div className="absolute top-40 right-20 w-40 h-40 bg-primary-foreground/20 rounded-full blur-3xl" style={{ animation: 'float 8s ease-in-out infinite 1s' }}></div>
-      <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-primary-foreground/20 rounded-full blur-3xl" style={{ animation: 'float 7s ease-in-out infinite 2s' }}></div>
-      
-      {/* Header Navigation */}
-      <header className="w-full bg-card relative z-30 rounded-b-3xl shadow-xl pt-4 pb-4 border-b-2 border-primary/30">
-        <div className="mx-auto max-w-6xl px-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 bg-gradient-to-r from-orange-50 to-orange-100 px-4 py-2 rounded-2xl shadow-xl border border-orange-200">
+   
+      {/* Header */}
+      <header className="w-full border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 bg-gradient-to-r from-secondary/50 to-secondary px-4 py-2 rounded-2xl shadow-xl border border-border">
             <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center shadow-lg">
               <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
@@ -159,7 +154,14 @@ export default function Solutions() {
             </div>
             <span className="font-semibold text-foreground">VinFast Service Workshop</span>
           </div>
-          <div className="flex items-center gap-3 relative z-30">
+          <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
+            <a href="/about" className="hover:text-foreground">Giới thiệu</a>
+            <a href="/services" className="hover:text-foreground">Dịch vụ</a>
+            <a href="/pricing" className="hover:text-foreground">Bảng giá</a>
+            <a href="/blog" className="hover:text-foreground">Blog</a>
+            <a href="/contact" className="hover:text-foreground">Liên hệ</a>
+          </nav>
+          <div className="flex items-center gap-3">
             <Button 
               onClick={() => navigate('/')}
               variant="outline"
@@ -181,15 +183,15 @@ export default function Solutions() {
         {/* Header Section */}
         <div className="text-center space-y-4" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
           <div className="inline-block mb-4">
-            <span className="px-5 py-2 bg-card/20 backdrop-blur-sm text-black text-sm font-semibold rounded-full border border-border/30 shadow-lg">
+            <span className="px-5 py-2 bg-card/20 backdrop-blur-sm text-foreground text-sm font-semibold rounded-full border border-border/30 shadow-lg">
               🚗 Xe điện VinFast
             </span>
           </div>
           <h1 
-            className="text-4xl md:text-6xl font-bold text-black mb-6"
+            className="text-4xl md:text-6xl font-bold text-foreground mb-6"
             style={{ 
               letterSpacing: '-0.03em',
-              textShadow: '0 4px 20px rgba(0,0,0,0.2)'
+              textShadow: '0 4px 20px hsl(var(--foreground) / 0.2)'
             }}
           >
             Dòng xe VinFast chúng tôi sửa chữa
@@ -232,28 +234,28 @@ export default function Solutions() {
                     <div className="text-primary-foreground space-y-3">
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <div>
-                          <p className="text-primary-foreground/70">Số chỗ ngồi</p>
-                          <p className="font-semibold">{vehicle.seats} chỗ</p>
+                          <p className="text-muted-foreground">Số chỗ ngồi</p>
+                          <p className="font-extrabold text-foreground">{vehicle.seats} chỗ</p>
                         </div>
                         <div>
-                          <p className="text-primary-foreground/70">Pin</p>
-                          <p className="font-semibold">{vehicle.batteryCapacity} kWh</p>
+                          <p className="text-muted-foreground">Pin</p>
+                          <p className="font-extrabold text-foreground">{vehicle.batteryCapacity} kWh</p>
                         </div>
                         <div>
-                          <p className="text-primary-foreground/70">Quãng đường</p>
-                          <p className="font-semibold">{vehicle.range} km</p>
+                          <p className="text-muted-foreground">Quãng đường</p>
+                          <p className="font-extrabold text-foreground">{vehicle.range} km</p>
                         </div>
                         <div>
-                          <p className="text-primary-foreground/70">Công suất</p>
-                          <p className="font-semibold">{vehicle.power} kW</p>
+                          <p className="text-muted-foreground">Công suất</p>
+                          <p className="font-extrabold text-foreground">{vehicle.power} kW</p>
                         </div>
                         <div>
-                          <p className="text-primary-foreground/70">Tăng tốc</p>
-                          <p className="font-semibold">{vehicle.acceleration}s (0-100km/h)</p>
+                          <p className="text-muted-foreground">Tăng tốc</p>
+                          <p className="font-extrabold text-foreground">{vehicle.acceleration}s (0-100km/h)</p>
                         </div>
                         <div>
-                          <p className="text-primary-foreground/70">Trọng lượng</p>
-                          <p className="font-semibold">{vehicle.weight} kg</p>
+                          <p className="text-muted-foreground">Trọng lượng</p>
+                          <p className="font-extrabold text-foreground">{vehicle.weight} kg</p>
                         </div>
                       </div>
                     </div>
