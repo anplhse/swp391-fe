@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
 import { bookingApi } from '@/lib/bookingUtils';
-import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
+import { showApiErrorToast } from '@/lib/responseHandler';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, MapPin, Phone, Plus, Search } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -35,7 +35,7 @@ interface Employee {
   email: string;
   phone: string;
   avatar?: string;
-  role: 'admin' | 'staff' | 'technician';
+  role: 'Quản trị viên' | 'Nhân viên' | 'Kỹ thuật viên';
   roleDisplayName?: string;
   department?: string;
   position?: string;
@@ -139,8 +139,7 @@ export default function PersonnelManagementPage() {
           email: u.email,
           phone: u.phoneNumber,
           roleDisplayName: u.roleDisplayName,
-          role: u.roleDisplayName === 'Quản trị viên' ? 'admin' :
-            u.roleDisplayName === 'Kỹ thuật viên' ? 'technician' : 'staff',
+          role: u.roleDisplayName as 'Quản trị viên' | 'Nhân viên' | 'Kỹ thuật viên',
           status: (u.status as Employee['status']) ?? 'ACTIVE',
           createdAt: u.createdAt,
           lastLogin: u.lastLogin
@@ -256,8 +255,7 @@ export default function PersonnelManagementPage() {
         email: u.email,
         phone: u.phoneNumber,
         roleDisplayName: u.roleDisplayName,
-        role: u.roleDisplayName === 'Quản trị viên' ? 'admin' :
-          u.roleDisplayName === 'Kỹ thuật viên' ? 'technician' : 'staff',
+        role: u.roleDisplayName as 'Quản trị viên' | 'Nhân viên' | 'Kỹ thuật viên',
         status: (u.status as Employee['status']) ?? 'ACTIVE',
         createdAt: u.createdAt,
         lastLogin: u.lastLogin
@@ -298,11 +296,11 @@ export default function PersonnelManagementPage() {
 
   const getRoleBadge = (role: string) => {
     switch (role) {
-      case 'admin':
+      case 'Quản trị viên':
         return <Badge variant="destructive">Quản lý</Badge>;
-      case 'staff':
+      case 'Nhân viên':
         return <Badge variant="default">Nhân viên</Badge>;
-      case 'technician':
+      case 'Kỹ thuật viên':
         return <Badge className="bg-blue-500">Kỹ thuật</Badge>;
       default:
         return <Badge variant="outline">Không xác định</Badge>;
@@ -437,9 +435,9 @@ export default function PersonnelManagementPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="admin">Quản lý</SelectItem>
-              <SelectItem value="staff">Nhân viên</SelectItem>
-              <SelectItem value="technician">Kỹ thuật</SelectItem>
+              <SelectItem value="Quản trị viên">Quản lý</SelectItem>
+              <SelectItem value="Nhân viên">Nhân viên</SelectItem>
+              <SelectItem value="Kỹ thuật viên">Kỹ thuật</SelectItem>
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>

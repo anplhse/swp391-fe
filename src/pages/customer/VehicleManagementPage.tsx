@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
 import { authService } from '@/lib/auth';
-import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
+import { showApiErrorToast, showAuthErrorToast } from '@/lib/responseHandler';
 import {
   Plus
 } from 'lucide-react';
@@ -101,11 +101,17 @@ export default function VehicleManagementPage() {
       } catch (e) {
         console.error('Failed to load vehicle models', e);
         const msg = e instanceof Error ? e.message : String(e);
-        if (mounted) setModelsError(msg.includes('status: 401') || msg.includes('status: 403')
-          ? 'Phiên đăng nhập hết hạn hoặc không có quyền. Vui lòng đăng nhập lại.'
-          : 'Không tải được danh sách model');
         if (msg.includes('status: 401') || msg.includes('status: 403')) {
+          if (mounted) {
+            setModelsError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+          }
+          showAuthErrorToast(e, toast);
           navigate('/login');
+        } else {
+          if (mounted) {
+            setModelsError('Không tải được danh sách model');
+          }
+          showApiErrorToast(e, toast, 'Không tải được danh sách model');
         }
       } finally {
         if (mounted) setModelsLoading(false);
@@ -162,8 +168,10 @@ export default function VehicleManagementPage() {
         console.error('Failed to load user vehicles', e);
         const msg = e instanceof Error ? e.message : String(e);
         if (msg.includes('status: 401') || msg.includes('status: 403')) {
-          showApiErrorToast(e, toast, 'Phiên đăng nhập hết hạn hoặc không có quyền. Vui lòng đăng nhập lại.');
+          showAuthErrorToast(e, toast);
           navigate('/login');
+        } else {
+          showApiErrorToast(e, toast, 'Không thể tải danh sách xe');
         }
       }
     };

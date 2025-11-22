@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface VehicleModel {
@@ -128,7 +128,7 @@ export default function Solutions() {
   const [hoveredVehicle, setHoveredVehicle] = useState<number | null>(null);
 
   return (
-    <div 
+    <div
       className="min-h-screen text-foreground relative overflow-hidden"
       style={{
         background: 'linear-gradient(-45deg, hsl(14, 100%, 68%), hsl(26, 100%, 74%), hsl(16, 100%, 78%), hsl(24, 100%, 83%))',
@@ -147,7 +147,7 @@ export default function Solutions() {
       <div className="absolute top-10 left-10 w-32 h-32 bg-card/20 rounded-full blur-3xl" style={{ animation: 'float 6s ease-in-out infinite' }}></div>
       <div className="absolute top-40 right-20 w-40 h-40 bg-card/20 rounded-full blur-3xl" style={{ animation: 'float 8s ease-in-out infinite 1s' }}></div>
       <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-card/20 rounded-full blur-3xl" style={{ animation: 'float 7s ease-in-out infinite 2s' }}></div>
-      
+
       {/* Header Navigation */}
       <header className="w-full bg-white relative z-30 rounded-b-3xl shadow-xl pt-4 pb-4">
         <div className="mx-auto max-w-6xl px-4 flex items-center justify-between">
@@ -164,14 +164,14 @@ export default function Solutions() {
             <span className="font-semibold text-gray-800">VinFast Service Workshop</span>
           </div>
           <div className="flex items-center gap-3 relative z-30">
-            <Button 
+            <Button
               onClick={() => navigate('/')}
               variant="outline"
               className="font-semibold px-6 py-2 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300 hover:scale-105"
             >
               Trang chủ
             </Button>
-            <Button 
+            <Button
               onClick={() => navigate('/login')}
               className="bg-primary hover:bg-primary-hover text-primary-foreground font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
@@ -189,9 +189,9 @@ export default function Solutions() {
               🚗 Xe điện VinFast
             </span>
           </div>
-          <h1 
+          <h1
             className="text-5xl md:text-7xl font-black mb-5 text-primary-foreground"
-            style={{ 
+            style={{
               letterSpacing: '-0.03em',
               textShadow: '0 4px 20px rgba(0,0,0,0.3), 0 0 40px rgba(255,255,255,0.1)',
               animation: 'pulse 3s ease-in-out infinite'
@@ -206,12 +206,11 @@ export default function Solutions() {
           {vehicleModels.map((vehicle, index) => (
             <div
               key={index}
-              className={`rounded-xl overflow-hidden bg-card shadow-lg hover:shadow-xl transition-smooth ${
-                vehicle.status === 'INACTIVE' ? 'opacity-60' : ''
-              }`}
+              className={`rounded-xl overflow-hidden bg-card shadow-lg hover:shadow-xl transition-smooth ${vehicle.status === 'INACTIVE' ? 'opacity-60' : ''
+                }`}
             >
               {/* Vehicle Image with Overlay Info */}
-              <div 
+              <div
                 className="relative h-64 bg-gradient-to-br from-muted to-muted cursor-pointer group overflow-hidden"
                 onMouseEnter={() => setHoveredVehicle(index)}
                 onMouseLeave={() => setHoveredVehicle(null)}
@@ -224,7 +223,7 @@ export default function Solutions() {
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
                   }}
                 />
-                
+
                 {vehicle.status === 'INACTIVE' && (
                   <div className="absolute top-4 right-4 bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-sm font-semibold z-10">
                     Ngừng sản xuất

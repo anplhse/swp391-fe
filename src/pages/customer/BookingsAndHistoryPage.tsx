@@ -135,10 +135,8 @@ export default function BookingsAndHistoryPage() {
   }, []);
 
   const handleViewDetails = useCallback((bookingId: string) => {
-    // Lưu bookingId vào localStorage để trang confirmation có thể load
-    localStorage.setItem('latestBookingId', bookingId);
-    // Điều hướng đến trang chi tiết booking
-    navigate('/customer/booking/confirmation', {
+    // Điều hướng đến trang chi tiết booking status
+    navigate('/customer/booking-status', {
       state: { bookingId: Number(bookingId) }
     });
   }, [navigate]);

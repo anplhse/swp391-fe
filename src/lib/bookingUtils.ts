@@ -432,6 +432,16 @@ export const bookingApi = {
     });
   },
 
+  // Simulate IPN fail (for expired or cancelled payments)
+  async simulateIpnFail(orderCode: string): Promise<{
+    message: string;
+    rspCode: string;
+  }> {
+    return request(`/payments/simulate-ipn-fail?orderCode=${encodeURIComponent(orderCode)}`, {
+      method: 'GET',
+    });
+  },
+
   async startMaintenance(bookingId: number): Promise<{
     id: number;
     customerId: number;

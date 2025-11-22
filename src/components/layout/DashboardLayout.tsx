@@ -26,7 +26,6 @@ import {
 } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { authService } from '@/lib/auth';
 import { Bell, Calendar, Car, ClipboardList, History, LayoutDashboard, LogOut, Package, Settings, User, Users, Wrench } from 'lucide-react';
 import { ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -66,26 +65,8 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
   };
 
   // Use auth user if available, fallback to prop user
-  // Map role from roleDisplayName if needed
-  const roleKey = authUser?.roleDisplayName
-    ? (authService.getRoleKey() || user?.role || 'customer')
-    : (user?.role || 'customer');
-  const currentUser = authUser ? { ...authUser, role: roleKey } : { ...user, role: roleKey };
-
-  const getRoleDisplayName = (role: string) => {
-    const roleNames = {
-      customer: 'Khách hàng',
-      staff: 'Nhân viên',
-      technician: 'Kỹ thuật viên',
-      admin: 'Quản trị viên'
-    };
-    return roleNames[role as keyof typeof roleNames] || role;
-  };
-
-  // Get user type based on role
-  const getUserType = (role: string) => {
-    return role === 'customer' ? 'customer' : 'service';
-  };
+  const roleDisplayName = authUser?.roleDisplayName || user?.role || 'Khách hàng';
+  const currentUser = authUser ? { ...authUser, role: roleDisplayName } : { ...user, role: roleDisplayName };
 
   // Type guards/helpers for display name without using any
   type MinimalUser = { email: string; role: string };
@@ -121,7 +102,7 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
 
   const menuItems = (() => {
     switch (currentUser.role) {
-      case 'staff':
+      case 'Nhân viên':
         return [
           { to: '/service/staff', icon: LayoutDashboard, label: 'Dashboard' },
           { to: '/service/customers', icon: Users, label: 'Quản lý tài khoản' },
@@ -132,14 +113,14 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
           { to: '/service/parts', icon: Package, label: 'Quản lý phụ tùng' },
           { to: '/service/vehicle-models', icon: Car, label: 'Quản lý mẫu xe' },
         ];
-      case 'technician':
+      case 'Kỹ thuật viên':
         return [
           { to: '/service/technician', icon: LayoutDashboard, label: 'Dashboard' },
           { to: '/service/assigned-tasks', icon: ClipboardList, label: 'Công việc được giao' },
           { to: '/service/maintenance-process', icon: Settings, label: 'Quy trình bảo dưỡng' },
           { to: '/service/vehicle-status', icon: Car, label: 'Trạng thái xe' },
         ];
-      case 'admin':
+      case 'Quản trị viên':
         return [
           { to: '/service/admin', icon: LayoutDashboard, label: 'Dashboard' },
           { to: '/service/personnel', icon: Users, label: 'Quản lý nhân sự' },
@@ -199,7 +180,7 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
             <div className="flex items-center gap-3">
               <SidebarTrigger />
               {title && <h1 className="text-lg font-sans font-semibold">{title}</h1>}
-              <span className="text-sm text-muted-foreground hidden md:inline">{getRoleDisplayName(currentUser.role)}</span>
+              <span className="text-sm text-muted-foreground hidden md:inline">{currentUser.role}</span>
             </div>
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" className="relative">
@@ -219,7 +200,7 @@ export function DashboardLayout({ children, title, user }: DashboardLayoutProps)
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex flex-col space-y-1 p-2">
-                    <p className="text-sm font-sans font-medium leading-none">{hasFullName(currentUser) ? currentUser.fullName : getRoleDisplayName(currentUser.role)}</p>
+                    <p className="text-sm font-sans font-medium leading-none">{hasFullName(currentUser) ? currentUser.fullName : currentUser.role}</p>
                     <p className="text-xs leading-none text-muted-foreground">{currentUser.email}</p>
                   </div>
                   <DropdownMenuSeparator />

@@ -44,23 +44,23 @@ export default function Login() {
         description: `Chào mừng ${response.user.fullName}`,
       });
 
-      // Redirect based on mapped role derived from roleDisplayName
-      const userRole = authService.getRoleKey();
+      // Redirect based on roleDisplayName directly
+      const roleDisplayName = response.user.roleDisplayName;
 
-      // Map role to valid routes
+      // Map roleDisplayName to routes
       const roleRoutes: Record<string, string> = {
-        'customer': '/customer',
-        'staff': '/service/staff',
-        'technician': '/service/technician',
-        'admin': '/service/admin',
+        'Khách hàng': '/customer',
+        'Nhân viên': '/service/staff',
+        'Kỹ thuật viên': '/service/technician',
+        'Quản trị viên': '/service/admin',
       };
 
-      const targetRoute = userRole ? roleRoutes[userRole] : undefined;
+      const targetRoute = roleRoutes[roleDisplayName];
 
       if (!targetRoute) {
         toast({
           title: "Lỗi phân quyền",
-          description: `Role "${userRole}" không có route tương ứng. Vui lòng liên hệ quản trị viên.`,
+          description: `Role "${roleDisplayName}" không có route tương ứng. Vui lòng liên hệ quản trị viên.`,
           variant: "destructive"
         });
         return;

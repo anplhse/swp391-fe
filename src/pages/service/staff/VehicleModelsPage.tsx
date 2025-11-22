@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
-import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
+import { showApiErrorToast } from '@/lib/responseHandler';
 import { Eye, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -22,6 +22,7 @@ type VehicleModel = {
   chargingTimeHours?: number;
   motorPowerKw?: number;
   weightKg?: number;
+  imageUrl?: string;
   status: string;
   createdAt?: string;
 };
@@ -52,6 +53,7 @@ export default function VehicleModelsPage() {
     chargingTimeHours: undefined,
     motorPowerKw: undefined,
     weightKg: undefined,
+    imageUrl: '',
   });
 
   useEffect(() => {
@@ -174,6 +176,7 @@ export default function VehicleModelsPage() {
         chargingTimeHours?: number;
         motorPowerKw?: number;
         weightKg?: number;
+        imageUrl?: string;
       } = {
         brandName: newModel.brandName,
         modelName: newModel.modelName,
@@ -186,6 +189,7 @@ export default function VehicleModelsPage() {
       if (newModel.chargingTimeHours !== undefined) payload.chargingTimeHours = newModel.chargingTimeHours;
       if (newModel.motorPowerKw !== undefined) payload.motorPowerKw = newModel.motorPowerKw;
       if (newModel.weightKg !== undefined) payload.weightKg = newModel.weightKg;
+      if (newModel.imageUrl) payload.imageUrl = newModel.imageUrl;
 
       const created = await apiClient.createVehicleModel(payload);
 
@@ -208,6 +212,7 @@ export default function VehicleModelsPage() {
         chargingTimeHours: undefined,
         motorPowerKw: undefined,
         weightKg: undefined,
+        imageUrl: '',
       });
     } catch (error) {
       console.error('Failed to create model', error);
@@ -232,6 +237,7 @@ export default function VehicleModelsPage() {
         chargingTimeHours?: number;
         motorPowerKw?: number;
         weightKg?: number;
+        imageUrl?: string;
         status?: string;
       }> = {};
 
@@ -245,6 +251,7 @@ export default function VehicleModelsPage() {
       if (editingModel.chargingTimeHours !== undefined) payload.chargingTimeHours = editingModel.chargingTimeHours;
       if (editingModel.motorPowerKw !== undefined) payload.motorPowerKw = editingModel.motorPowerKw;
       if (editingModel.weightKg !== undefined) payload.weightKg = editingModel.weightKg;
+      if (editingModel.imageUrl !== undefined) payload.imageUrl = editingModel.imageUrl;
       if (editingModel.status) payload.status = editingModel.status;
 
       const updated = await apiClient.updateVehicleModel(editingModel.id, payload);
@@ -419,6 +426,21 @@ export default function VehicleModelsPage() {
                   <label className="text-sm font-medium text-muted-foreground">Khối lượng (kg)</label>
                   <p className="text-sm font-medium">{modelDetail.weightKg ?? '—'}</p>
                 </div>
+                {modelDetail.imageUrl && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Hình ảnh</label>
+                    <div className="mt-2">
+                      <img
+                        src={modelDetail.imageUrl}
+                        alt={modelDetail.modelName}
+                        className="w-full max-w-md h-auto rounded-lg border border-border"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground">Ngày tạo</label>
                   <p className="text-sm font-medium">
@@ -564,6 +586,28 @@ export default function VehicleModelsPage() {
                     value={editingModel.weightKg ?? ''}
                     onChange={(e) => setEditingModel({ ...editingModel, weightKg: e.target.value ? Number(e.target.value) : undefined })}
                   />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="edit-imageUrl">URL hình ảnh</Label>
+                  <Input
+                    id="edit-imageUrl"
+                    type="url"
+                    value={editingModel.imageUrl || ''}
+                    onChange={(e) => setEditingModel({ ...editingModel, imageUrl: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                  {editingModel.imageUrl && (
+                    <div className="mt-2">
+                      <img
+                        src={editingModel.imageUrl}
+                        alt="Preview"
+                        className="w-full max-w-md h-auto rounded-lg border border-border"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Invalid+Image+URL';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-status">Trạng thái</Label>
@@ -718,6 +762,28 @@ export default function VehicleModelsPage() {
                   value={newModel.weightKg ?? ''}
                   onChange={(e) => setNewModel({ ...newModel, weightKg: e.target.value ? Number(e.target.value) : undefined })}
                 />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="add-imageUrl">URL hình ảnh</Label>
+                <Input
+                  id="add-imageUrl"
+                  type="url"
+                  value={newModel.imageUrl || ''}
+                  onChange={(e) => setNewModel({ ...newModel, imageUrl: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                />
+                {newModel.imageUrl && (
+                  <div className="mt-2">
+                    <img
+                      src={newModel.imageUrl}
+                      alt="Preview"
+                      className="w-full max-w-md h-auto rounded-lg border border-border"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Invalid+Image+URL';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -341,6 +341,7 @@ class ApiClient {
     chargingTimeHours?: number;
     motorPowerKw?: number;
     weightKg?: number;
+    imageUrl?: string;
     status: string;
     createdAt?: string;
   }>> {
@@ -360,6 +361,7 @@ class ApiClient {
     chargingTimeHours?: number;
     motorPowerKw?: number;
     weightKg?: number;
+    imageUrl?: string;
     status: string;
     createdAt?: string;
   }> {
@@ -378,6 +380,7 @@ class ApiClient {
     chargingTimeHours?: number;
     motorPowerKw?: number;
     weightKg?: number;
+    imageUrl?: string;
   }): Promise<{
     id: number;
     brandName: string;
@@ -389,6 +392,7 @@ class ApiClient {
     chargingTimeHours?: number;
     motorPowerKw?: number;
     weightKg?: number;
+    imageUrl?: string;
     status: string;
     createdAt?: string;
   }> {
@@ -410,6 +414,7 @@ class ApiClient {
       chargingTimeHours?: number;
       motorPowerKw?: number;
       weightKg?: number;
+      imageUrl?: string;
       status?: string;
     }>
   ): Promise<{
@@ -423,6 +428,7 @@ class ApiClient {
     chargingTimeHours?: number;
     motorPowerKw?: number;
     weightKg?: number;
+    imageUrl?: string;
     status: string;
     createdAt?: string;
   }> {
@@ -580,6 +586,24 @@ class ApiClient {
     type: string;
   }> {
     return this.request('/maintenance-catalogs/enum/category', {
+      method: 'GET',
+    });
+  }
+
+  // Payment APIs
+  async getPaymentHistory(bookingId: number): Promise<Array<{
+    id: number;
+    invoiceNumber: string;
+    orderCode: string;
+    amount: number;
+    status: string;
+    paymentMethod: string;
+    createdAt: string;
+    paidAt: string;
+    transactionRef: string;
+    responseCode: string;
+  }>> {
+    return this.request(`/payments/history/${bookingId}`, {
       method: 'GET',
     });
   }

@@ -31,15 +31,16 @@ export function ProtectedRoute({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Check role if required
-  const roleKey = authService.getRoleKey();
-  if (requiredRole && roleKey !== requiredRole) {
+  // Check role if required (using roleDisplayName directly)
+  const roleDisplayName = user?.roleDisplayName;
+  if (requiredRole && roleDisplayName !== requiredRole) {
     return <Navigate to="/unauthorized" replace />;
   }
 
   // Check user type if required
   if (requiredUserType) {
-    const userType = roleKey === 'customer' ? 'customer' : 'service';
+    const isCustomer = roleDisplayName === 'Khách hàng';
+    const userType = isCustomer ? 'customer' : 'service';
     if (userType !== requiredUserType) {
       return <Navigate to="/unauthorized" replace />;
     }

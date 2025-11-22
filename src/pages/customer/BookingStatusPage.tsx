@@ -1,515 +1,592 @@
+import { DataTable } from '@/components/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api';
+import { bookingApi } from '@/lib/bookingUtils';
+import { showApiErrorToast } from '@/lib/responseHandler';
+import { ColumnDef } from '@tanstack/react-table';
 import {
   AlertCircle,
-  Calendar,
-  Car,
   CheckCircle2,
   Clock,
   CreditCard,
   Edit,
-  MapPin,
-  MessageSquare,
-  Phone,
+  History,
   Trash2,
-  Wrench
+  Wrench,
+  X
 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-interface BookingData {
-  id: string;
-  services: Array<{
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    duration: string;
-  }>;
-  vehicle: {
-    id: string;
-    name: string;
-    plate: string;
-    model: string;
-    year?: string;
+type ApiBooking = {
+  id: number;
+  customerId: number;
+  customerName: string;
+  vehicleVin: string;
+  vehicleModel: string;
+  scheduleDateTime: {
+    format: string;
+    value: string;
+    timezone: string | null;
   };
-  date: string;
-  time: string;
-  status: 'pending' | 'confirmed' | 'paid' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
-  center: string;
-  technician?: string;
-  notes?: string;
+  bookingStatus: string;
   createdAt: string;
-  estimatedDuration: string;
-  paymentStatus?: string;
-  totalAmount?: number;
-}
+  updatedAt: string;
+  technicianId?: number | null;
+  technicianName?: string | null;
+  catalogDetails?: Array<{
+    id: number;
+    catalogId: number;
+    serviceName: string;
+    description: string;
+  }>;
+  invoice?: {
+    id: number;
+    invoiceNumber: string;
+    issueDate: string;
+    dueDate: string;
+    totalAmount: number;
+    status: string;
+    createdAt: string;
+    paidAt: string;
+    invoiceLines: Array<{
+      id: number;
+      itemDescription: string;
+      itemType: string;
+      quantity: number;
+      unitPrice: number;
+      totalPrice: number;
+    }>;
+  };
+};
+
+type PaymentHistory = {
+  id: number;
+  invoiceNumber: string;
+  orderCode: string;
+  amount: number;
+  status: string;
+  paymentMethod: string;
+  createdAt: string;
+  paidAt: string;
+  transactionRef: string;
+  responseCode: string;
+};
 
 export default function BookingStatusPage() {
+  const [booking, setBooking] = useState<ApiBooking | null>(null);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingPaymentHistory, setIsLoadingPaymentHistory] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  // Mock data - in real app, this would come from location state or API
-  const bookingData: BookingData = location.state?.bookingData || {
-    id: 'BK2025001',
-    services: [{
-      id: 'maintenance',
-      name: 'Bảo dưỡng định kỳ',
-      description: 'Kiểm tra tổng quát hệ thống xe điện',
-      price: 2500000,
-      duration: '2-3 giờ'
-    }],
-    vehicle: {
-      id: '1',
-      name: 'VinFast VF8',
-      plate: '30A-123.45',
-      model: 'VF8 Plus',
-      year: '2024'
-    },
-    date: '2025-01-15',
-    time: '09:00',
-    status: 'pending',
-    center: 'Trung tâm bảo dưỡng Hà Nội',
-    notes: 'Xe có tiếng ồn lạ ở bánh trước',
-    createdAt: '2025-01-10T10:30:00Z',
-    estimatedDuration: '2-3 giờ',
-    paymentStatus: 'pending',
-    totalAmount: 0
-  };
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setIsLoading(true);
+        const bookingId = location.state?.bookingId;
 
-  const getStatusInfo = (status: string) => {
-    switch (status) {
-      case 'pending':
+        if (!bookingId) {
+          toast({
+            title: 'Lỗi',
+            description: 'Không tìm thấy thông tin booking. Vui lòng quay lại danh sách booking.',
+            variant: 'destructive'
+          });
+          if (mounted) navigate('/customer/bookings');
+          return;
+        }
+
+        const data = await bookingApi.getBookingById(bookingId);
+        if (!mounted) return;
+        setBooking(data);
+
+        // Load payment history
+        try {
+          setIsLoadingPaymentHistory(true);
+          const history = await apiClient.getPaymentHistory(bookingId);
+          if (mounted) setPaymentHistory(history);
+        } catch (error) {
+          console.error('Failed to load payment history:', error);
+          // Don't show error toast for payment history, just log it
+          if (mounted) setPaymentHistory([]);
+        } finally {
+          if (mounted) setIsLoadingPaymentHistory(false);
+        }
+      } catch (error) {
+        console.error('Failed to load booking:', error);
+        showApiErrorToast(error, toast, 'Không thể tải thông tin booking.');
+        if (mounted) navigate('/customer/bookings');
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [location.state, navigate, toast]);
+
+  const getStatusInfo = useCallback((status: string) => {
+    const normalized = (status || '').toUpperCase();
+    switch (normalized) {
+      case 'PENDING':
         return {
           label: 'Chờ xác nhận',
-          color: 'secondary',
+          color: 'secondary' as const,
           icon: Clock,
-          description: 'Đang chờ trung tâm xác nhận lịch hẹn',
-          progress: 25
+          description: 'Đang chờ trung tâm xác nhận lịch hẹn'
         };
-      case 'confirmed':
+      case 'CONFIRMED':
         return {
           label: 'Đã xác nhận',
-          color: 'default',
+          color: 'default' as const,
           icon: CheckCircle2,
-          description: 'Lịch hẹn đã được xác nhận, sẵn sàng thực hiện',
-          progress: 50
+          description: 'Lịch hẹn đã được xác nhận, sẵn sàng thực hiện'
         };
-      case 'paid':
+      case 'PAID':
         return {
           label: 'Đã thanh toán',
-          color: 'default',
+          color: 'default' as const,
           icon: CreditCard,
-          description: 'Đã thanh toán trước, sẵn sàng thực hiện dịch vụ',
-          progress: 60
+          description: 'Đã thanh toán trước, sẵn sàng thực hiện dịch vụ'
         };
-      case 'in_progress':
+      case 'IN_PROGRESS':
         return {
           label: 'Đang thực hiện',
-          color: 'default',
+          color: 'default' as const,
           icon: Wrench,
-          description: 'Dịch vụ đang được thực hiện',
-          progress: 75
+          description: 'Dịch vụ đang được thực hiện'
         };
-      case 'completed':
+      case 'MAINTENANCE_COMPLETE':
+      case 'COMPLETED':
         return {
           label: 'Hoàn thành',
-          color: 'default',
+          color: 'default' as const,
           icon: CheckCircle2,
-          description: 'Dịch vụ đã hoàn thành',
-          progress: 100
+          description: 'Dịch vụ đã hoàn thành'
         };
-      case 'cancelled':
+      case 'CANCELLED':
         return {
           label: 'Đã hủy',
-          color: 'destructive',
+          color: 'destructive' as const,
           icon: AlertCircle,
-          description: 'Lịch hẹn đã bị hủy',
-          progress: 0
+          description: 'Lịch hẹn đã bị hủy'
         };
-      case 'rejected':
+      case 'REJECTED':
         return {
           label: 'Từ chối',
-          color: 'destructive',
+          color: 'destructive' as const,
           icon: AlertCircle,
-          description: 'Lịch hẹn đã bị từ chối bởi trung tâm',
-          progress: 0
+          description: 'Lịch hẹn đã bị từ chối bởi trung tâm'
         };
       default:
         return {
           label: 'Không xác định',
-          color: 'secondary',
+          color: 'secondary' as const,
           icon: AlertCircle,
-          description: 'Trạng thái không xác định',
-          progress: 0
+          description: 'Trạng thái không xác định'
         };
     }
-  };
+  }, []);
 
-  const statusInfo = getStatusInfo(bookingData.status);
-  const StatusIcon = statusInfo.icon;
+  const getStatusBadge = useCallback((status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return <Badge variant="secondary">Chờ xác nhận</Badge>;
+      case 'CONFIRMED':
+        return <Badge variant="default">Đã xác nhận</Badge>;
+      case 'PAID':
+        return <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">Đã thanh toán</Badge>;
+      case 'IN_PROGRESS':
+        return <Badge variant="default" className="bg-orange-600 hover:bg-orange-700">Đang thực hiện</Badge>;
+      case 'MAINTENANCE_COMPLETE':
+      case 'COMPLETED':
+        return <Badge variant="default" className="bg-green-600 hover:bg-green-700">Hoàn thành</Badge>;
+      case 'CANCELLED':
+        return <Badge variant="destructive">Đã hủy</Badge>;
+      case 'REJECTED':
+        return <Badge variant="destructive">Từ chối</Badge>;
+      default:
+        return <Badge variant="outline">Không xác định</Badge>;
+    }
+  }, []);
 
-  const handlePayment = () => {
-    // Chỉ cho phép thanh toán khi dịch vụ đã hoàn thành
-    if (bookingData.status !== 'completed') {
+  const formatPrice = useCallback((price: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(price);
+  }, []);
+
+  const handleEditBooking = useCallback(() => {
+    if (!booking) return;
+    navigate('/customer/booking', {
+      state: {
+        preselectedVin: booking.vehicleVin,
+        preselectedVehicle: { vin: booking.vehicleVin, modelName: booking.vehicleModel },
+        editMode: true,
+        existingBooking: null
+      }
+    });
+  }, [booking, navigate]);
+
+  const handleCancelBooking = useCallback(() => {
+    toast({
+      title: 'Thông báo',
+      description: 'Tính năng hủy lịch sẽ được bổ sung sau.',
+    });
+  }, [toast]);
+
+  const handlePayment = useCallback(async () => {
+    if (!booking || !booking.invoice?.id) {
       toast({
-        title: "Chưa thể thanh toán",
-        description: "Vui lòng chờ trung tâm hoàn thành dịch vụ trước khi thanh toán",
-        variant: "destructive"
+        title: 'Lỗi',
+        description: 'Không tìm thấy thông tin hóa đơn để thanh toán.',
+        variant: 'destructive',
       });
       return;
     }
 
-    const paymentItems = bookingData.services.map(service => ({
-      id: service.id,
-      name: service.name,
-      type: 'service' as const,
-      price: service.price,
-      quantity: 1,
-      description: service.description
-    }));
+    setIsProcessingPayment(true);
+    try {
+      const result = await bookingApi.createPayment(booking.invoice.id);
+      window.location.href = result.paymentUrl;
+    } catch (error) {
+      console.error('Payment creation failed', error);
+      toast({
+        title: 'Lỗi',
+        description: error instanceof Error ? error.message : 'Không thể tạo thanh toán. Vui lòng thử lại.',
+        variant: 'destructive',
+      });
+      setIsProcessingPayment(false);
+    }
+  }, [booking, toast]);
 
-    navigate('/customer/payment', {
-      state: {
-        items: paymentItems,
-        from: 'booking-status',
-        bookingId: bookingData.id
-      }
-    });
-  };
+  const bookingInfoColumns: ColumnDef<{ label: string; value: string | React.ReactNode }>[] = useMemo(
+    () => [
+      {
+        accessorKey: 'label',
+        header: 'Thông tin',
+        cell: ({ row }) => <div className="font-medium">{row.getValue('label')}</div>,
+      },
+      {
+        accessorKey: 'value',
+        header: 'Chi tiết',
+        cell: ({ row }) => <div>{row.getValue('value') as React.ReactNode}</div>,
+      },
+    ],
+    []
+  );
 
-  const handleEdit = () => {
-    navigate('/customer/booking', {
-      state: { editBooking: bookingData }
-    });
-  };
+  const bookingInfoData = useMemo(() => {
+    if (!booking) return [];
+    const [dateStr = '', timeStr = ''] = (booking.scheduleDateTime?.value || '').split(' ');
+    const data = [
+      { label: 'Booking ID', value: <span className="font-mono font-semibold">#{booking.id}</span> },
+      { label: 'Trạng thái', value: getStatusBadge(booking.bookingStatus) },
+      { label: 'Khách hàng', value: booking.customerName },
+      { label: 'VIN', value: <span className="font-mono">{booking.vehicleVin}</span> },
+      { label: 'Model xe', value: booking.vehicleModel },
+      { label: 'Ngày hẹn', value: dateStr ? new Date(dateStr).toLocaleDateString('vi-VN') : '—' },
+      { label: 'Giờ hẹn', value: timeStr || '—' },
+    ];
 
-  const handleCancel = () => {
-    toast({
-      title: "Hủy lịch hẹn",
-      description: "Lịch hẹn đã được hủy thành công",
-    });
-    navigate('/customer');
-  };
+    if (booking.technicianName) {
+      data.push({ label: 'Kỹ thuật viên', value: booking.technicianName });
+    }
 
-  const handleContact = () => {
-    toast({
-      title: "Liên hệ trung tâm",
-      description: "Đang kết nối với trung tâm bảo dưỡng...",
-    });
-  };
+    data.push(
+      { label: 'Tạo lúc', value: new Date(booking.createdAt).toLocaleString('vi-VN') },
+      { label: 'Cập nhật lúc', value: new Date(booking.updatedAt).toLocaleString('vi-VN') }
+    );
+
+    return data;
+  }, [booking, getStatusBadge]);
+
+  const servicesColumns: ColumnDef<{
+    id: number;
+    serviceName: string;
+    description: string;
+  }>[] = useMemo(
+    () => [
+      { accessorKey: 'serviceName', header: 'Tên dịch vụ' },
+      { accessorKey: 'description', header: 'Mô tả' },
+    ],
+    []
+  );
+
+  const paymentHistoryColumns: ColumnDef<PaymentHistory>[] = useMemo(() => [
+    {
+      accessorKey: 'orderCode',
+      header: 'Mã đơn hàng',
+      cell: ({ row }) => <span className="font-mono font-medium">{row.original.orderCode}</span>,
+    },
+    {
+      accessorKey: 'invoiceNumber',
+      header: 'Số hóa đơn',
+      cell: ({ row }) => <span className="font-mono">{row.original.invoiceNumber}</span>,
+    },
+    {
+      accessorKey: 'amount',
+      header: 'Số tiền',
+      cell: ({ row }) => (
+        <span className="font-semibold text-green-600">
+          {formatPrice(row.original.amount)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'paymentMethod',
+      header: 'Phương thức',
+      cell: ({ row }) => (
+        <Badge variant="outline">{row.original.paymentMethod}</Badge>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: 'Trạng thái',
+      cell: ({ row }) => {
+        const status = row.original.status;
+        return (
+          <Badge
+            variant={status === 'SUCCESSFUL' ? 'default' : 'secondary'}
+            className={status === 'SUCCESSFUL' ? 'bg-green-600 hover:bg-green-700' : ''}
+          >
+            {status === 'SUCCESSFUL' ? 'Thành công' : status}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: 'transactionRef',
+      header: 'Mã giao dịch',
+      cell: ({ row }) => (
+        <span className="font-mono text-sm">{row.original.transactionRef || '—'}</span>
+      ),
+    },
+    {
+      accessorKey: 'paidAt',
+      header: 'Thời gian thanh toán',
+      cell: ({ row }) => (
+        <span>{new Date(row.original.paidAt).toLocaleString('vi-VN')}</span>
+      ),
+    },
+  ], [formatPrice]);
+
+  const invoiceLinesColumns: ColumnDef<{
+    id: number;
+    itemDescription: string;
+    itemType: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }>[] = useMemo(
+    () => [
+      {
+        accessorKey: 'itemType',
+        header: 'Loại',
+        cell: ({ row }) => (
+          <Badge variant={row.getValue('itemType') === 'SERVICE' ? 'default' : 'secondary'}>
+            {row.getValue('itemType') === 'SERVICE' ? 'Dịch vụ' : 'Linh kiện'}
+          </Badge>
+        ),
+      },
+      { accessorKey: 'itemDescription', header: 'Hạng mục' },
+      {
+        accessorKey: 'quantity',
+        header: 'SL',
+        cell: ({ row }) => <div className="text-center">{row.getValue('quantity')}</div>,
+      },
+      {
+        accessorKey: 'unitPrice',
+        header: 'Đơn giá',
+        cell: ({ row }) => formatPrice(row.getValue('unitPrice') as number),
+      },
+      {
+        accessorKey: 'totalPrice',
+        header: 'Thành tiền',
+        cell: ({ row }) => <div className="font-medium">{formatPrice(row.getValue('totalPrice') as number)}</div>,
+      },
+    ],
+    [formatPrice]
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Đang tải thông tin booking...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!booking) {
+    return (
+      <div className="text-center py-12">
+        <X className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Không tìm thấy thông tin booking</h2>
+        <p className="text-muted-foreground mb-6">
+          Có vẻ như booking không tồn tại hoặc đã bị xóa.
+        </p>
+        <Button onClick={() => navigate('/customer/bookings')}>
+          Quay lại danh sách booking
+        </Button>
+      </div>
+    );
+  }
+
+  const statusInfo = getStatusInfo(booking.bookingStatus);
+  const StatusIcon = statusInfo.icon;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4"></div>
-
-      {/* Status Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <StatusIcon className="w-5 h-5" />
-            Trạng thái hiện tại
-          </CardTitle>
-          <CardDescription>
-            {statusInfo.description}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Badge variant={statusInfo.color as 'default' | 'secondary' | 'destructive'} className="text-lg px-4 py-2">
-              {statusInfo.label}
-            </Badge>
-            <span className="text-sm text-muted-foreground">
-              Tạo lúc: {new Date(bookingData.createdAt).toLocaleString('vi-VN')}
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Tiến độ xử lý</span>
-              <span>{statusInfo.progress}%</span>
-            </div>
-            <Progress value={statusInfo.progress} className="h-2" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Booking Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Chi tiết đặt lịch</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              {bookingData.services.map((service, index) => (
-                <div key={service.id} className="flex items-center gap-3">
-                  <Wrench className="w-5 h-5 text-muted-foreground" />
-                  <div>
-                    <h3 className="font-semibold">{service.name}</h3>
-                    <p className="text-sm text-muted-foreground">{service.description}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {new Intl.NumberFormat('vi-VN', {
-                        style: 'currency',
-                        currency: 'VND'
-                      }).format(service.price)} • {service.duration}
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              <div className="flex items-center gap-3">
-                <Car className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <h3 className="font-semibold">{bookingData.vehicle.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {bookingData.vehicle.plate} • {bookingData.vehicle.model}
-                    {bookingData.vehicle.year && ` • ${bookingData.vehicle.year}`}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Calendar className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <h3 className="font-semibold">Thời gian</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(bookingData.date).toLocaleDateString('vi-VN')} - {bookingData.time}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <MapPin className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <h3 className="font-semibold">Trung tâm</h3>
-                  <p className="text-sm text-muted-foreground">{bookingData.center}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <h3 className="font-semibold">Thời gian dự kiến</h3>
-                  <p className="text-sm text-muted-foreground">{bookingData.estimatedDuration}</p>
-                </div>
-              </div>
-            </div>
-
-            {bookingData.notes && (
-              <div className="mt-4 p-3 bg-muted rounded-lg">
-                <h4 className="font-medium text-sm mb-1">Ghi chú:</h4>
-                <p className="text-sm text-muted-foreground">{bookingData.notes}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Thao tác</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="text-center p-4 border rounded-lg">
-                <h3 className="font-semibold text-lg">
-                  {bookingData.totalAmount && bookingData.totalAmount > 0
-                    ? new Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: 'VND'
-                    }).format(bookingData.totalAmount)
-                    : 'Chưa tính phí'
-                  }
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {bookingData.totalAmount && bookingData.totalAmount > 0
-                    ? 'Tổng chi phí dịch vụ'
-                    : 'Sẽ tính phí sau khi hoàn thành'
-                  }
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                {bookingData.status === 'pending' && (
-                  <>
-                    <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <Clock className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-                      <p className="text-sm text-yellow-700 font-medium">Chờ trung tâm xác nhận</p>
-                      <p className="text-xs text-yellow-600 mt-1">Bạn sẽ nhận được thông báo khi được xác nhận</p>
-                    </div>
-                    <Button variant="outline" onClick={handleEdit} className="w-full">
-                      <Edit className="w-4 h-4 mr-2" />
-                      Chỉnh sửa lịch hẹn
-                    </Button>
-                    <Button variant="outline" onClick={handleCancel} className="w-full">
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Hủy lịch hẹn
-                    </Button>
-                  </>
-                )}
-
-                {bookingData.status === 'confirmed' && (
-                  <>
-                    <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <CheckCircle2 className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                      <p className="text-sm text-blue-700 font-medium">Đã xác nhận lịch hẹn</p>
-                      <p className="text-xs text-blue-600 mt-1">Trung tâm sẽ thực hiện dịch vụ theo lịch hẹn</p>
-                    </div>
-                    <Button variant="outline" onClick={handleEdit} className="w-full">
-                      <Edit className="w-4 h-4 mr-2" />
-                      Chỉnh sửa lịch hẹn
-                    </Button>
-                  </>
-                )}
-
-                {bookingData.status === 'in_progress' && (
-                  <div className="text-center p-4 bg-primary/10 border border-primary/20 rounded-lg">
-                    <Wrench className="w-8 h-8 text-primary mx-auto mb-2" />
-                    <p className="text-sm text-primary font-medium">Đang thực hiện dịch vụ</p>
-                    <p className="text-xs text-primary/80 mt-1">Kỹ thuật viên đang bảo dưỡng xe của bạn</p>
-                  </div>
-                )}
-
-                {bookingData.status === 'completed' && (
-                  <>
-                    <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                      <p className="text-sm text-green-700 font-medium">Dịch vụ đã hoàn thành</p>
-                      <p className="text-xs text-green-600 mt-1">Xe sẵn sàng để nhận, vui lòng thanh toán</p>
-                    </div>
-                    <Button onClick={handlePayment} className="w-full">
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Thanh toán ngay
-                    </Button>
-                  </>
-                )}
-
-                {bookingData.status === 'cancelled' && (
-                  <div className="text-center p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                    <p className="text-sm text-red-700 font-medium">Lịch hẹn đã bị hủy</p>
-                    <p className="text-xs text-red-600 mt-1">Vui lòng đặt lịch mới nếu cần</p>
-                  </div>
-                )}
-
-                <Button variant="outline" onClick={handleContact} className="w-full">
-                  <Phone className="w-4 h-4 mr-2" />
-                  Liên hệ trung tâm
-                </Button>
-
-                <Button variant="outline" onClick={() => navigate('/customer/bookings')} className="w-full">
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Xem lịch sử
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="text-center space-y-2">
+        <div className="flex items-center justify-center mb-4">
+          <StatusIcon className={`w-12 h-12 mr-3 ${statusInfo.color === 'destructive' ? 'text-red-500' :
+            statusInfo.color === 'secondary' ? 'text-yellow-500' :
+              'text-green-500'
+            }`} />
+          <h1 className="text-3xl font-bold">Trạng thái Booking</h1>
+        </div>
+        <div className="flex items-center justify-center gap-3">
+          <Badge variant={statusInfo.color} className="text-lg px-4 py-2">
+            {statusInfo.label}
+          </Badge>
+        </div>
+        <p className="text-muted-foreground text-lg">
+          {statusInfo.description}
+        </p>
       </div>
 
-      {/* Timeline */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lịch sử xử lý</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Bước 1: Đặt lịch */}
-            <div className="flex items-center gap-3 p-3 border rounded-lg">
-              <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
-                <CheckCircle2 className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <div className="flex-1">
-                <h4 className="font-medium">Đặt lịch thành công</h4>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(bookingData.createdAt).toLocaleString('vi-VN')}
-                </p>
-              </div>
+      {/* Booking Information Table */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Thông tin lịch hẹn</h2>
+        <DataTable columns={bookingInfoColumns} data={bookingInfoData} />
+      </div>
+
+      {/* Services Table */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Dịch vụ đã chọn</h2>
+        <DataTable
+          columns={servicesColumns}
+          data={(booking.catalogDetails || []).map(s => ({
+            id: s.id,
+            serviceName: s.serviceName,
+            description: s.description
+          }))}
+        />
+      </div>
+
+      {/* Invoice Information */}
+      {booking.invoice && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Thông tin hóa đơn</h2>
+          <DataTable
+            columns={bookingInfoColumns}
+            data={[
+              { label: 'Số hóa đơn', value: <span className="font-mono font-medium">{booking.invoice.invoiceNumber}</span> },
+              {
+                label: 'Trạng thái',
+                value: (
+                  <Badge
+                    variant={booking.invoice.status === 'PAID' ? 'default' : 'secondary'}
+                    className={booking.invoice.status === 'PAID' ? 'bg-green-600 hover:bg-green-700' : ''}
+                  >
+                    {booking.invoice.status === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                  </Badge>
+                ),
+              },
+              { label: 'Ngày tạo', value: new Date(booking.invoice.issueDate).toLocaleString('vi-VN') },
+              { label: 'Hạn thanh toán', value: new Date(booking.invoice.dueDate).toLocaleDateString('vi-VN') },
+              {
+                label: 'Thời gian thanh toán',
+                value: booking.invoice.paidAt ? new Date(booking.invoice.paidAt).toLocaleString('vi-VN') : '—',
+              },
+              {
+                label: 'Tổng tiền',
+                value: <span className="font-semibold text-green-600">{formatPrice(booking.invoice.totalAmount)}</span>,
+              },
+            ]}
+          />
+        </div>
+      )}
+
+      {/* Invoice Lines */}
+      {booking.invoice && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Chi tiết hóa đơn</h2>
+          <DataTable
+            columns={invoiceLinesColumns}
+            data={booking.invoice.invoiceLines}
+          />
+        </div>
+      )}
+
+      {/* Payment History */}
+      {paymentHistory.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Lịch sử thanh toán</h2>
+          {isLoadingPaymentHistory ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Đang tải lịch sử thanh toán...
             </div>
+          ) : (
+            <DataTable
+              columns={paymentHistoryColumns}
+              data={paymentHistory}
+            />
+          )}
+        </div>
+      )}
 
-            {/* Bước 2: Xác nhận */}
-            {bookingData.status !== 'pending' && (
-              <div className="flex items-center gap-3 p-3 border rounded-lg">
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-primary-foreground" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium">Trung tâm đã xác nhận</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Lịch hẹn đã được trung tâm xác nhận và sẵn sàng thực hiện
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Bước 3: Thực hiện */}
-            {bookingData.status === 'in_progress' && (
-              <div className="flex items-center gap-3 p-3 border rounded-lg">
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <Wrench className="w-4 h-4 text-primary-foreground" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium">Đang thực hiện dịch vụ</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Kỹ thuật viên đang bảo dưỡng xe của bạn
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Bước 4: Hoàn thành */}
-            {bookingData.status === 'completed' && (
-              <div className="flex items-center gap-3 p-3 border rounded-lg">
-                <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-primary-foreground" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium">Dịch vụ hoàn thành</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Trung tâm đã hoàn thành dịch vụ, xe sẵn sàng để nhận
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Bước 5: Thanh toán */}
-            {bookingData.status === 'completed' && (
-              <div className="flex items-center gap-3 p-3 border rounded-lg bg-accent/10">
-                <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
-                  <CreditCard className="w-4 h-4 text-primary-foreground" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-accent">Chờ thanh toán</h4>
-                  <p className="text-sm text-accent/80">
-                    Vui lòng thanh toán để hoàn tất quy trình
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Hủy bỏ */}
-            {bookingData.status === 'cancelled' && (
-              <div className="flex items-center gap-3 p-3 border rounded-lg bg-destructive/10">
-                <div className="w-8 h-8 bg-destructive rounded-full flex items-center justify-center">
-                  <AlertCircle className="w-4 h-4 text-destructive-foreground" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-destructive">Lịch hẹn đã bị hủy</h4>
-                  <p className="text-sm text-destructive/80">
-                    Lịch hẹn đã bị hủy, vui lòng đặt lịch mới nếu cần
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Actions */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        {booking.bookingStatus === 'CONFIRMED' && booking.invoice && (
+          <Button
+            onClick={handlePayment}
+            disabled={isProcessingPayment}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <CreditCard className="w-4 h-4 mr-2" />
+            {isProcessingPayment ? 'Đang xử lý...' : 'Thanh toán'}
+          </Button>
+        )}
+        {['MAINTENANCE_COMPLETE', 'COMPLETED'].includes(booking.bookingStatus) && booking.invoice && booking.invoice.status !== 'PAID' && (
+          <Button
+            onClick={handlePayment}
+            disabled={isProcessingPayment}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <CreditCard className="w-4 h-4 mr-2" />
+            {isProcessingPayment ? 'Đang xử lý...' : 'Thanh toán ngay'}
+          </Button>
+        )}
+        {!['CANCELLED', 'REJECTED', 'COMPLETED', 'MAINTENANCE_COMPLETE'].includes(booking.bookingStatus) && (
+          <>
+            <Button variant="outline" onClick={handleEditBooking}>
+              <Edit className="w-4 h-4 mr-2" />
+              Chỉnh sửa lịch hẹn
+            </Button>
+            <Button variant="destructive" onClick={handleCancelBooking}>
+              <Trash2 className="w-4 h-4 mr-2" />
+              Hủy lịch hẹn
+            </Button>
+          </>
+        )}
+        <Button variant="outline" onClick={() => navigate('/customer/bookings')}>
+          <History className="w-4 h-4 mr-2" />
+          Xem lịch sử
+        </Button>
+        <Button variant="outline" onClick={() => navigate('/customer')}>
+          Về trang chủ
+        </Button>
+      </div>
     </div>
   );
 }

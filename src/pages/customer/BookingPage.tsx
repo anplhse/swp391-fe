@@ -58,5 +58,9 @@ export default function BookingPage() {
     loadServices();
   }, []);
 
-  return <BookingForm services={services} />;
+  return (
+    <div className="space-y-8">
+      <BookingForm services={services} />
+    </div>
+  );
 }
