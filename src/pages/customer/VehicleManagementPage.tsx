@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
 import { authService } from '@/lib/auth';
-import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
+import { showApiErrorToast, showAuthErrorToast } from '@/lib/responseHandler';
 import {
   Plus
 } from 'lucide-react';
@@ -101,18 +101,24 @@ export default function VehicleManagementPage() {
       } catch (e) {
         console.error('Failed to load vehicle models', e);
         const msg = e instanceof Error ? e.message : String(e);
-        if (mounted) setModelsError(msg.includes('status: 401') || msg.includes('status: 403')
-          ? 'Phiên đăng nhập hết hạn hoặc không có quyền. Vui lòng đăng nhập lại.'
-          : 'Không tải được danh sách model');
         if (msg.includes('status: 401') || msg.includes('status: 403')) {
+          if (mounted) {
+            setModelsError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+          }
+          showAuthErrorToast(e, toast);
           navigate('/login');
+        } else {
+          if (mounted) {
+            setModelsError('Không tải được danh sách model');
+          }
+          showApiErrorToast(e, toast, 'Không tải được danh sách model');
         }
       } finally {
         if (mounted) setModelsLoading(false);
       }
     })();
     return () => { mounted = false; };
-  }, [navigate]);
+  }, [navigate, toast]);
 
   useEffect(() => {
     const loadUserVehicles = async () => {
@@ -162,8 +168,10 @@ export default function VehicleManagementPage() {
         console.error('Failed to load user vehicles', e);
         const msg = e instanceof Error ? e.message : String(e);
         if (msg.includes('status: 401') || msg.includes('status: 403')) {
-          showApiErrorToast(e, toast, 'Phiên đăng nhập hết hạn hoặc không có quyền. Vui lòng đăng nhập lại.');
+          showAuthErrorToast(e, toast);
           navigate('/login');
+        } else {
+          showApiErrorToast(e, toast, 'Không thể tải danh sách xe');
         }
       }
     };
@@ -363,21 +371,27 @@ export default function VehicleManagementPage() {
     }
   };
 
-  const handleDeleteVehicle = (vehicleId: string) => {
+  const handleDeleteVehicle = async (vehicleId: string) => {
     const vehicle = vehicles.find(v => v.id === vehicleId);
-    setVehicles(vehicles.filter(v => v.id !== vehicleId));
-    setVehicleDetails(prev => {
-      const updated = { ...prev };
-      delete updated[vehicleId];
-      return updated;
-    });
+    if (!vehicle) return;
 
-    // Không dùng sessionStore
+    try {
+      await apiClient.deleteVehicle(vehicle.vin);
+      setVehicles(vehicles.filter(v => v.id !== vehicleId));
+      setVehicleDetails(prev => {
+        const updated = { ...prev };
+        delete updated[vehicleId];
+        return updated;
+      });
 
-    toast({
-      title: "Xóa xe thành công!",
-      description: `Đã xóa ${vehicle?.name} khỏi danh sách`,
-    });
+      toast({
+        title: "Xóa xe thành công!",
+        description: `Đã xóa ${vehicle.name} khỏi danh sách`,
+      });
+    } catch (error) {
+      console.error('Failed to delete vehicle:', error);
+      showApiErrorToast(error, toast, 'Không thể xóa xe');
+    }
   };
 
   const handleViewVehicle = (vehicleId: string) => {

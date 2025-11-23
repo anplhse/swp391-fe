@@ -1,7 +1,7 @@
 import { MaintenanceProcessTable } from '@/components/MaintenanceProcessTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -13,12 +13,13 @@ import { useCallback, useEffect, useState } from 'react';
 interface MaintenanceTask {
   id: string;
   bookingId: number;
+  jobId?: number;
   vehiclePlate: string;
   vehicleModel: string;
   customerName: string;
   serviceType: string;
   technician: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
   progress: number;
   startTime?: string;
   estimatedEndTime?: string;
@@ -46,6 +47,7 @@ export default function MaintenanceProcessPage() {
   const [tasks, setTasks] = useState<MaintenanceTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<MaintenanceTask | null>(null);
   const [isStarting, setIsStarting] = useState<{ [key: string]: boolean }>({});
+  const [isCompleting, setIsCompleting] = useState<{ [key: string]: boolean }>({});
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [taskToAssign, setTaskToAssign] = useState<MaintenanceTask | null>(null);
   const [availableTechnicians, setAvailableTechnicians] = useState<AvailableTechnician[]>([]);
@@ -56,38 +58,101 @@ export default function MaintenanceProcessPage() {
 
   const loadTasks = useCallback(async () => {
     try {
-      const bookings = await bookingApi.getAllBookings();
-      
-      // Filter bookings that are PAID (ready to start) or IN_PROGRESS
+      // Load both bookings and jobs
+      const [bookings, jobs] = await Promise.all([
+        bookingApi.getAllBookings(),
+        bookingApi.getJobs()
+      ]);
+
+      // Create a map of bookingId -> job for quick lookup
+      const jobsMap = new Map(jobs.map(job => [job.bookingId, job]));
+
+      // Create a set of bookingIds that have jobs (for filtering)
+      const bookingIdsWithJobs = new Set(jobs.map(job => job.bookingId));
+
+      // Filter bookings:
+      // 1. PAID/ASSIGNED bookings (to assign work) - chưa có job hoặc job PENDING
+      // 2. Bookings with jobs that are PENDING, IN_PROGRESS, or COMPLETED (to start/complete)
       const maintenanceTasks = bookings
-        .filter(b => ['PAID', 'IN_PROGRESS'].includes(b.bookingStatus))
+        .filter(b => {
+          const job = jobsMap.get(b.id);
+          // Include if:
+          // - Booking is PAID or ASSIGNED (for assigning work)
+          // - Booking has a job with status PENDING, IN_PROGRESS, or COMPLETED (for start/complete)
+          if (['PAID', 'ASSIGNED'].includes(b.bookingStatus)) {
+            return true; // Always show PAID/ASSIGNED bookings
+          }
+          if (job && ['PENDING', 'IN_PROGRESS', 'COMPLETED'].includes(job.status)) {
+            return true; // Show bookings with active jobs
+          }
+          return false;
+        })
         .map(b => {
           const dt = b.scheduleDateTime?.value || '';
-          const toStatus = (s: string): MaintenanceTask['status'] => {
+          const job = jobsMap.get(b.id);
+
+          // Use job status if available, otherwise use booking status
+          // Map booking status to frontend status
+          const toBookingStatus = (s: string): MaintenanceTask['status'] => {
             const normalized = (s || '').toUpperCase();
             if (normalized === 'IN_PROGRESS') return 'in_progress';
+            if (normalized === 'MAINTENANCE_COMPLETE') return 'completed';
+            if (normalized === 'ASSIGNED') return 'assigned';
+            if (normalized === 'PENDING') return 'pending';
             if (normalized === 'PAID') return 'pending';
             return 'pending';
           };
 
+          // Map job status to frontend status
+          const toJobStatus = (s: string): MaintenanceTask['status'] => {
+            const normalized = (s || '').toUpperCase();
+            if (normalized === 'IN_PROGRESS') return 'in_progress';
+            if (normalized === 'COMPLETED') return 'completed';
+            if (normalized === 'PENDING') return 'pending';
+            return 'pending';
+          };
+
+          // Determine status:
+          // - If booking is PAID: status = 'pending' (chưa phân công)
+          // - If booking is ASSIGNED and has job: use job status (PENDING -> 'pending', IN_PROGRESS -> 'in_progress', COMPLETED -> 'completed')
+          // - If booking is ASSIGNED and no job: status = 'assigned' (đã phân công nhưng chưa tạo job)
+          const bookingStatus = toBookingStatus(b.bookingStatus);
+          const jobStatus = job ? toJobStatus(job.status) : null;
+
+          // Priority: job status > assigned status > booking status
+          let status: MaintenanceTask['status'];
+          if (jobStatus) {
+            status = jobStatus; // Use job status if job exists
+          } else if (bookingStatus === 'assigned') {
+            status = 'assigned'; // Booking assigned but no job yet
+          } else {
+            status = bookingStatus; // Use booking status (PAID -> 'pending')
+          }
+
+          const progress = job?.status === 'COMPLETED' ? 100 :
+            job?.status === 'IN_PROGRESS' ? 50 : 0;
+
           return {
-            id: String(b.id),
+            id: job ? String(job.id) : String(b.id), // Use job ID if available, otherwise booking ID
             bookingId: b.id,
+            jobId: job?.id,
             vehiclePlate: b.vehicleVin,
             vehicleModel: b.vehicleModel,
             customerName: b.customerName,
             serviceType: (b.catalogDetails || []).map(c => c.serviceName).join(', ') || 'Bảo dưỡng',
-            technician: b.technicianName || b.assignedTechnicianName || 'Chưa phân công',
-            status: toStatus(b.bookingStatus),
-            progress: b.bookingStatus === 'IN_PROGRESS' ? 50 : 0,
-            startTime: b.bookingStatus === 'IN_PROGRESS' ? b.updatedAt : undefined,
+            technician: job?.technicianName || b.technicianName || b.assignedTechnicianName || 'Chưa phân công',
+            status: status,
+            progress: progress,
+            startTime: job?.startTime || (b.bookingStatus === 'IN_PROGRESS' ? b.updatedAt : undefined),
+            estimatedEndTime: job?.estEndTime || undefined,
+            actualEndTime: job?.actualEndTime || undefined,
             services: (b.catalogDetails || []).map(c => ({
               id: c.id,
               name: c.serviceName,
               description: c.description,
             })),
             scheduleDateTime: b.scheduleDateTime?.value,
-            notes: '',
+            notes: job?.notes || '',
           };
         });
 
@@ -117,32 +182,68 @@ export default function MaintenanceProcessPage() {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
+    // Need jobId to start job
+    if (!task.jobId) {
+      toast({
+        title: 'Lỗi',
+        description: 'Không tìm thấy job ID. Vui lòng gán kỹ thuật viên trước.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsStarting(prev => ({ ...prev, [taskId]: true }));
 
     try {
-      await bookingApi.startMaintenance(task.bookingId);
-      
+      await bookingApi.startJob(task.jobId);
+
       toast({
         title: 'Thành công',
-        description: `Đã bắt đầu bảo dưỡng cho booking #${task.bookingId}`,
+        description: `Đã bắt đầu bảo dưỡng cho job #${task.jobId}`,
       });
 
       // Reload tasks to get updated status
       await loadTasks();
     } catch (error) {
-      console.error('Failed to start maintenance:', error);
+      console.error('Failed to start job:', error);
       showApiErrorToast(error, toast, 'Không thể bắt đầu bảo dưỡng');
     } finally {
       setIsStarting(prev => ({ ...prev, [taskId]: false }));
     }
   };
 
-  const handleCompleteTask = (taskId: string) => {
-    // TODO: Implement complete maintenance API
-    toast({
-      title: 'Chức năng đang phát triển',
-      description: 'API hoàn thành bảo dưỡng đang được phát triển',
-    });
+  const handleCompleteTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // Need jobId to complete job
+    if (!task.jobId) {
+      toast({
+        title: 'Lỗi',
+        description: 'Không tìm thấy job ID. Vui lòng bắt đầu job trước.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsCompleting(prev => ({ ...prev, [taskId]: true }));
+
+    try {
+      await bookingApi.completeJob(task.jobId);
+
+      toast({
+        title: 'Thành công',
+        description: `Đã hoàn thành bảo dưỡng cho job #${task.jobId}`,
+      });
+
+      // Reload tasks to get updated status
+      await loadTasks();
+    } catch (error) {
+      console.error('Failed to complete job:', error);
+      showApiErrorToast(error, toast, 'Không thể hoàn thành bảo dưỡng');
+    } finally {
+      setIsCompleting(prev => ({ ...prev, [taskId]: false }));
+    }
   };
 
   const handleViewDetails = (task: MaintenanceTask) => {
@@ -176,13 +277,13 @@ export default function MaintenanceProcessPage() {
     setIsAssigning(true);
     try {
       const result = await bookingApi.assignTechnician(taskToAssign.bookingId, selectedTechnicianId);
-      
+
       showApiResponseToast(result, toast, 'Gán kỹ thuật viên thành công');
-      
+
       setIsAssignDialogOpen(false);
       setTaskToAssign(null);
       setSelectedTechnicianId(null);
-      
+
       // Reload tasks
       await loadTasks();
     } catch (error) {
@@ -210,6 +311,9 @@ export default function MaintenanceProcessPage() {
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl font-bold">{selectedTask.serviceType}</DialogTitle>
+              <DialogDescription>
+                Chi tiết quy trình bảo dưỡng cho booking #{selectedTask.bookingId}
+              </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-6">
@@ -265,6 +369,9 @@ export default function MaintenanceProcessPage() {
               <UserPlus className="w-5 h-5" />
               Gán kỹ thuật viên cho Booking #{taskToAssign?.bookingId}
             </DialogTitle>
+            <DialogDescription>
+              Chọn kỹ thuật viên để gán công việc bảo dưỡng
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">

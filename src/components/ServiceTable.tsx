@@ -1,11 +1,17 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TablePagination } from '@/components/ui/table-pagination';
+import { useDebounce } from '@/hooks/useDebounce';
 import { cn } from '@/lib/utils';
-import { Clock, Edit, Plus, Trash2, Wrench } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Clock, Edit, Plus, Search, Trash2, Wrench, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface Service {
   id: string;
@@ -68,25 +74,37 @@ export function ServiceTable({
   itemsPerPage = 10,
   selectedModel
 }: ServiceTableProps) {
-  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
-  const [localStatusFilter, setLocalStatusFilter] = useState(statusFilter);
+  const filterSchema = z.object({
+    search: z.string().optional(),
+    status: z.string().optional(),
+  });
+  type FilterForm = z.infer<typeof filterSchema>;
+
+  const filterForm = useForm<FilterForm>({
+    resolver: zodResolver(filterSchema),
+    defaultValues: { search: searchQuery || '', status: statusFilter || 'all' }
+  });
+
+  const watchFilters = filterForm.watch();
+  const debouncedSearchQuery = useDebounce(watchFilters.search || '', 300);
 
   // Filter services based on search query, status, and selected model
   const filteredServices = useMemo(() => {
     let filtered = services;
 
     // Search filter
-    if (localSearchQuery.trim()) {
+    if (debouncedSearchQuery.trim()) {
       filtered = filtered.filter(service =>
-        service.name.toLowerCase().includes(localSearchQuery.toLowerCase()) ||
-        service.description.toLowerCase().includes(localSearchQuery.toLowerCase()) ||
-        service.category.toLowerCase().includes(localSearchQuery.toLowerCase())
+        service.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        service.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        service.category.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
       );
     }
 
     // Status filter
-    if (localStatusFilter !== 'all' && mode === 'management') {
-      filtered = filtered.filter(service => service.status === localStatusFilter);
+    const currentStatusFilter = watchFilters.status || statusFilter;
+    if (currentStatusFilter !== 'all' && mode === 'management') {
+      filtered = filtered.filter(service => service.status === currentStatusFilter);
     }
 
     // Model filter - only show services compatible with selected model
@@ -97,22 +115,37 @@ export function ServiceTable({
     }
 
     return filtered;
-  }, [services, localSearchQuery, localStatusFilter, selectedModel, mode]);
+  }, [services, debouncedSearchQuery, watchFilters.status, statusFilter, selectedModel, mode]);
+
+  // Internal pagination state if onPageChange is not provided
+  const [internalPage, setInternalPage] = useState(1);
+
+  // Calculate totalPages from filtered services
+  const calculatedTotalPages = Math.ceil(filteredServices.length / itemsPerPage);
+  const effectiveTotalPages = totalPages > 1 ? totalPages : calculatedTotalPages;
+  const effectiveCurrentPage = onPageChange ? Math.min(currentPage, effectiveTotalPages || 1) : internalPage;
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (!onPageChange) {
+      setInternalPage(1);
+    }
+  }, [debouncedSearchQuery, watchFilters.status, onPageChange]);
 
   // Paginate filtered services
   const paginatedServices = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
+    const startIndex = (effectiveCurrentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredServices.slice(startIndex, endIndex);
-  }, [filteredServices, currentPage, itemsPerPage]);
+  }, [filteredServices, effectiveCurrentPage, itemsPerPage]);
 
   const handleSearchChange = (value: string) => {
-    setLocalSearchQuery(value);
+    filterForm.setValue('search', value);
     onSearchChange?.(value);
   };
 
   const handleStatusFilterChange = (value: string) => {
-    setLocalStatusFilter(value);
+    filterForm.setValue('status', value);
     onStatusFilterChange?.(value);
   };
 
@@ -176,32 +209,77 @@ export function ServiceTable({
     selectedServices.includes(service.id)
   );
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
+  const startIndex = (effectiveCurrentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, filteredServices.length);
 
   return (
     <div className="space-y-4">
       {/* Search and Controls */}
       <div className="flex items-center justify-between">
+        <Form {...filterForm}>
+          <form className="flex items-center gap-4">
+            <FormField
+              name="search"
+              control={filterForm.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        placeholder="Tìm kiếm dịch vụ..."
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleSearchChange(e.target.value);
+                        }}
+                        className="pl-10 pr-10 w-64"
+                      />
+                      {field.value && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            field.onChange('');
+                            handleSearchChange('');
+                          }}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            {mode === 'management' && (
+              <FormField
+                name="status"
+                control={filterForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <Select onValueChange={(value) => {
+                      field.onChange(value);
+                      handleStatusFilterChange(value);
+                    }} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="w-32">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="all">Tất cả</SelectItem>
+                        <SelectItem value="active">Hoạt động</SelectItem>
+                        <SelectItem value="inactive">Tạm dừng</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            )}
+          </form>
+        </Form>
         <div className="flex items-center gap-4">
-          <Input
-            value={localSearchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Tìm kiếm dịch vụ..."
-            className="w-64"
-          />
-          {mode === 'management' && (
-            <Select value={localStatusFilter} onValueChange={handleStatusFilterChange}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="active">Hoạt động</SelectItem>
-                <SelectItem value="inactive">Tạm dừng</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
           {showSelection && (
             <div className="flex items-center gap-2">
               <Button
@@ -224,50 +302,22 @@ export function ServiceTable({
               </Button>
             </div>
           )}
-        </div>
-
-        <div className="flex items-center gap-4">
-          {showSelection && selectedServices.length > 0 && (
-            <Badge variant="secondary" className="text-sm">
-              Đã chọn {selectedServices.length} dịch vụ
-            </Badge>
-          )}
-          <span className="text-sm text-muted-foreground">
-            Hiển thị {startIndex + 1}-{endIndex} trong {filteredServices.length} dịch vụ
-          </span>
           {showActions && onAdd && (
             <Button onClick={onAdd}>
               <Plus className="w-4 h-4 mr-2" />
               Thêm dịch vụ
             </Button>
           )}
-          {totalPages > 1 && onPageChange && (
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                Trước
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Trang {currentPage} / {totalPages}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Sau
-              </Button>
-            </div>
-          )}
         </div>
       </div>
+
+      {showSelection && selectedServices.length > 0 && (
+        <div className="flex items-center gap-4">
+          <Badge variant="secondary" className="text-sm">
+            Đã chọn {selectedServices.length} dịch vụ
+          </Badge>
+        </div>
+      )}
 
       {/* Services Table */}
       <div className="border rounded-lg">
@@ -486,6 +536,19 @@ export function ServiceTable({
           <p>Không tìm thấy dịch vụ phù hợp</p>
         </div>
       )}
+
+      {/* Pagination */}
+      <TablePagination
+        currentPage={effectiveCurrentPage}
+        totalPages={effectiveTotalPages}
+        onPageChange={(page) => {
+          if (onPageChange) {
+            onPageChange(page);
+          } else {
+            setInternalPage(page);
+          }
+        }}
+      />
     </div>
   );
 }

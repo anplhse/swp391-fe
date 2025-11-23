@@ -1,14 +1,22 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, Battery, Car, CheckCircle, Clock, Wrench, Zap } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api';
+import { authService } from '@/lib/auth';
+import { bookingApi } from '@/lib/bookingUtils';
+import { showApiErrorToast } from '@/lib/responseHandler';
+import { Car } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface VehicleStatus {
   id: string;
+  jobId: number;
+  bookingId: number;
   plate: string;
   brand: string;
   model: string;
@@ -20,47 +28,124 @@ interface VehicleStatus {
   estimatedEndTime: string;
   actualEndTime?: string;
   progress: number;
-  battery: {
-    level: number;
-    health: number;
-    temperature: number;
-    voltage: number;
-    charging: boolean;
-  };
-  motor: {
-    status: 'good' | 'warning' | 'error';
-    temperature: number;
-    rpm: number;
-    power: number;
-  };
-  electrical: {
-    status: 'good' | 'warning' | 'error';
-    voltage: number;
-    current: number;
-    insulation: number;
-  };
-  diagnostics: {
-    errorCodes: string[];
-    warnings: string[];
-    recommendations: string[];
-  };
-  maintenance: {
-    lastService: string;
-    nextService: string;
-    mileage: number;
-    serviceHistory: string[];
-  };
+  vehicleVin?: string;
+}
+
+interface VehicleDetail {
+  vin: string;
+  name: string;
+  plateNumber: string;
+  color: string;
+  distanceTraveledKm: number;
+  batteryDegradation: number;
+  purchasedAt: string;
+  modelName: string;
+  username: string;
 }
 
 export default function VehicleStatusPage() {
   const [vehicles, setVehicles] = useState<VehicleStatus[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleStatus | null>(null);
+  const [vehicleDetail, setVehicleDetail] = useState<VehicleDetail | null>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const { toast } = useToast();
+
+  const loadVehicles = useCallback(async () => {
+    try {
+      const currentUser = authService.getAuthState().user;
+      if (!currentUser || !currentUser.id) {
+        console.error('User not found or missing ID');
+        return;
+      }
+
+      // Get technician-specific tasks
+      const jobs = await bookingApi.getTechnicianTasks(currentUser.id);
+
+      // Load booking details for each job to get vehicle and customer info
+      const vehiclesWithDetails = await Promise.all(
+        jobs.map(async (job) => {
+          try {
+            const booking = await bookingApi.getBookingById(job.bookingId);
+
+            const toStatus = (s: string): VehicleStatus['currentStatus'] => {
+              const normalized = (s || '').toUpperCase();
+              if (normalized === 'IN_PROGRESS') return 'in_service';
+              if (normalized === 'COMPLETED') return 'completed';
+              if (normalized === 'PENDING') return 'waiting';
+              return 'waiting';
+            };
+
+            const progress = job.status === 'COMPLETED' ? 100 :
+              job.status === 'IN_PROGRESS' ? 50 : 0;
+
+            // Extract vehicle info from booking
+            const vehicleVin = booking.vehicleVin || '';
+            const vehicleModel = booking.vehicleModel || '';
+            const vehicleParts = vehicleVin.split(' - ') || [];
+            const plate = vehicleParts[0] || vehicleVin || `Booking #${job.bookingId}`;
+            const brandModel = vehicleParts[1] || vehicleModel || '';
+            const [brand = '', model = ''] = brandModel.split(' ');
+
+            return {
+              id: String(job.id),
+              jobId: job.id,
+              bookingId: job.bookingId,
+              plate: plate,
+              brand: brand || 'N/A',
+              model: model || 'N/A',
+              year: new Date().getFullYear(), // Default year if not available
+              customerName: booking.customerName || 'N/A',
+              currentStatus: toStatus(job.status),
+              serviceType: (booking.catalogDetails || []).map(c => c.serviceName).join(', ') || 'Bảo dưỡng',
+              startTime: job.startTime || new Date().toISOString(),
+              estimatedEndTime: job.estEndTime || new Date().toISOString(),
+              actualEndTime: job.actualEndTime || undefined,
+              progress: progress,
+              vehicleVin: vehicleVin,
+            };
+          } catch (error) {
+            console.error(`Failed to load booking ${job.bookingId}:`, error);
+            // Return vehicle with minimal info if booking load fails
+            const toStatus = (s: string): VehicleStatus['currentStatus'] => {
+              const normalized = (s || '').toUpperCase();
+              if (normalized === 'IN_PROGRESS') return 'in_service';
+              if (normalized === 'COMPLETED') return 'completed';
+              if (normalized === 'PENDING') return 'waiting';
+              return 'waiting';
+            };
+            return {
+              id: String(job.id),
+              jobId: job.id,
+              bookingId: job.bookingId,
+              plate: `Booking #${job.bookingId}`,
+              brand: 'N/A',
+              model: 'N/A',
+              year: new Date().getFullYear(),
+              customerName: 'N/A',
+              currentStatus: toStatus(job.status),
+              serviceType: 'Bảo dưỡng',
+              startTime: job.startTime || new Date().toISOString(),
+              estimatedEndTime: job.estEndTime || new Date().toISOString(),
+              actualEndTime: job.actualEndTime || undefined,
+              progress: job.status === 'COMPLETED' ? 100 : job.status === 'IN_PROGRESS' ? 50 : 0,
+              vehicleVin: '',
+            };
+          }
+        })
+      );
+
+      setVehicles(vehiclesWithDetails);
+    } catch (error) {
+      console.error('Failed to load vehicles:', error);
+      showApiErrorToast(error, toast, 'Không thể tải danh sách xe');
+    }
+  }, [toast]);
 
   useEffect(() => {
-    // Vehicles should be loaded from API
-    // TODO: Load vehicles from API
-    setVehicles([]);
-  }, []);
+    loadVehicles();
+  }, [loadVehicles]);
 
   const filteredVehicles = vehicles.filter(vehicle =>
     statusFilter === 'all' || vehicle.currentStatus === statusFilter
@@ -81,22 +166,40 @@ export default function VehicleStatusPage() {
     }
   };
 
-  const getBatteryStatus = (battery: VehicleStatus['battery']) => {
-    if (battery.health < 70) return 'error';
-    if (battery.health < 85) return 'warning';
-    return 'good';
-  };
+  const handleViewDetail = async (vehicle: VehicleStatus) => {
+    setSelectedVehicle(vehicle);
+    setIsDetailDialogOpen(true);
+    setIsLoadingDetail(true);
+    setVehicleDetail(null);
 
-  const getBatteryStatusIcon = (status: string) => {
-    switch (status) {
-      case 'good':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'warning':
-        return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
-      case 'error':
-        return <AlertTriangle className="w-4 h-4 text-red-600" />;
-      default:
-        return <Clock className="w-4 h-4 text-muted-foreground" />;
+    if (!vehicle.vehicleVin) {
+      setIsLoadingDetail(false);
+      toast({
+        title: 'Lỗi',
+        description: 'Không tìm thấy VIN của xe',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const detail = await apiClient.getVehicleByVin(vehicle.vehicleVin);
+      setVehicleDetail({
+        vin: detail.vin,
+        name: detail.name,
+        plateNumber: detail.plateNumber,
+        color: detail.color,
+        distanceTraveledKm: detail.distanceTraveledKm,
+        batteryDegradation: detail.batteryDegradation,
+        purchasedAt: detail.purchasedAt,
+        modelName: detail.modelName,
+        username: detail.username,
+      });
+    } catch (error) {
+      console.error('Failed to load vehicle detail:', error);
+      showApiErrorToast(error, toast, 'Không thể tải thông tin chi tiết xe');
+    } finally {
+      setIsLoadingDetail(false);
     }
   };
 
@@ -160,128 +263,23 @@ export default function VehicleStatusPage() {
                     <Progress value={vehicle.progress} className="w-full" />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center gap-2">
-                          <Battery className="w-4 h-4" />
-                          <CardTitle className="text-sm">Pin</CardTitle>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Mức pin:</span>
-                          <span>{vehicle.battery.level}%</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Sức khỏe:</span>
-                          <span>{vehicle.battery.health}%</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Nhiệt độ:</span>
-                          <span>{vehicle.battery.temperature}°C</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Điện áp:</span>
-                          <span>{vehicle.battery.voltage}V</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center gap-2">
-                          <Wrench className="w-4 h-4" />
-                          <CardTitle className="text-sm">Động cơ</CardTitle>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Trạng thái:</span>
-                          <Badge variant={vehicle.motor.status === 'good' ? 'default' : vehicle.motor.status === 'warning' ? 'destructive' : 'outline'}>
-                            {vehicle.motor.status === 'good' ? 'Tốt' : vehicle.motor.status === 'warning' ? 'Cảnh báo' : 'Lỗi'}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Nhiệt độ:</span>
-                          <span>{vehicle.motor.temperature}°C</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span>RPM:</span>
-                          <span>{vehicle.motor.rpm}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Công suất:</span>
-                          <span>{vehicle.motor.power}kW</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center gap-2">
-                          <Zap className="w-4 h-4" />
-                          <CardTitle className="text-sm">Hệ thống điện</CardTitle>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Trạng thái:</span>
-                          <Badge variant={vehicle.electrical.status === 'good' ? 'default' : vehicle.electrical.status === 'warning' ? 'destructive' : 'outline'}>
-                            {vehicle.electrical.status === 'good' ? 'Tốt' : vehicle.electrical.status === 'warning' ? 'Cảnh báo' : 'Lỗi'}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Điện áp:</span>
-                          <span>{vehicle.electrical.voltage}V</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Dòng điện:</span>
-                          <span>{vehicle.electrical.current}A</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Cách điện:</span>
-                          <span>{vehicle.electrical.insulation}%</span>
-                        </div>
-                      </CardContent>
-                    </Card>
+                  <div className="text-sm space-y-2">
+                    <div>
+                      <span className="font-medium">Dịch vụ:</span> {vehicle.serviceType}
+                    </div>
+                    <div>
+                      <span className="font-medium">Bắt đầu:</span> {new Date(vehicle.startTime).toLocaleString('vi-VN')}
+                    </div>
+                    <div>
+                      <span className="font-medium">Dự kiến hoàn thành:</span> {new Date(vehicle.estimatedEndTime).toLocaleString('vi-VN')}
+                    </div>
                   </div>
-
-                  {vehicle.diagnostics.errorCodes.length > 0 && (
-                    <Card className="border-destructive">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-destructive">Mã lỗi</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-wrap gap-1">
-                          {vehicle.diagnostics.errorCodes.map((code, idx) => (
-                            <Badge key={idx} variant="destructive" className="text-xs">{code}</Badge>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {vehicle.diagnostics.warnings.length > 0 && (
-                    <Card className="border-yellow-500">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-yellow-600">Cảnh báo</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="list-disc list-inside text-sm text-yellow-600">
-                          {vehicle.diagnostics.warnings.map((warning, idx) => (
-                            <li key={idx}>{warning}</li>
-                          ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
-                  )}
 
                   <div className="flex gap-2 pt-2">
                     <Button size="sm">
                       Cập nhật trạng thái
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => handleViewDetail(vehicle)}>
                       Chi tiết
                     </Button>
                   </div>
@@ -318,7 +316,7 @@ export default function VehicleStatusPage() {
                     <Button size="sm">
                       Bắt đầu sửa chữa
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => handleViewDetail(vehicle)}>
                       Chi tiết
                     </Button>
                   </div>
@@ -352,10 +350,10 @@ export default function VehicleStatusPage() {
                     <span className="font-medium">Hoàn thành lúc:</span> {vehicle.actualEndTime ? new Date(vehicle.actualEndTime).toLocaleString('vi-VN') : 'N/A'}
                   </div>
                   <div className="text-sm">
-                    <span className="font-medium">Dịch vụ tiếp theo:</span> {new Date(vehicle.maintenance.nextService).toLocaleDateString('vi-VN')}
+                    <span className="font-medium">Dịch vụ:</span> {vehicle.serviceType}
                   </div>
                   <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => handleViewDetail(vehicle)}>
                       Chi tiết
                     </Button>
                   </div>
@@ -365,6 +363,98 @@ export default function VehicleStatusPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Vehicle Detail Dialog */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Chi tiết xe</DialogTitle>
+            <DialogDescription>
+              Thông tin chi tiết về xe và khách hàng
+            </DialogDescription>
+          </DialogHeader>
+          {isLoadingDetail ? (
+            <div className="py-8 text-center text-muted-foreground">
+              Đang tải thông tin...
+            </div>
+          ) : vehicleDetail && selectedVehicle ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Biển số xe</label>
+                  <p className="text-sm font-semibold">{vehicleDetail.plateNumber}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">VIN</label>
+                  <p className="text-sm font-semibold">{vehicleDetail.vin}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Tên xe</label>
+                  <p className="text-sm font-semibold">{vehicleDetail.name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Mẫu xe</label>
+                  <p className="text-sm font-semibold">{vehicleDetail.modelName}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Màu sắc</label>
+                  <p className="text-sm font-semibold">{vehicleDetail.color}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Số km đã đi</label>
+                  <p className="text-sm font-semibold">{vehicleDetail.distanceTraveledKm?.toLocaleString('vi-VN') || 'N/A'} km</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Độ suy giảm pin</label>
+                  <p className="text-sm font-semibold">{vehicleDetail.batteryDegradation !== null ? `${vehicleDetail.batteryDegradation}%` : 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Ngày mua</label>
+                  <p className="text-sm font-semibold">{new Date(vehicleDetail.purchasedAt).toLocaleDateString('vi-VN')}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Khách hàng</label>
+                  <p className="text-sm font-semibold">{selectedVehicle.customerName}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Tên tài khoản</label>
+                  <p className="text-sm font-semibold">{vehicleDetail.username}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Dịch vụ</label>
+                  <p className="text-sm font-semibold">{selectedVehicle.serviceType}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Trạng thái</label>
+                  <div className="mt-1">{getStatusBadge(selectedVehicle.currentStatus)}</div>
+                </div>
+                {selectedVehicle.startTime && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Bắt đầu</label>
+                    <p className="text-sm font-semibold">{new Date(selectedVehicle.startTime).toLocaleString('vi-VN')}</p>
+                  </div>
+                )}
+                {selectedVehicle.estimatedEndTime && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Dự kiến hoàn thành</label>
+                    <p className="text-sm font-semibold">{new Date(selectedVehicle.estimatedEndTime).toLocaleString('vi-VN')}</p>
+                  </div>
+                )}
+                {selectedVehicle.actualEndTime && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Hoàn thành lúc</label>
+                    <p className="text-sm font-semibold">{new Date(selectedVehicle.actualEndTime).toLocaleString('vi-VN')}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">
+              Không thể tải thông tin chi tiết
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

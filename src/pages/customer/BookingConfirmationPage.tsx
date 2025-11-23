@@ -2,6 +2,7 @@ import { DataTable } from '@/components/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { getBookingStatusBadge } from '@/lib/bookingStatusUtils';
 import { bookingApi } from '@/lib/bookingUtils';
 import { showApiErrorToast } from '@/lib/responseHandler';
 import { ColumnDef } from '@tanstack/react-table';
@@ -110,26 +111,6 @@ export default function BookingConfirmationPage() {
     load();
   }, [location.state, toast]);
 
-  const handleCancelBooking = () => {
-    toast({
-      title: 'Thông báo',
-      description: 'Tính năng hủy lịch sẽ được bổ sung sau.',
-    });
-  };
-
-  const handleEditBooking = () => {
-    if (!booking) return;
-
-    // Chuyển về trang đặt lịch với dữ liệu hiện tại
-    navigate('/customer/booking', {
-      state: {
-        preselectedVin: booking.vehicleVin,
-        preselectedVehicle: { vin: booking.vehicleVin, modelName: booking.vehicleModel },
-        editMode: true,
-        existingBooking: null
-      }
-    });
-  };
 
   const handlePayment = useCallback(async () => {
     if (!booking || !booking.invoice?.id) {
@@ -165,24 +146,7 @@ export default function BookingConfirmationPage() {
   }, []);
 
   const getStatusBadge = useCallback((status: string) => {
-    switch (status) {
-      case 'PENDING':
-        return <Badge variant="secondary">Chờ xác nhận</Badge>;
-      case 'CONFIRMED':
-        return <Badge variant="default">Đã xác nhận</Badge>;
-      case 'PAID':
-        return <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">Đã thanh toán</Badge>;
-      case 'IN_PROGRESS':
-        return <Badge variant="destructive">Đang thực hiện</Badge>;
-      case 'MAINTENANCE_COMPLETE':
-        return <Badge variant="default" className="bg-green-600 hover:bg-green-700">Hoàn thành</Badge>;
-      case 'CANCELLED':
-        return <Badge variant="destructive">Đã hủy</Badge>;
-      case 'REJECTED':
-        return <Badge variant="destructive">Từ chối</Badge>;
-      default:
-        return <Badge variant="outline">Không xác định</Badge>;
-    }
+    return getBookingStatusBadge(status);
   }, []);
 
   // Old column definitions removed; using unified definitions below
@@ -348,31 +312,7 @@ export default function BookingConfirmationPage() {
       {/* Invoice Lines */}
       {booking.invoice && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <h2 className="text-xl font-semibold">Hóa đơn chi tiết</h2>
-            <div className="text-sm space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Số hóa đơn:</span>
-                <span className="font-mono font-medium">{booking.invoice.invoiceNumber}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Trạng thái:</span>
-                <Badge variant={booking.invoice.status === 'PAID' ? 'default' : 'secondary'} className={booking.invoice.status === 'PAID' ? 'bg-green-600 hover:bg-green-700' : ''}>
-                  {booking.invoice.status === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}
-                </Badge>
-              </div>
-              {booking.invoice.paidAt && (
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Thanh toán lúc:</span>
-                  <span className="font-medium">{new Date(booking.invoice.paidAt).toLocaleString('vi-VN')}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Ngày tạo:</span>
-                <span>{new Date(booking.invoice.issueDate).toLocaleString('vi-VN')}</span>
-              </div>
-            </div>
-          </div>
+          <h2 className="text-xl font-semibold">Hóa đơn chi tiết</h2>
           <DataTable
             columns={invoiceLinesColumns}
             data={booking.invoice.invoiceLines}
@@ -400,16 +340,9 @@ export default function BookingConfirmationPage() {
             {isProcessingPayment ? 'Đang xử lý...' : 'Thanh toán'}
           </Button>
         )}
-        {booking.bookingStatus !== 'CANCELLED' && booking.bookingStatus !== 'REJECTED' && (
-          <>
-            <Button variant="outline" onClick={handleEditBooking}>
-              Chỉnh sửa lịch hẹn
-            </Button>
-            <Button variant="destructive" onClick={handleCancelBooking}>
-              Hủy lịch hẹn
-            </Button>
-          </>
-        )}
+        <Button variant="outline" onClick={() => navigate('/customer/booking-status', { state: { bookingId: booking.id } })}>
+          Xem chi tiết & Theo dõi trạng thái
+        </Button>
         <Button onClick={() => navigate('/customer')}>
           Về trang chủ
         </Button>

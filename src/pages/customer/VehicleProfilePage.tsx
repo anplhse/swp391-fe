@@ -8,11 +8,12 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { authService } from '@/lib/auth';
+import { bookingApi } from '@/lib/bookingUtils';
 import { showApiErrorToast } from '@/lib/responseHandler';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   AlertCircle,
-  Battery,
   Calendar,
   Car,
   CheckCircle2,
@@ -125,15 +126,20 @@ export default function VehicleProfilePage() {
     }
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!vehicleData) return;
-    // TODO: Gọi API xóa xe theo VIN nếu có endpoint
-    toast({
-      title: 'Đã xóa xe',
-      description: `Đã xóa ${vehicleData.name}.`,
-    });
-    setIsDeleteDialogOpen(false);
-    navigate('/customer/vehicles');
+    try {
+      await apiClient.deleteVehicle(vehicleData.vin);
+      toast({
+        title: 'Đã xóa xe',
+        description: `Đã xóa ${vehicleData.name}.`,
+      });
+      setIsDeleteDialogOpen(false);
+      navigate('/customer/vehicles');
+    } catch (error) {
+      console.error('Failed to delete vehicle:', error);
+      showApiErrorToast(error, toast, 'Không thể xóa xe');
+    }
   };
 
   // Load vehicle detail from API by VIN (vehicleId param)
@@ -218,18 +224,125 @@ export default function VehicleProfilePage() {
     return () => { mounted = false; };
   }, [vehicleId, location.state]);
 
-  // Service history should be loaded from API
-  // TODO: Load service history from API
   const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
+  const [upcomingMaintenance, setUpcomingMaintenance] = useState<ServiceRecord[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   useEffect(() => {
     // Load service history when vehicle data is available
-    if (vehicleData) {
-      // Service history should be loaded from API
-      // TODO: Load service history from API using vehicleData.id or vehicleData.vin
-      setServiceHistory([]);
+    if (vehicleData && vehicleData.vin) {
+      const loadServiceHistory = async () => {
+        try {
+          setIsLoadingHistory(true);
+          const currentUser = authService.getAuthState().user;
+          if (!currentUser) return;
+
+          // Get all customer bookings
+          const bookings = await bookingApi.getCustomerBookings(currentUser.id);
+
+          // Filter bookings for this vehicle
+          const vehicleBookings = bookings.filter(booking => booking.vehicleVin === vehicleData.vin);
+
+          // Load booking details to get invoice info
+          const bookingsWithDetails = await Promise.all(
+            vehicleBookings.map(async (booking) => {
+              try {
+                const detail = await bookingApi.getBookingById(booking.id);
+                return {
+                  ...booking,
+                  invoice: detail.invoice,
+                  catalogDetails: detail.catalogDetails || []
+                };
+              } catch (error) {
+                console.error(`Failed to load booking ${booking.id} details:`, error);
+                return {
+                  ...booking,
+                  invoice: undefined,
+                  catalogDetails: []
+                };
+              }
+            })
+          );
+
+          // Helper function to map booking to ServiceRecord
+          const mapToServiceRecord = (booking: {
+            id: number;
+            bookingStatus: string;
+            scheduleDateTime?: { value: string };
+            createdAt: string;
+            updatedAt: string;
+            technicianName?: string | null;
+            assignedTechnicianName?: string | null;
+            invoice?: { totalAmount: number };
+            catalogDetails?: Array<{ serviceName: string }>;
+          }) => {
+            const toStatus = (s: string): ServiceRecord['status'] => {
+              const normalized = (s || '').toUpperCase();
+              if (normalized === 'MAINTENANCE_COMPLETE') return 'completed';
+              if (normalized === 'IN_PROGRESS') return 'in_progress';
+              return 'pending';
+            };
+
+            const dt = booking.scheduleDateTime?.value || '';
+            const [date] = dt.split(' ');
+
+            // Get invoice total if available
+            let cost = '0 VND';
+            if (booking.invoice?.totalAmount) {
+              cost = `${booking.invoice.totalAmount.toLocaleString('vi-VN')} VND`;
+            }
+
+            return {
+              id: String(booking.id),
+              service: (booking.catalogDetails || []).map(c => c.serviceName).join(', ') || 'Bảo dưỡng',
+              date: date || booking.createdAt.split('T')[0],
+              center: 'VinFast Service Workshop',
+              technician: booking.technicianName || booking.assignedTechnicianName || 'Chưa phân công',
+              status: toStatus(booking.bookingStatus),
+              cost: cost,
+              details: {
+                checkIn: booking.createdAt ? new Date(booking.createdAt).toLocaleString('vi-VN') : null,
+                checkOut: booking.updatedAt && toStatus(booking.bookingStatus) === 'completed'
+                  ? new Date(booking.updatedAt).toLocaleString('vi-VN')
+                  : null,
+                services: (booking.catalogDetails || []).map(c => c.serviceName),
+                notes: '',
+              },
+            };
+          };
+
+          // Separate into completed (history) and paid/confirmed (upcoming)
+          const completed: ServiceRecord[] = bookingsWithDetails
+            .filter(booking => {
+              const status = (booking.bookingStatus || '').toUpperCase();
+              return status === 'MAINTENANCE_COMPLETE';
+            })
+            .map(mapToServiceRecord)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+          const upcoming: ServiceRecord[] = bookingsWithDetails
+            .filter(booking => {
+              const status = (booking.bookingStatus || '').toUpperCase();
+              return status === 'PAID' || status === 'CONFIRMED';
+            })
+            .map(mapToServiceRecord)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+          setServiceHistory(completed);
+          setUpcomingMaintenance(upcoming);
+        } catch (error) {
+          console.error('Failed to load service history:', error);
+          showApiErrorToast(error, toast, 'Không thể tải lịch sử bảo dưỡng');
+          setServiceHistory([]);
+          setUpcomingMaintenance([]);
+        } finally {
+          setIsLoadingHistory(false);
+        }
+      };
+
+      loadServiceHistory();
     }
-  }, [vehicleData]);
+  }, [vehicleData, toast]);
 
 
   const getServiceStatusBadge = (status: string) => {
@@ -338,10 +451,6 @@ export default function VehicleProfilePage() {
                 <span className="text-muted-foreground">Ngày mua:</span>
                 <p className="font-medium">{new Date(vehicle.purchaseDate).toLocaleDateString('vi-VN')}</p>
               </div>
-              <div>
-                <span className="text-muted-foreground">Bảo dưỡng tiếp theo:</span>
-                <p className="font-medium">{new Date(vehicle.nextService).toLocaleDateString('vi-VN')}</p>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -417,80 +526,90 @@ export default function VehicleProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {serviceHistory.map((service) => (
-                  <div key={service.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <h3 className="font-semibold">{service.service}</h3>
-                          {getServiceStatusBadge(service.status)}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(service.date).toLocaleDateString('vi-VN')}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-lg">{service.cost}</p>
-                        <p className="text-sm text-muted-foreground">{service.center}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-muted-foreground" />
-                        <span>{service.center}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Wrench className="w-4 h-4 text-muted-foreground" />
-                        <span>KTV: {service.technician}</span>
-                      </div>
-                    </div>
-
-                    {service.details.checkIn && (
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          <span>Nhận xe: {service.details.checkIn}</span>
-                        </div>
-                        {service.details.checkOut && (
-                          <div className="flex items-center gap-1">
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>Trả xe: {service.details.checkOut}</span>
+              {isLoadingHistory ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  Đang tải lịch sử bảo dưỡng...
+                </div>
+              ) : serviceHistory.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  Chưa có lịch sử bảo dưỡng
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {serviceHistory.map((service) => (
+                    <div key={service.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-3">
+                            <h3 className="font-semibold">{service.service}</h3>
+                            {getServiceStatusBadge(service.status)}
                           </div>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(service.date).toLocaleDateString('vi-VN')}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-lg">{service.cost}</p>
+                          <p className="text-sm text-muted-foreground">{service.center}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-muted-foreground" />
+                          <span>{service.center}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Wrench className="w-4 h-4 text-muted-foreground" />
+                          <span>KTV: {service.technician}</span>
+                        </div>
+                      </div>
+
+                      {service.details.checkIn && (
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            <span>Nhận xe: {service.details.checkIn}</span>
+                          </div>
+                          {service.details.checkOut && (
+                            <div className="flex items-center gap-1">
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>Trả xe: {service.details.checkOut}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Dịch vụ thực hiện:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {service.details.services.map((item, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {item}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      {service.details.notes && (
+                        <div className="space-y-1">
+                          <h4 className="font-medium text-sm">Ghi chú:</h4>
+                          <p className="text-sm text-muted-foreground">{service.details.notes}</p>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2">
+                        {service.status === 'completed' && (
+                          <Button variant="outline" size="sm">
+                            <Download className="w-4 h-4 mr-2" />
+                            Tải hóa đơn
+                          </Button>
                         )}
                       </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm">Dịch vụ thực hiện:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {service.details.services.map((item, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {item}
-                          </Badge>
-                        ))}
-                      </div>
                     </div>
-
-                    {service.details.notes && (
-                      <div className="space-y-1">
-                        <h4 className="font-medium text-sm">Ghi chú:</h4>
-                        <p className="text-sm text-muted-foreground">{service.details.notes}</p>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2">
-                      {service.status === 'completed' && (
-                        <Button variant="outline" size="sm">
-                          <Download className="w-4 h-4 mr-2" />
-                          Tải hóa đơn
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -500,72 +619,54 @@ export default function VehicleProfilePage() {
             <CardHeader>
               <CardTitle>Lịch bảo dưỡng</CardTitle>
               <CardDescription>
-                Lịch bảo dưỡng định kỳ và nhắc nhở
+                Các đơn đã được xác nhận và thanh toán, sắp được thực hiện
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold">Bảo dưỡng định kỳ tiếp theo</h3>
-                    <Badge variant="secondary">Sắp tới</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span>{new Date(vehicle.nextService).toLocaleDateString('vi-VN')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Wrench className="w-4 h-4 text-muted-foreground" />
-                      <span>Bảo dưỡng định kỳ 6 tháng</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Battery className="w-4 h-4 text-muted-foreground" />
-                      <span>Kiểm tra pin và hệ thống điện</span>
-                    </div>
-                  </div>
+              {isLoadingHistory ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  Đang tải thông tin...
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border rounded-lg p-4">
-                    <h4 className="font-semibold mb-2">Bảo dưỡng 3 tháng</h4>
-                    <p className="text-sm text-muted-foreground mb-2">Kiểm tra cơ bản</p>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-accent" />
-                        <span>Kiểm tra lốp</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-accent" />
-                        <span>Kiểm tra phanh</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-accent" />
-                        <span>Kiểm tra đèn</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border rounded-lg p-4">
-                    <h4 className="font-semibold mb-2">Bảo dưỡng 6 tháng</h4>
-                    <p className="text-sm text-muted-foreground mb-2">Bảo dưỡng toàn diện</p>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-accent" />
-                        <span>Kiểm tra pin</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-accent" />
-                        <span>Thay dầu phanh</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-accent" />
-                        <span>Cập nhật phần mềm</span>
-                      </div>
-                    </div>
-                  </div>
+              ) : upcomingMaintenance.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  Chưa có lịch bảo dưỡng sắp tới
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-4">
+                  {upcomingMaintenance.map((service) => (
+                    <div key={service.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold">{service.service}</h3>
+                        {getServiceStatusBadge(service.status)}
+                      </div>
+                      <div className="space-y-1 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          <span>Ngày hẹn: {new Date(service.date).toLocaleDateString('vi-VN')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Wrench className="w-4 h-4" />
+                          <span>KTV: {service.technician}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="w-4 h-4" />
+                          <span>Chi phí: {service.cost}</span>
+                        </div>
+                        <div className="space-y-1 mt-2">
+                          <h4 className="font-medium text-sm text-foreground">Dịch vụ:</h4>
+                          <div className="flex flex-wrap gap-1">
+                            {service.details.services.map((item, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {item}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

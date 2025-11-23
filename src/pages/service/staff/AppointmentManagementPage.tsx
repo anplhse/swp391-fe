@@ -7,9 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api';
+import { getBookingStatusBadge, mapBookingStatusToFrontend } from '@/lib/bookingStatusUtils';
 import { bookingApi } from '@/lib/bookingUtils';
 import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Star } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -33,7 +36,7 @@ interface Appointment {
   };
   date: string;
   time: string;
-  status: 'pending' | 'confirmed' | 'paid' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
+  status: 'pending' | 'confirmed' | 'assigned' | 'paid' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
   center: string;
   technician?: string;
   notes?: string;
@@ -89,6 +92,21 @@ export default function AppointmentManagementPage() {
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<BookingDetail | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [selectedFeedback, setSelectedFeedback] = useState<{
+    id: number;
+    rating: number;
+    comment: string;
+    tags: Array<{
+      id: number;
+      content: string;
+      ratingTarget: number;
+    }>;
+    bookingId: number;
+    customerId: number;
+    customerName: string;
+    createdAt: string;
+  } | null>(null);
+  const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
   const [partsCheckResult, setPartsCheckResult] = useState<Record<string, boolean>>({});
   const [isLoadingParts, setIsLoadingParts] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
@@ -124,17 +142,7 @@ export default function AppointmentManagementPage() {
           const dt = b.scheduleDateTime?.value || '';
           const [date, time] = dt.split(' ');
           const toStatus = (s: string): Appointment['status'] => {
-            const normalized = (s || '').toLowerCase();
-            switch (normalized) {
-              case 'pending': return 'pending';
-              case 'confirmed': return 'confirmed';
-              case 'in_progress': return 'in_progress';
-              case 'maintenance_complete': return 'completed';
-              case 'completed': return 'completed';
-              case 'cancelled': return 'cancelled';
-              case 'rejected': return 'rejected';
-              default: return 'pending';
-            }
+            return mapBookingStatusToFrontend(s);
           };
 
           return {
@@ -194,7 +202,17 @@ export default function AppointmentManagementPage() {
       });
     } catch (error) {
       console.error('Failed to check parts:', error);
-      showApiErrorToast(error, toast, 'Không thể kiểm tra phụ tùng');
+      // Check if error message indicates booking is already confirmed
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('đã được xác nhận') || errorMessage.includes('không cần kiểm tra')) {
+        toast({
+          title: 'Thông báo',
+          description: 'Đơn đã được xác nhận, không cần kiểm tra số lượng phụ tùng.',
+          variant: 'default',
+        });
+      } else {
+        showApiErrorToast(error, toast, 'Không thể kiểm tra phụ tùng');
+      }
     } finally {
       setIsLoadingParts(prev => ({ ...prev, [id]: false }));
     }
@@ -220,9 +238,9 @@ export default function AppointmentManagementPage() {
             case 'PENDING': return 'pending';
             case 'CONFIRMED': return 'confirmed';
             case 'PAID': return 'paid';
+            case 'ASSIGNED': return 'assigned';
             case 'IN_PROGRESS': return 'in_progress';
             case 'MAINTENANCE_COMPLETE': return 'completed';
-            case 'COMPLETED': return 'completed';
             case 'CANCELLED': return 'cancelled';
             case 'REJECTED': return 'rejected';
             default: return 'pending';
@@ -319,7 +337,9 @@ export default function AppointmentManagementPage() {
 
   const handleViewDetails = async (id: string) => {
     setIsLoadingDetail(true);
+    setIsLoadingFeedback(true);
     setIsDetailDialogOpen(true);
+    setSelectedFeedback(null);
     try {
       const bookingId = parseInt(id);
       if (isNaN(bookingId)) {
@@ -327,12 +347,22 @@ export default function AppointmentManagementPage() {
       }
       const detail = await bookingApi.getBookingById(bookingId);
       setSelectedBooking(detail);
+
+      // Load feedback for this booking
+      try {
+        const feedback = await apiClient.getFeedbackByBookingId(bookingId);
+        setSelectedFeedback(feedback);
+      } catch (error) {
+        // Feedback might not exist, set to null
+        setSelectedFeedback(null);
+      }
     } catch (error) {
       console.error('Failed to load booking details:', error);
       showApiErrorToast(error, toast, 'Không thể tải chi tiết booking');
       setIsDetailDialogOpen(false);
     } finally {
       setIsLoadingDetail(false);
+      setIsLoadingFeedback(false);
     }
   };
 
@@ -481,22 +511,7 @@ export default function AppointmentManagementPage() {
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground mb-1">Trạng thái</h4>
-                  <Badge variant={
-                    selectedBooking.bookingStatus === 'CONFIRMED' || selectedBooking.bookingStatus === 'PAID' ? 'default' :
-                      selectedBooking.bookingStatus === 'IN_PROGRESS' ? 'secondary' :
-                        selectedBooking.bookingStatus === 'PENDING' ? 'outline' :
-                          selectedBooking.bookingStatus === 'COMPLETED' || selectedBooking.bookingStatus === 'MAINTENANCE_COMPLETE' ? 'default' :
-                            selectedBooking.bookingStatus === 'REJECTED' || selectedBooking.bookingStatus === 'CANCELLED' ? 'destructive' : 'outline'
-                  }>
-                    {selectedBooking.bookingStatus === 'PENDING' ? 'Chờ xác nhận' :
-                      selectedBooking.bookingStatus === 'CONFIRMED' ? 'Đã xác nhận' :
-                        selectedBooking.bookingStatus === 'PAID' ? 'Đã thanh toán' :
-                          selectedBooking.bookingStatus === 'IN_PROGRESS' ? 'Đang thực hiện' :
-                            selectedBooking.bookingStatus === 'COMPLETED' || selectedBooking.bookingStatus === 'MAINTENANCE_COMPLETE' ? 'Hoàn thành' :
-                              selectedBooking.bookingStatus === 'REJECTED' ? 'Từ chối' :
-                                selectedBooking.bookingStatus === 'CANCELLED' ? 'Đã hủy' :
-                                  selectedBooking.bookingStatus}
-                  </Badge>
+                  {getBookingStatusBadge(selectedBooking.bookingStatus || '')}
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground mb-1">VIN</h4>
@@ -583,6 +598,59 @@ export default function AppointmentManagementPage() {
                   </div>
                 </div>
               )}
+
+              {/* Feedback */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">Đánh giá</h4>
+                {isLoadingFeedback ? (
+                  <div className="py-4 text-center text-muted-foreground">
+                    Đang tải đánh giá...
+                  </div>
+                ) : selectedFeedback ? (
+                  <div className="space-y-3 border rounded-lg p-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Đánh giá:</span>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 ${star <= selectedFeedback.rating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-muted-foreground'
+                              }`}
+                          />
+                        ))}
+                        <span className="ml-1 text-sm font-medium">{selectedFeedback.rating}/5</span>
+                      </div>
+                    </div>
+                    {selectedFeedback.comment && (
+                      <div>
+                        <span className="text-sm font-medium text-muted-foreground">Bình luận:</span>
+                        <p className="mt-1 text-sm whitespace-pre-wrap">{selectedFeedback.comment}</p>
+                      </div>
+                    )}
+                    {selectedFeedback.tags && selectedFeedback.tags.length > 0 && (
+                      <div>
+                        <span className="text-sm font-medium text-muted-foreground">Tags:</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedFeedback.tags.map((tag) => (
+                            <Badge key={tag.id} variant="outline" className="text-xs">
+                              {tag.content}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground">
+                      Ngày đánh giá: {new Date(selectedFeedback.createdAt).toLocaleString('vi-VN')}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-4 text-center text-muted-foreground border rounded-lg">
+                    Chưa có đánh giá cho booking này
+                  </div>
+                )}
+              </div>
             </div>
           ) : null}
           <DialogFooter>

@@ -1,11 +1,15 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TablePagination } from '@/components/ui/table-pagination';
+import { useDebounce } from '@/hooks/useDebounce';
+import { apiClient } from '@/lib/api';
+import { getBookingStatusBadge, getBookingStatusLabel, mapBookingStatusToFrontend } from '@/lib/bookingStatusUtils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle2, Edit, Eye, Package, Search, XCircle } from 'lucide-react';
+import { CheckCircle2, Edit, Eye, Package, Search, X, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -28,7 +32,7 @@ interface Appointment {
   };
   date: string;
   time: string;
-  status: 'pending' | 'confirmed' | 'paid' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
+  status: 'pending' | 'confirmed' | 'assigned' | 'paid' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
   center: string;
   technician?: string;
   notes?: string;
@@ -68,56 +72,76 @@ export function AppointmentTable({
   isLoadingParts = {},
   showActions = true
 }: AppointmentTableProps) {
+  const [bookingStatuses, setBookingStatuses] = useState<string[]>([]);
+
   const filterForm = useForm<FilterForm>({
     resolver: zodResolver(filterSchema),
     defaultValues: { search: '', status: 'all' }
   });
 
   const watchFilters = filterForm.watch();
-  const filteredAppointments = appointments.filter(appointment => {
-    const term = (watchFilters.search || '').toLowerCase().trim();
-    const matchesSearch = term === '' ||
-      appointment.id.toLowerCase().includes(term) ||
-      appointment.date.toLowerCase().includes(term) ||
-      appointment.time.toLowerCase().includes(term) ||
-      (appointment.customerName && appointment.customerName.toLowerCase().includes(term)) ||
-      appointment.vehicle.plate.toLowerCase().includes(term) ||
-      appointment.vehicle.model.toLowerCase().includes(term) ||
-      (appointment.technician && appointment.technician.toLowerCase().includes(term));
+  const debouncedSearch = useDebounce(watchFilters.search || '', 300);
 
-    const matchesStatus = watchFilters.status === 'all' || appointment.status === watchFilters.status;
+  useEffect(() => {
+    const loadBookingStatuses = async () => {
+      try {
+        const statusData = await apiClient.getBookingStatusEnum();
+        setBookingStatuses(statusData.enumValue);
+      } catch (e) {
+        console.error('Failed to load booking statuses', e);
+        // Fallback to default statuses if API fails
+        setBookingStatuses(['PENDING', 'CONFIRMED', 'PAID', 'ASSIGNED', 'IN_PROGRESS', 'MAINTENANCE_COMPLETE', 'CANCELLED', 'REJECTED']);
+      }
+    };
+    loadBookingStatuses();
+  }, []);
 
-    return matchesSearch && matchesStatus;
-  });
+  const getStatusLabel = (status: string): string => {
+    return getBookingStatusLabel(status);
+  };
+
+  const filteredAppointments = useMemo(() => {
+    return appointments.filter(appointment => {
+      const term = debouncedSearch.toLowerCase().trim();
+      const matchesSearch = !term ||
+        appointment.id.toLowerCase().includes(term) ||
+        appointment.date.toLowerCase().includes(term) ||
+        appointment.time.toLowerCase().includes(term) ||
+        (appointment.customerName && appointment.customerName.toLowerCase().includes(term)) ||
+        appointment.vehicle.plate.toLowerCase().includes(term) ||
+        appointment.vehicle.model.toLowerCase().includes(term) ||
+        (appointment.technician && appointment.technician.toLowerCase().includes(term));
+
+      const matchesStatus = watchFilters.status === 'all' || appointment.status === watchFilters.status;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [appointments, debouncedSearch, watchFilters.status]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.ceil(filteredAppointments.length / pageSize);
+
+  const paginatedAppointments = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredAppointments.slice(startIndex, startIndex + pageSize);
+  }, [filteredAppointments, currentPage, pageSize]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, watchFilters.status]);
+
 
   const getStatusBadge = (status: string) => {
+    // Convert frontend status to API status
     const normalized = (status || '').toLowerCase();
-    switch (normalized) {
-      case 'pending':
-      case 'chờ xác nhận':
-        return <Badge variant="secondary">Chờ xác nhận</Badge>;
-      case 'confirmed':
-      case 'đã xác nhận':
-        return <Badge variant="default">Đã xác nhận</Badge>;
-      case 'paid':
-      case 'đã thanh toán':
-        return <Badge variant="default" className="bg-blue-500">Đã thanh toán</Badge>;
-      case 'in_progress':
-      case 'đang thực hiện':
-        return <Badge variant="destructive">Đang thực hiện</Badge>;
-      case 'completed':
-      case 'hoàn thành':
-      case 'maintenance_complete':
-        return <Badge className="bg-green-500">Hoàn thành</Badge>;
-      case 'cancelled':
-      case 'đã hủy':
-        return <Badge variant="destructive">Đã hủy</Badge>;
-      case 'rejected':
-      case 'từ chối':
-        return <Badge variant="destructive">Từ chối</Badge>;
-      default:
-        return <Badge variant="outline">{status || 'Không xác định'}</Badge>;
+    let apiStatus = status;
+    if (normalized === 'completed' || normalized === 'maintenance_complete') {
+      apiStatus = 'MAINTENANCE_COMPLETE';
+    } else {
+      apiStatus = status.toUpperCase();
     }
+    return getBookingStatusBadge(apiStatus);
   };
 
   return (
@@ -131,7 +155,16 @@ export function AppointmentTable({
                 <FormControl>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <Input className="pl-9 w-64" placeholder="Tìm kiếm..." {...field} />
+                    <Input className="pl-9 pr-10 w-64" placeholder="Tìm kiếm..." {...field} />
+                    {field.value && (
+                      <button
+                        type="button"
+                        onClick={() => field.onChange('')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </FormControl>
               </FormItem>
@@ -146,12 +179,14 @@ export function AppointmentTable({
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="pending">Chờ xác nhận</SelectItem>
-                    <SelectItem value="confirmed">Đã xác nhận</SelectItem>
-                    <SelectItem value="paid">Đã thanh toán</SelectItem>
-                    <SelectItem value="in_progress">Đang thực hiện</SelectItem>
-                    <SelectItem value="completed">Hoàn thành</SelectItem>
-                    <SelectItem value="cancelled">Đã hủy</SelectItem>
+                    {bookingStatuses.map((status) => {
+                      const filterValue = mapBookingStatusToFrontend(status);
+                      return (
+                        <SelectItem key={`status-${status}`} value={filterValue}>
+                          {getBookingStatusLabel(status)}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </FormItem>
@@ -183,7 +218,7 @@ export function AppointmentTable({
                 </TableCell>
               </TableRow>
             ) : (
-              filteredAppointments.map(appointment => (
+              paginatedAppointments.map(appointment => (
                 <TableRow key={appointment.id}>
                   <TableCell className="font-medium">#{appointment.id}</TableCell>
                   <TableCell>
@@ -263,6 +298,13 @@ export function AppointmentTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      <TablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

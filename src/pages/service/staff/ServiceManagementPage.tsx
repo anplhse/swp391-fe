@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useVehicleModels } from '@/hooks/useVehicleModels';
 import { apiClient } from '@/lib/api';
 import { showApiErrorToast } from '@/lib/responseHandler';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -59,16 +60,6 @@ interface Service {
 
 // Services should be loaded from API
 
-const vehicleTypes = [
-  { value: 'VF 3', label: 'VF 3' },
-  { value: 'VF 5 Plus', label: 'VF 5 Plus' },
-  { value: 'VF 6', label: 'VF 6' },
-  { value: 'VF 7', label: 'VF 7' },
-  { value: 'VF 8', label: 'VF 8' },
-  { value: 'VF 9', label: 'VF 9' },
-  { value: 'VF e34', label: 'VF e34' }
-];
-
 const serviceCategories = [
   { value: 'maintenance', label: 'Bảo dưỡng' },
   { value: 'repair', label: 'Sửa chữa' },
@@ -78,6 +69,7 @@ const serviceCategories = [
 ];
 
 export default function ServiceManagementPage() {
+  const { vehicleModels } = useVehicleModels();
   const [services, setServices] = useState<Service[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -85,6 +77,12 @@ export default function ServiceManagementPage() {
   const [relatedParts, setRelatedParts] = useState<Record<string, string[]>>({});
   const [newPartInputs, setNewPartInputs] = useState<Record<string, string>>({});
   const [selectedParts, setSelectedParts] = useState<string[]>([]);
+
+  // Convert vehicle models from API to select options
+  const vehicleTypes = vehicleModels.map(model => ({
+    value: model,
+    label: model
+  }));
   const { toast } = useToast();
 
   // Parts should be loaded from API

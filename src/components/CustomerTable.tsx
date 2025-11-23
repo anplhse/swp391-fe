@@ -1,10 +1,16 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, Car, Edit, Mail, Phone, Plus, Search, Trash2 } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { TablePagination } from '@/components/ui/table-pagination';
+import { useDebounce } from '@/hooks/useDebounce';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Calendar, Edit, Mail, Phone, Search, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface Customer {
   id: string;
@@ -37,13 +43,41 @@ export function CustomerTable({
   filters,
   rightAction
 }: CustomerTableProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const filterSchema = z.object({
+    search: z.string().optional(),
+  });
+  type FilterForm = z.infer<typeof filterSchema>;
 
-  const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.phone.includes(searchTerm)
-  );
+  const filterForm = useForm<FilterForm>({
+    resolver: zodResolver(filterSchema),
+    defaultValues: { search: '' }
+  });
+
+  const watchFilters = filterForm.watch();
+  const debouncedSearchTerm = useDebounce(watchFilters.search || '', 300);
+
+  const filteredCustomers = useMemo(() => {
+    return customers.filter(customer =>
+      !debouncedSearchTerm.trim() ||
+      customer.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      customer.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      customer.phone.includes(debouncedSearchTerm)
+    );
+  }, [customers, debouncedSearchTerm]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.ceil(filteredCustomers.length / pageSize);
+
+  const paginatedCustomers = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredCustomers.slice(startIndex, startIndex + pageSize);
+  }, [filteredCustomers, currentPage, pageSize]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm]);
+
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -64,18 +98,38 @@ export function CustomerTable({
     <div className="space-y-4">
       {/* Search Controls */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Tìm kiếm tài khoản..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
+        <Form {...filterForm}>
+          <form className="flex items-center gap-3">
+            <FormField
+              name="search"
+              control={filterForm.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        placeholder="Tìm kiếm tài khoản..."
+                        {...field}
+                        className="pl-10 pr-10 w-64"
+                      />
+                      {field.value && (
+                        <button
+                          type="button"
+                          onClick={() => field.onChange('')}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
             />
-          </div>
-          {filters}
-        </div>
+            {filters}
+          </form>
+        </Form>
         {rightAction && <div className="flex items-center gap-3">{rightAction}</div>}
       </div>
 
@@ -102,7 +156,7 @@ export function CustomerTable({
                 </TableCell>
               </TableRow>
             ) : (
-              filteredCustomers.map((customer) => (
+              paginatedCustomers.map((customer) => (
                 <TableRow key={customer.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -166,6 +220,13 @@ export function CustomerTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      <TablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

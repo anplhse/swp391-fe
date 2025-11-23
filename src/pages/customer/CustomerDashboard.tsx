@@ -1,3 +1,4 @@
+import { ChatBot } from '@/components/ChatBot';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -97,7 +98,7 @@ export default function CustomerDashboard() {
       </section>
 
       {/* Reviews */}
-      <section id="feedbacks">
+      <section id="feedbacks" className="mb-16">
         <div className="mx-auto max-w-6xl px-4 py-14">
           <h2 className="text-2xl md:text-3xl font-sans font-semibold text-center mb-8">Đánh giá</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
@@ -151,31 +152,34 @@ export default function CustomerDashboard() {
               <p className="text-sm text-muted-foreground">Nền tảng quản lý bảo dưỡng xe VinFast</p>
             </div>
             <div className="md:pl-20">
-              <h4 className="font-sans font-semibold mb-3 pt-1">Thông tin</h4>
+              <h4 className="font-sans font-semibold mb-3 pt-1 px-2">Thông tin</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><button onClick={() => navigate('/customer')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Trang chủ</button></li>
                 <li><button onClick={() => navigate('/customer/vehicles')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Xe của tôi</button></li>
                 <li><button onClick={() => navigate('/customer/bookings')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Lịch hẹn</button></li>
               </ul>
             </div>
-            <div>
-              <h4 className="font-sans font-semibold mb-3 pt-1">Chức năng</h4>
+            <div className="md:pl-12">
+              <h4 className="font-sans font-semibold mb-3 pt-1 px-2">Chức năng</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><button onClick={() => navigate('/customer/booking')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Đặt lịch ngay</button></li>
                 <li><button onClick={() => navigate('/customer/bookings')} className="hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded transition-colors">Quản lý lịch hẹn</button></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-sans font-semibold mb-3 pt-1">Liên hệ</h4>
+              <h4 className="font-sans font-semibold mb-3 pt-1 px-2">Liên hệ</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Email: dengocrong123@gmail.com</li>
-                <li>Hotline: 0396727248</li>
+                <li className="px-2">Email: dengocrong123@gmail.com</li>
+                <li className="px-2">Hotline: 0396727248</li>
               </ul>
             </div>
           </div>
           <div className="mt-8 border-t pt-4 text-xs text-muted-foreground">© {new Date().getFullYear()} VinFast Service Workshop</div>
         </div>
       </footer>
+
+      {/* ChatBot */}
+      <ChatBot />
     </div>
   );
 }

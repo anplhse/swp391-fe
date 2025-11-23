@@ -61,8 +61,6 @@ interface Vehicle {
 
 export default function VehicleManagementPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const { toast } = useToast();
@@ -154,18 +152,7 @@ export default function VehicleManagementPage() {
   }, []);
 
 
-  // Pagination helpers
-  const totalPages = Math.max(1, Math.ceil(vehicles.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const startIdx = (currentPage - 1) * pageSize;
-  const endIdx = startIdx + pageSize;
-  const pagedVehicles = vehicles.slice(startIdx, endIdx);
-
-  useEffect(() => {
-    // Reset to first page when data size changes and current page is out of range
-    const newTotal = Math.max(1, Math.ceil(vehicles.length / pageSize));
-    if (page > newTotal) setPage(newTotal);
-  }, [vehicles.length, pageSize, page]);
+  // VehicleTable handles pagination internally, so we pass all vehicles
 
   const handleAddVehicle = () => {
     setEditingVehicle(null);
@@ -366,7 +353,7 @@ export default function VehicleManagementPage() {
     <div className="space-y-6">
       <VehicleTable
         mode="staff"
-        vehicles={pagedVehicles.map(v => ({
+        vehicles={vehicles.map(v => ({
           id: v.id,
           name: `${v.brand} ${v.model}`,
           plate: v.licensePlate,
@@ -383,19 +370,9 @@ export default function VehicleManagementPage() {
           lastService: v.lastService,
         }))}
         rightAction={(
-          <div className="flex items-center gap-3">
             <Button onClick={handleAddVehicle}>
               Thêm xe mới
             </Button>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={currentPage <= 1}>
-                Trước
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>
-                Sau
-              </Button>
-            </div>
-          </div>
         )}
         onEdit={(veh) => {
           const found = vehicles.find(x => x.id === veh.id);

@@ -1,15 +1,21 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TablePagination } from '@/components/ui/table-pagination';
 import { useToast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/useDebounce';
 import { apiClient } from '@/lib/api';
-import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
-import { Eye, Plus, Search } from 'lucide-react';
+import { showApiErrorToast } from '@/lib/responseHandler';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Eye, Plus, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 type VehicleModel = {
   id: number;
@@ -22,6 +28,7 @@ type VehicleModel = {
   chargingTimeHours?: number;
   motorPowerKw?: number;
   weightKg?: number;
+  imageUrl?: string;
   status: string;
   createdAt?: string;
 };
@@ -30,8 +37,20 @@ export default function VehicleModelsPage() {
   const { toast } = useToast();
   const [models, setModels] = useState<VehicleModel[]>([]);
   const [modelEnumValues, setModelEnumValues] = useState<string[]>([]);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+
+  const filterSchema = z.object({
+    search: z.string().optional(),
+    status: z.enum(['ALL', 'ACTIVE', 'INACTIVE']).optional(),
+  });
+  type FilterForm = z.infer<typeof filterSchema>;
+
+  const filterForm = useForm<FilterForm>({
+    resolver: zodResolver(filterSchema),
+    defaultValues: { search: '', status: 'ALL' }
+  });
+
+  const watchFilters = filterForm.watch();
+  const debouncedSearch = useDebounce(watchFilters.search || '', 300);
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
@@ -52,6 +71,7 @@ export default function VehicleModelsPage() {
     chargingTimeHours: undefined,
     motorPowerKw: undefined,
     weightKg: undefined,
+    imageUrl: '',
   });
 
   useEffect(() => {
@@ -87,18 +107,19 @@ export default function VehicleModelsPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
+    const keyword = debouncedSearch.trim().toLowerCase();
+    const currentStatusFilter = watchFilters.status || 'ALL';
     return models.filter(m =>
-      (statusFilter === 'ALL' ? true : m.status === statusFilter) &&
+      (currentStatusFilter === 'ALL' ? true : m.status === currentStatusFilter) &&
       (
         !keyword ||
         m.brandName.toLowerCase().includes(keyword) ||
         m.modelName.toLowerCase().includes(keyword)
       )
     );
-  }, [models, search, statusFilter]);
+  }, [models, debouncedSearch, watchFilters.status]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const totalPages = filtered.length > 0 ? Math.ceil(filtered.length / pageSize) : 1;
   const currentPage = Math.min(page, totalPages);
   const startIdx = (currentPage - 1) * pageSize;
   const pageItems = filtered.slice(startIdx, startIdx + pageSize);
@@ -174,6 +195,7 @@ export default function VehicleModelsPage() {
         chargingTimeHours?: number;
         motorPowerKw?: number;
         weightKg?: number;
+        imageUrl?: string;
       } = {
         brandName: newModel.brandName,
         modelName: newModel.modelName,
@@ -186,6 +208,7 @@ export default function VehicleModelsPage() {
       if (newModel.chargingTimeHours !== undefined) payload.chargingTimeHours = newModel.chargingTimeHours;
       if (newModel.motorPowerKw !== undefined) payload.motorPowerKw = newModel.motorPowerKw;
       if (newModel.weightKg !== undefined) payload.weightKg = newModel.weightKg;
+      if (newModel.imageUrl) payload.imageUrl = newModel.imageUrl;
 
       const created = await apiClient.createVehicleModel(payload);
 
@@ -208,6 +231,7 @@ export default function VehicleModelsPage() {
         chargingTimeHours: undefined,
         motorPowerKw: undefined,
         weightKg: undefined,
+        imageUrl: '',
       });
     } catch (error) {
       console.error('Failed to create model', error);
@@ -232,6 +256,7 @@ export default function VehicleModelsPage() {
         chargingTimeHours?: number;
         motorPowerKw?: number;
         weightKg?: number;
+        imageUrl?: string;
         status?: string;
       }> = {};
 
@@ -245,6 +270,7 @@ export default function VehicleModelsPage() {
       if (editingModel.chargingTimeHours !== undefined) payload.chargingTimeHours = editingModel.chargingTimeHours;
       if (editingModel.motorPowerKw !== undefined) payload.motorPowerKw = editingModel.motorPowerKw;
       if (editingModel.weightKg !== undefined) payload.weightKg = editingModel.weightKg;
+      if (editingModel.imageUrl !== undefined) payload.imageUrl = editingModel.imageUrl;
       if (editingModel.status) payload.status = editingModel.status;
 
       const updated = await apiClient.updateVehicleModel(editingModel.id, payload);
@@ -270,36 +296,72 @@ export default function VehicleModelsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <Form {...filterForm}>
+          <form className="flex items-center gap-3">
+            <FormField
+              name="search"
+              control={filterForm.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder="Tìm kiếm model/brand..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="pl-10 w-64"
-            />
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setPage(1);
+                        }}
+                        className="pl-10 pr-10 w-64"
+                      />
+                      {field.value && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            field.onChange('');
+                            setPage(1);
+                          }}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
           </div>
-          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as 'ALL' | 'ACTIVE' | 'INACTIVE'); setPage(1); }}>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="status"
+              control={filterForm.control}
+              render={({ field }) => (
+                <FormItem>
+                  <Select onValueChange={(v) => {
+                    field.onChange(v);
+                    setPage(1);
+                  }} defaultValue={field.value}>
+                    <FormControl>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Trạng thái" />
             </SelectTrigger>
+                    </FormControl>
             <SelectContent>
               <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
               <SelectItem value="ACTIVE">ACTIVE</SelectItem>
               <SelectItem value="INACTIVE">INACTIVE</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
         <div className="flex items-center gap-3">
           <Button onClick={handleAddNew}>
             <Plus className="h-4 w-4 mr-2" />
             Thêm mới
           </Button>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>Trước</Button>
-            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>Sau</Button>
-          </div>
         </div>
       </div>
 
@@ -358,6 +420,13 @@ export default function VehicleModelsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      <TablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
 
       {/* Detail Dialog */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
@@ -419,6 +488,21 @@ export default function VehicleModelsPage() {
                   <label className="text-sm font-medium text-muted-foreground">Khối lượng (kg)</label>
                   <p className="text-sm font-medium">{modelDetail.weightKg ?? '—'}</p>
                 </div>
+                {modelDetail.imageUrl && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Hình ảnh</label>
+                    <div className="mt-2">
+                      <img
+                        src={modelDetail.imageUrl}
+                        alt={modelDetail.modelName}
+                        className="w-full max-w-md h-auto rounded-lg border border-border"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground">Ngày tạo</label>
                   <p className="text-sm font-medium">
@@ -564,6 +648,28 @@ export default function VehicleModelsPage() {
                     value={editingModel.weightKg ?? ''}
                     onChange={(e) => setEditingModel({ ...editingModel, weightKg: e.target.value ? Number(e.target.value) : undefined })}
                   />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="edit-imageUrl">URL hình ảnh</Label>
+                  <Input
+                    id="edit-imageUrl"
+                    type="url"
+                    value={editingModel.imageUrl || ''}
+                    onChange={(e) => setEditingModel({ ...editingModel, imageUrl: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                  {editingModel.imageUrl && (
+                    <div className="mt-2">
+                      <img
+                        src={editingModel.imageUrl}
+                        alt="Preview"
+                        className="w-full max-w-md h-auto rounded-lg border border-border"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Invalid+Image+URL';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-status">Trạng thái</Label>
@@ -718,6 +824,28 @@ export default function VehicleModelsPage() {
                   value={newModel.weightKg ?? ''}
                   onChange={(e) => setNewModel({ ...newModel, weightKg: e.target.value ? Number(e.target.value) : undefined })}
                 />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="add-imageUrl">URL hình ảnh</Label>
+                <Input
+                  id="add-imageUrl"
+                  type="url"
+                  value={newModel.imageUrl || ''}
+                  onChange={(e) => setNewModel({ ...newModel, imageUrl: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                />
+                {newModel.imageUrl && (
+                  <div className="mt-2">
+                    <img
+                      src={newModel.imageUrl}
+                      alt="Preview"
+                      className="w-full max-w-md h-auto rounded-lg border border-border"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Invalid+Image+URL';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>

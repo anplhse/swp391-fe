@@ -360,6 +360,51 @@ export const bookingApi = {
     });
   },
 
+  // Cancel booking
+  async cancelBooking(bookingId: number): Promise<{
+    id: number;
+    customerId: number;
+    customerName: string;
+    vehicleVin: string;
+    vehicleModel: string;
+    scheduleDateTime: {
+      format: string;
+      value: string;
+      timezone: string | null;
+    };
+    bookingStatus: string;
+    createdAt: string;
+    updatedAt: string;
+    catalogDetails: Array<{
+      id: number;
+      catalogId: number;
+      serviceName: string;
+      description: string;
+    }>;
+    invoice?: {
+      id: number;
+      invoiceNumber: string;
+      issueDate: string;
+      dueDate: string | null;
+      totalAmount: number;
+      status: string;
+      createdAt: string;
+      paidAt: string | null;
+      invoiceLines: Array<{
+        id: number;
+        itemDescription: string;
+        itemType: string;
+        quantity: number;
+        unitPrice: number;
+        totalPrice: number;
+      }>;
+    };
+  }> {
+    return request(`/bookings/${bookingId}/cancel`, {
+      method: 'PUT',
+    });
+  },
+
   // Get all bookings (for staff)
   async getAllBookings(): Promise<Array<{
     id: number;
@@ -428,6 +473,16 @@ export const bookingApi = {
     rspCode: string;
   }> {
     return request(`/payments/simulate-ipn-success?orderCode=${encodeURIComponent(orderCode)}`, {
+      method: 'GET',
+    });
+  },
+
+  // Simulate IPN fail (for expired or cancelled payments)
+  async simulateIpnFail(orderCode: string): Promise<{
+    message: string;
+    rspCode: string;
+  }> {
+    return request(`/payments/simulate-ipn-fail?orderCode=${encodeURIComponent(orderCode)}`, {
       method: 'GET',
     });
   },
@@ -552,6 +607,44 @@ export const bookingApi = {
   }> {
     return request(`/jobs/${jobId}/start`, {
       method: 'PUT',
+    });
+  },
+
+  // Technician completes a job
+  async completeJob(jobId: number): Promise<{
+    id: number;
+    bookingId: number;
+    technicianId: number;
+    technicianName: string;
+    startTime: string;
+    estEndTime: string;
+    actualEndTime: string | null;
+    status: string;
+    notes: string;
+    createdAt: string;
+    updatedAt: string;
+  }> {
+    return request(`/jobs/${jobId}/complete`, {
+      method: 'PUT',
+    });
+  },
+
+  // Get tasks for a specific technician
+  async getTechnicianTasks(technicianId: number): Promise<Array<{
+    id: number;
+    bookingId: number;
+    technicianId: number;
+    technicianName: string;
+    startTime: string | null;
+    estEndTime: string | null;
+    actualEndTime: string | null;
+    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+    notes: string;
+    createdAt: string;
+    updatedAt: string;
+  }>> {
+    return request(`/jobs/technician/${technicianId}/tasks`, {
+      method: 'GET',
     });
   },
 

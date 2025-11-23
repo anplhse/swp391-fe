@@ -25,7 +25,6 @@ const routes = {
   service: {
     // Staff routes
     staff: {
-      dashboard: '/service/staff',
       customers: '/service/customers',
       vehicles: '/service/vehicles',
       appointments: '/service/appointments',
@@ -37,7 +36,6 @@ const routes = {
 
     // Technician routes
     technician: {
-      dashboard: '/service/technician',
       assignedTasks: '/service/assigned-tasks',
       maintenanceProcess: '/service/maintenance-process',
       vehicleStatus: '/service/vehicle-status',

@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { authService } from '@/lib/auth';
 import { bookingApi } from '@/lib/bookingUtils';
 import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
 import { AlertCircle, Car, CheckCircle, ClipboardList, Clock, Play, User } from 'lucide-react';
@@ -51,40 +52,85 @@ export default function AssignedTasksPage() {
 
   const loadTasks = useCallback(async () => {
     try {
-      const jobs = await bookingApi.getJobs();
+      const currentUser = authService.getAuthState().user;
+      if (!currentUser || !currentUser.id) {
+        console.error('User not found or missing ID');
+        return;
+      }
 
-      // Map jobs to AssignedTask format
-      const mappedTasks: AssignedTask[] = jobs.map(job => {
-        const toStatus = (s: string): AssignedTask['status'] => {
-          const normalized = s.toUpperCase();
-          if (normalized === 'UNASSIGNED') return 'unassigned';
-          if (normalized === 'PENDING') return 'pending';
-          if (normalized === 'IN_PROGRESS') return 'in_progress';
-          if (normalized === 'COMPLETED') return 'completed';
-          return 'pending';
-        };
+      // Get technician-specific tasks
+      const jobs = await bookingApi.getTechnicianTasks(currentUser.id);
 
-        return {
-          id: String(job.id),
-          jobId: job.id,
-          bookingId: job.bookingId,
-          vehiclePlate: `Booking #${job.bookingId}`,
-          customerName: job.technicianName || 'N/A',
-          serviceType: job.notes || 'Bảo dưỡng',
-          priority: 'medium' as const,
-          status: toStatus(job.status),
-          progress: job.status === 'COMPLETED' ? 100 : job.status === 'IN_PROGRESS' ? 50 : 0,
-          assignedDate: job.createdAt,
-          startTime: job.startTime || undefined,
-          estimatedDuration: 60,
-          steps: [],
-          notes: job.notes,
-          tools: [],
-          parts: [],
-        };
-      });
+      // Load booking details for each job to get vehicle and customer info
+      const tasksWithDetails = await Promise.all(
+        jobs.map(async (job) => {
+          try {
+            const booking = await bookingApi.getBookingById(job.bookingId);
 
-      setTasks(mappedTasks);
+            const toStatus = (s: string): AssignedTask['status'] => {
+              const normalized = (s || '').toUpperCase();
+              if (normalized === 'UNASSIGNED') return 'unassigned';
+              if (normalized === 'PENDING') return 'pending';
+              if (normalized === 'IN_PROGRESS') return 'in_progress';
+              if (normalized === 'COMPLETED') return 'completed';
+              return 'pending';
+            };
+
+            const progress = job.status === 'COMPLETED' ? 100 :
+              job.status === 'IN_PROGRESS' ? 50 : 0;
+
+            return {
+              id: String(job.id),
+              jobId: job.id,
+              bookingId: job.bookingId,
+              vehiclePlate: booking.vehicleVin || `Booking #${job.bookingId}`,
+              customerName: booking.customerName || 'N/A',
+              serviceType: (booking.catalogDetails || []).map(c => c.serviceName).join(', ') || 'Bảo dưỡng',
+              priority: 'medium' as const,
+              status: toStatus(job.status),
+              progress: progress,
+              assignedDate: job.createdAt,
+              startTime: job.startTime || undefined,
+              estimatedDuration: 60,
+              steps: [],
+              notes: job.notes,
+              tools: [],
+              parts: [],
+            };
+          } catch (error) {
+            console.error(`Failed to load booking ${job.bookingId}:`, error);
+            // Return task with minimal info if booking load fails
+            const toStatus = (s: string): AssignedTask['status'] => {
+              const normalized = (s || '').toUpperCase();
+              if (normalized === 'UNASSIGNED') return 'unassigned';
+              if (normalized === 'PENDING') return 'pending';
+              if (normalized === 'IN_PROGRESS') return 'in_progress';
+              if (normalized === 'COMPLETED') return 'completed';
+              return 'pending';
+            };
+            return {
+              id: String(job.id),
+              jobId: job.id,
+              bookingId: job.bookingId,
+              vehiclePlate: `Booking #${job.bookingId}`,
+              customerName: job.technicianName || 'N/A',
+              serviceType: job.notes || 'Bảo dưỡng',
+              priority: 'medium' as const,
+              status: toStatus(job.status),
+              progress: job.status === 'COMPLETED' ? 100 : job.status === 'IN_PROGRESS' ? 50 : 0,
+              assignedDate: job.createdAt,
+              startTime: job.startTime || undefined,
+              estimatedDuration: 60,
+              steps: [],
+              notes: job.notes,
+              tools: [],
+              parts: [],
+            };
+          }
+        })
+      );
+
+      setTasks(tasksWithDetails);
     } catch (error) {
       console.error('Failed to load jobs:', error);
       showApiErrorToast(error, toast, 'Không thể tải danh sách công việc');
@@ -174,12 +220,25 @@ export default function AssignedTasksPage() {
     await handleStartTask(taskId);
   };
 
-  const handleCompleteTask = (taskId: string) => {
-    // TODO: Implement complete job API
-    toast({
-      title: 'Chức năng đang phát triển',
-      description: 'API hoàn thành công việc đang được phát triển',
-    });
+  const handleCompleteTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.jobId) {
+      toast({
+        title: 'Lỗi',
+        description: 'Không tìm thấy job ID.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await bookingApi.completeJob(task.jobId);
+      showApiResponseToast({ message: 'Đã hoàn thành công việc' }, toast, 'Đã hoàn thành công việc');
+      await loadTasks();
+    } catch (error) {
+      console.error('Failed to complete job:', error);
+      showApiErrorToast(error, toast, 'Không thể hoàn thành công việc');
+    }
   };
 
   const pendingTasks = filteredTasks.filter(task => task.status === 'pending' || task.status === 'unassigned');

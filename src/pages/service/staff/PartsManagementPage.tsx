@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
 import { showApiErrorToast } from '@/lib/responseHandler';
@@ -16,19 +17,14 @@ interface Part {
   name: string;
   partNumber: string;
   category: string;
-  brand: string;
-  compatibleModel: string; // Model xe tương thích
-  initialQuantity: number; // Số lượng ban đầu nhập vào
-  usedQuantity: number; // Số lượng đã sử dụng
-  currentStock: number; // Số lượng hiện tại = initialQuantity - usedQuantity
-  minStock: number;
-  maxStock: number;
-  unitPrice: number;
-  supplier: string;
-  lastRestocked: string;
-  status: 'active' | 'inactive'; // Trạng thái sử dụng (đang sử dụng/ngưng)
-  location: string;
-  description?: string;
+  manufacturer: string; // Nhà cung cấp (từ API manufacturer)
+  compatibleModel: string; // Model xe tương thích (extract từ vehicleModelsEnum)
+  initialQuantity: number; // Số lượng ban đầu (từ API all)
+  usedQuantity: number; // Số lượng đã sử dụng (từ API used)
+  reserved: number; // Số lượng đã đặt (từ API reserved)
+  currentStock: number; // Số lượng hiện tại (từ API quantity)
+  unitPrice: number; // Giá đơn vị (từ API currentUnitPrice)
+  status: 'active' | 'inactive'; // Trạng thái (từ API status)
 }
 
 // Helper function to extract category from partNumber (fallback if API doesn't provide)
@@ -49,29 +45,39 @@ export default function PartsManagementPage() {
   const [isPartDialogOpen, setIsPartDialogOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<Part | null>(null);
   const [selectedPart, setSelectedPart] = useState<Part | null>(null);
+  const [partCategories, setPartCategories] = useState<string[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const { toast } = useToast();
-
-  const vehicleTypes = [
-    { value: 'VF5', label: 'VF5 (Hatchback)' },
-    { value: 'VF8', label: 'VF8 (SUV)' },
-    { value: 'VF9', label: 'VF9 (SUV)' },
-    { value: 'VFE34', label: 'VFE34 (Sedan)' }
-  ];
-
 
   const partSchema = z.object({
     name: z.string().min(1, 'Tên phụ tùng là bắt buộc'),
     partNumber: z.string().min(1, 'Mã phụ tùng là bắt buộc'),
     category: z.string().min(1, 'Danh mục là bắt buộc'),
-    brand: z.string().min(1, 'Thương hiệu là bắt buộc'),
-    compatibleModel: z.string().min(1, 'Phải chọn model xe'),
     initialQuantity: z.string().min(1).refine(v => !isNaN(Number(v)) && Number(v) > 0, 'Số lượng ban đầu phải lớn hơn 0'),
     unitPrice: z.string().min(1).refine(v => !isNaN(Number(v)) && Number(v) > 0, 'Giá không hợp lệ'),
-    supplier: z.string().min(1, 'Nhà cung cấp là bắt buộc')
+    manufacturer: z.string().min(1, 'Nhà cung cấp là bắt buộc')
   });
   type PartFormData = z.infer<typeof partSchema>;
 
-  const partForm = useForm<PartFormData>({ resolver: zodResolver(partSchema), defaultValues: { name: '', partNumber: '', category: '', brand: '', compatibleModel: '', initialQuantity: '1', unitPrice: '0', supplier: '' } });
+  const partForm = useForm<PartFormData>({ resolver: zodResolver(partSchema), defaultValues: { name: '', partNumber: '', category: '', initialQuantity: '1', unitPrice: '0', manufacturer: '' } });
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setIsLoadingCategories(true);
+        const categoriesData = await apiClient.getPartCategories();
+        setPartCategories(categoriesData.enumValue);
+      } catch (error) {
+        console.error('Failed to load part categories:', error);
+        showApiErrorToast(error, toast, 'Không thể tải danh sách danh mục phụ tùng');
+        // Fallback to default categories
+        setPartCategories(['Lọc', 'Dung dịch & Hóa chất', 'Pin & Ắc quy', 'Gạt mưa', 'Lốp xe', 'Phanh', 'Điện & Điện tử', 'Hệ thống treo', 'Linh kiện điều hòa', 'Khác']);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+    loadCategories();
+  }, [toast]);
 
   useEffect(() => {
     let mounted = true;
@@ -85,7 +91,6 @@ export default function PartsManagementPage() {
           const currentStock = apiPart.quantity;
           const usedQuantity = apiPart.used; // Use 'used' from API
           const initialQuantity = apiPart.all; // Use 'all' from API (total quantity)
-          const minStock = Math.max(1, Math.floor(initialQuantity * 0.2)); // 20% of initial
 
           // Map status from API (ACTIVE/INACTIVE) to active/inactive
           const status: 'active' | 'inactive' = apiPart.status === 'ACTIVE' ? 'active' : 'inactive';
@@ -107,18 +112,14 @@ export default function PartsManagementPage() {
             name: apiPart.name,
             partNumber: apiPart.partNumber,
             category: category,
-            brand: apiPart.manufacturer,
+            manufacturer: apiPart.manufacturer || '',
             compatibleModel: compatibleModel,
             initialQuantity: initialQuantity,
             usedQuantity: usedQuantity,
+            reserved: apiPart.reserved,
             currentStock: currentStock,
-            minStock: minStock,
-            maxStock: initialQuantity * 2,
             unitPrice: apiPart.currentUnitPrice,
-            supplier: '', // Not available in API
-            lastRestocked: apiPart.createdAt ? apiPart.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
-            status: status, // Trạng thái sử dụng (active/inactive)
-            location: 'Kho chính',
+            status: status,
           };
         });
 
@@ -137,7 +138,7 @@ export default function PartsManagementPage() {
 
   const handleAddPart = () => {
     setEditingPart(null);
-    partForm.reset({ name: '', partNumber: '', category: '', brand: '', compatibleModel: '', initialQuantity: '1', unitPrice: '0', supplier: '' });
+    partForm.reset({ name: '', partNumber: '', category: '', initialQuantity: '1', unitPrice: '0', manufacturer: '' });
     setIsPartDialogOpen(true);
   };
 
@@ -147,11 +148,9 @@ export default function PartsManagementPage() {
       name: part.name,
       partNumber: part.partNumber,
       category: part.category,
-      brand: part.brand,
-      compatibleModel: part.compatibleModel || '',
       initialQuantity: String(part.initialQuantity),
       unitPrice: String(part.unitPrice),
-      supplier: part.supplier
+      manufacturer: part.manufacturer
     });
     setIsPartDialogOpen(true);
   };
@@ -178,6 +177,86 @@ export default function PartsManagementPage() {
   };
 
 
+  const handleIncreaseStock = async (partId: string, amount: number) => {
+    try {
+      await apiClient.increasePartStock(Number(partId), amount);
+      // Reload parts to get updated data
+      const apiParts = await apiClient.getParts();
+      const mappedParts: Part[] = apiParts.map((apiPart) => {
+        const currentStock = apiPart.quantity;
+        const usedQuantity = apiPart.used;
+        const initialQuantity = apiPart.all;
+        const status: 'active' | 'inactive' = apiPart.status === 'ACTIVE' ? 'active' : 'inactive';
+        const category = apiPart.category || extractCategory(apiPart.partNumber);
+        let compatibleModel = '';
+        if (apiPart.vehicleModelsEnum && apiPart.vehicleModelsEnum.enumValue.length > 0) {
+          compatibleModel = apiPart.vehicleModelsEnum.enumValue
+            .map(model => model.replace('VinFast ', ''))
+            .join(', ');
+        }
+        return {
+          id: String(apiPart.id),
+          name: apiPart.name,
+          partNumber: apiPart.partNumber,
+          category: category,
+          manufacturer: apiPart.manufacturer || '',
+          compatibleModel: compatibleModel,
+          initialQuantity: initialQuantity,
+          usedQuantity: usedQuantity,
+          reserved: apiPart.reserved,
+          currentStock: currentStock,
+          unitPrice: apiPart.currentUnitPrice,
+          status: status,
+        };
+      });
+      setParts(mappedParts);
+      toast({ title: 'Tăng số lượng phụ tùng thành công' });
+    } catch (error) {
+      console.error('Failed to increase stock:', error);
+      showApiErrorToast(error, toast, 'Không thể tăng số lượng phụ tùng. Vui lòng thử lại.');
+    }
+  };
+
+  const handleDecreaseStock = async (partId: string, amount: number) => {
+    try {
+      await apiClient.decreasePartStock(Number(partId), amount);
+      // Reload parts to get updated data
+      const apiParts = await apiClient.getParts();
+      const mappedParts: Part[] = apiParts.map((apiPart) => {
+        const currentStock = apiPart.quantity;
+        const usedQuantity = apiPart.used;
+        const initialQuantity = apiPart.all;
+        const status: 'active' | 'inactive' = apiPart.status === 'ACTIVE' ? 'active' : 'inactive';
+        const category = apiPart.category || extractCategory(apiPart.partNumber);
+        let compatibleModel = '';
+        if (apiPart.vehicleModelsEnum && apiPart.vehicleModelsEnum.enumValue.length > 0) {
+          compatibleModel = apiPart.vehicleModelsEnum.enumValue
+            .map(model => model.replace('VinFast ', ''))
+            .join(', ');
+        }
+        return {
+          id: String(apiPart.id),
+          name: apiPart.name,
+          partNumber: apiPart.partNumber,
+          category: category,
+          manufacturer: apiPart.manufacturer || '',
+          compatibleModel: compatibleModel,
+          initialQuantity: initialQuantity,
+          usedQuantity: usedQuantity,
+          reserved: apiPart.reserved,
+          currentStock: currentStock,
+          unitPrice: apiPart.currentUnitPrice,
+          status: status,
+        };
+      });
+      setParts(mappedParts);
+      toast({ title: 'Giảm số lượng phụ tùng thành công' });
+    } catch (error) {
+      console.error('Failed to decrease stock:', error);
+      showApiErrorToast(error, toast, 'Không thể giảm số lượng phụ tùng. Vui lòng thử lại.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PartsTable
@@ -185,6 +264,8 @@ export default function PartsManagementPage() {
         onEdit={handleEditPart}
         onDelete={handleDeletePart}
         onAdd={handleAddPart}
+        onIncreaseStock={handleIncreaseStock}
+        onDecreaseStock={handleDecreaseStock}
         showActions={true}
       />
 
@@ -196,31 +277,106 @@ export default function PartsManagementPage() {
             <DialogDescription>{editingPart ? 'Cập nhật thông tin phụ tùng' : 'Thêm phụ tùng mới vào kho'}</DialogDescription>
           </DialogHeader>
           <Form {...partForm}>
-            <form onSubmit={partForm.handleSubmit((data) => {
-              const initialQuantity = Number(data.initialQuantity);
-              const usedQuantity = editingPart ? editingPart.usedQuantity : 0;
-              const currentStock = initialQuantity - usedQuantity;
-              const next: Part = {
-                id: editingPart ? editingPart.id : String(parts.length + 1),
-                name: data.name,
-                partNumber: data.partNumber,
-                category: data.category,
-                brand: data.brand,
-                compatibleModel: data.compatibleModel,
-                initialQuantity: initialQuantity,
-                usedQuantity: usedQuantity,
-                currentStock: currentStock,
-                minStock: Math.max(1, Math.floor(initialQuantity * 0.2)), // 20% của số lượng ban đầu
-                maxStock: initialQuantity * 2, // Gấp đôi số lượng ban đầu
-                unitPrice: Number(data.unitPrice),
-                supplier: data.supplier,
-                lastRestocked: new Date().toISOString().split('T')[0],
-                status: editingPart?.status || 'active', // Keep existing status or default to 'active'
-                location: 'Kho chính',
-              };
-              setParts(prev => editingPart ? prev.map(p => p.id === editingPart.id ? next : p) : [...prev, next]);
-              setIsPartDialogOpen(false);
-              toast({ title: editingPart ? 'Cập nhật phụ tùng thành công' : 'Thêm phụ tùng thành công' });
+            <form onSubmit={partForm.handleSubmit(async (data) => {
+              if (editingPart) {
+                // Update part via API
+                try {
+                  await apiClient.updatePart(Number(editingPart.id), {
+                    name: data.name,
+                    partNumber: data.partNumber,
+                    manufacturer: data.manufacturer,
+                    category: data.category,
+                    currentUnitPrice: Number(data.unitPrice),
+                    quantity: Number(data.initialQuantity),
+                    reserved: editingPart.reserved, // Keep existing reserved
+                    used: editingPart.usedQuantity, // Keep existing used
+                  });
+
+                  // Reload parts to get the updated part with all details
+                  const apiParts = await apiClient.getParts();
+                  const mappedParts: Part[] = apiParts.map((apiPart) => {
+                    const currentStock = apiPart.quantity;
+                    const usedQuantity = apiPart.used;
+                    const initialQuantity = apiPart.all;
+                    const status: 'active' | 'inactive' = apiPart.status === 'ACTIVE' ? 'active' : 'inactive';
+                    const category = apiPart.category || extractCategory(apiPart.partNumber);
+                    let compatibleModel = '';
+                    if (apiPart.vehicleModelsEnum && apiPart.vehicleModelsEnum.enumValue.length > 0) {
+                      compatibleModel = apiPart.vehicleModelsEnum.enumValue
+                        .map(model => model.replace('VinFast ', ''))
+                        .join(', ');
+                    }
+                    return {
+                      id: String(apiPart.id),
+                      name: apiPart.name,
+                      partNumber: apiPart.partNumber,
+                      category: category,
+                      manufacturer: apiPart.manufacturer || '',
+                      compatibleModel: compatibleModel,
+                      initialQuantity: initialQuantity,
+                      usedQuantity: usedQuantity,
+                      reserved: apiPart.reserved,
+                      currentStock: currentStock,
+                      unitPrice: apiPart.currentUnitPrice,
+                      status: status,
+                    };
+                  });
+                  setParts(mappedParts);
+                  setIsPartDialogOpen(false);
+                  toast({ title: 'Cập nhật phụ tùng thành công' });
+                } catch (error) {
+                  console.error('Failed to update part:', error);
+                  showApiErrorToast(error, toast, 'Không thể cập nhật phụ tùng. Vui lòng thử lại.');
+                }
+              } else {
+                // Create new part via API
+                try {
+                  const newPart = await apiClient.createPart({
+                    name: data.name,
+                    partNumber: data.partNumber,
+                    manufacturer: data.manufacturer,
+                    category: data.category,
+                    currentUnitPrice: Number(data.unitPrice),
+                    quantity: Number(data.initialQuantity),
+                  });
+
+                  // Reload parts to get the new part with all details
+                  const apiParts = await apiClient.getParts();
+                  const mappedParts: Part[] = apiParts.map((apiPart) => {
+                    const currentStock = apiPart.quantity;
+                    const usedQuantity = apiPart.used;
+                    const initialQuantity = apiPart.all;
+                    const status: 'active' | 'inactive' = apiPart.status === 'ACTIVE' ? 'active' : 'inactive';
+                    const category = apiPart.category || extractCategory(apiPart.partNumber);
+                    let compatibleModel = '';
+                    if (apiPart.vehicleModelsEnum && apiPart.vehicleModelsEnum.enumValue.length > 0) {
+                      compatibleModel = apiPart.vehicleModelsEnum.enumValue
+                        .map(model => model.replace('VinFast ', ''))
+                        .join(', ');
+                    }
+                    return {
+                      id: String(apiPart.id),
+                      name: apiPart.name,
+                      partNumber: apiPart.partNumber,
+                      category: category,
+                      manufacturer: apiPart.manufacturer || '',
+                      compatibleModel: compatibleModel,
+                      initialQuantity: initialQuantity,
+                      usedQuantity: usedQuantity,
+                      reserved: apiPart.reserved,
+                      currentStock: currentStock,
+                      unitPrice: apiPart.currentUnitPrice,
+                      status: status,
+                    };
+                  });
+                  setParts(mappedParts);
+                  setIsPartDialogOpen(false);
+                  toast({ title: 'Thêm phụ tùng thành công' });
+                } catch (error) {
+                  console.error('Failed to create part:', error);
+                  showApiErrorToast(error, toast, 'Không thể thêm phụ tùng. Vui lòng thử lại.');
+                }
+              }
             })} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={partForm.control} name="name" render={({ field }) => (
@@ -232,38 +388,26 @@ export default function PartsManagementPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={partForm.control} name="category" render={({ field }) => (
-                  <FormItem><FormLabel>Danh mục *</FormLabel><FormControl><Input {...field} placeholder="Danh mục" /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={partForm.control} name="brand" render={({ field }) => (
-                  <FormItem><FormLabel>Thương hiệu *</FormLabel><FormControl><Input {...field} placeholder="Thương hiệu" /></FormControl><FormMessage /></FormItem>
+                  <FormItem>
+                    <FormLabel>Danh mục *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingCategories}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={isLoadingCategories ? "Đang tải..." : "Chọn danh mục"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {partCategories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                 )} />
               </div>
-              <FormField control={partForm.control} name="compatibleModel" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Model xe tương thích *</FormLabel>
-                  <FormControl>
-                    <div className="grid grid-cols-2 gap-2">
-                      {vehicleTypes.map((vehicleType) => (
-                        <div key={vehicleType.value} className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id={vehicleType.value}
-                            name="compatibleModel"
-                            value={vehicleType.value}
-                            checked={field.value === vehicleType.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            className="border-gray-300"
-                          />
-                          <label htmlFor={vehicleType.value} className="text-sm font-medium">
-                            {vehicleType.label}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={partForm.control} name="initialQuantity" render={({ field }) => (
                   <FormItem><FormLabel>Số lượng ban đầu *</FormLabel><FormControl><Input type="number" {...field} placeholder="Số lượng nhập từ nhà cung cấp" /></FormControl><FormMessage /></FormItem>
@@ -272,7 +416,7 @@ export default function PartsManagementPage() {
                   <FormItem><FormLabel>Giá đơn vị (VNĐ) *</FormLabel><FormControl><Input type="number" {...field} placeholder="Giá mỗi phụ tùng" /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
-              <FormField control={partForm.control} name="supplier" render={({ field }) => (
+              <FormField control={partForm.control} name="manufacturer" render={({ field }) => (
                 <FormItem><FormLabel>Nhà cung cấp *</FormLabel><FormControl><Input {...field} placeholder="Tên nhà cung cấp" /></FormControl><FormMessage /></FormItem>
               )} />
               <DialogFooter>

@@ -4,8 +4,11 @@ import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TablePagination } from '@/components/ui/table-pagination';
+import { useDebounce } from '@/hooks/useDebounce';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Edit, Plus, Search, Trash2 } from 'lucide-react';
+import { Edit, Minus, Plus, PlusCircle, Search, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -14,19 +17,13 @@ interface Part {
   name: string;
   partNumber: string;
   category: string;
-  brand: string;
-  compatibleModel: string;
-  initialQuantity: number;
-  usedQuantity: number;
-  currentStock: number;
-  minStock: number;
-  maxStock: number;
-  unitPrice: number;
-  supplier: string;
-  lastRestocked: string;
-  status: 'active' | 'inactive'; // Trạng thái sử dụng (đang sử dụng/ngưng)
-  location: string;
-  description?: string;
+  manufacturer: string; // Nhà cung cấp (từ API manufacturer)
+  compatibleModel: string; // Model xe tương thích (extract từ vehicleModelsEnum)
+  initialQuantity: number; // Số lượng ban đầu (từ API all)
+  usedQuantity: number; // Số lượng đã sử dụng (từ API used)
+  currentStock: number; // Số lượng hiện tại (từ API quantity)
+  unitPrice: number; // Giá đơn vị (từ API currentUnitPrice)
+  status: 'active' | 'inactive'; // Trạng thái (từ API status)
 }
 
 interface PartsTableProps {
@@ -34,6 +31,8 @@ interface PartsTableProps {
   onEdit: (part: Part) => void;
   onDelete: (partId: string) => void;
   onAdd: () => void;
+  onIncreaseStock?: (partId: string, amount: number) => void;
+  onDecreaseStock?: (partId: string, amount: number) => void;
   showActions?: boolean;
 }
 
@@ -50,6 +49,8 @@ export function PartsTable({
   onEdit,
   onDelete,
   onAdd,
+  onIncreaseStock,
+  onDecreaseStock,
   showActions = true
 }: PartsTableProps) {
   const filtersForm = useForm<FiltersForm>({
@@ -58,18 +59,37 @@ export function PartsTable({
   });
 
   const watchFilters = filtersForm.watch();
-  const filteredParts = parts.filter(part => {
-    const term = (watchFilters.search || '').toLowerCase().trim();
-    const matchesSearch = term === '' ||
-      part.name.toLowerCase().includes(term) ||
-      part.partNumber.toLowerCase().includes(term) ||
-      part.brand.toLowerCase().includes(term);
+  const debouncedSearch = useDebounce(watchFilters.search || '', 300);
 
-    const matchesCategory = watchFilters.category === 'all' || part.category === watchFilters.category;
-    const matchesStatus = watchFilters.status === 'all' || part.status === watchFilters.status;
+  const filteredParts = useMemo(() => {
+    return parts.filter(part => {
+      const term = debouncedSearch.toLowerCase().trim();
+      const matchesSearch = !term ||
+        part.name.toLowerCase().includes(term) ||
+        part.partNumber.toLowerCase().includes(term) ||
+        part.manufacturer.toLowerCase().includes(term);
 
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+      const matchesCategory = watchFilters.category === 'all' || part.category === watchFilters.category;
+      const matchesStatus = watchFilters.status === 'all' || part.status === watchFilters.status;
+
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [parts, debouncedSearch, watchFilters.category, watchFilters.status]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.ceil(filteredParts.length / pageSize);
+
+  const paginatedParts = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredParts.slice(startIndex, startIndex + pageSize);
+  }, [filteredParts, currentPage, pageSize]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, watchFilters.category, watchFilters.status]);
+
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -100,7 +120,16 @@ export function PartsTable({
                 <FormControl>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <Input className="pl-9 w-64" placeholder="Tìm kiếm..." {...field} />
+                    <Input className="pl-9 pr-10 w-64" placeholder="Tìm kiếm phụ tùng..." {...field} />
+                    {field.value && (
+                      <button
+                        type="button"
+                        onClick={() => field.onChange('')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </FormControl>
               </FormItem>
@@ -179,12 +208,12 @@ export function PartsTable({
                 </TableCell>
               </TableRow>
             ) : (
-              filteredParts.map(part => (
+              paginatedParts.map(part => (
                 <TableRow key={part.id}>
                   <TableCell>{part.name}</TableCell>
                   <TableCell>{part.partNumber}</TableCell>
                   <TableCell>{part.category}</TableCell>
-                  <TableCell>{part.brand}</TableCell>
+                  <TableCell>{part.manufacturer}</TableCell>
                   <TableCell>
                     {part.compatibleModel ? (
                       <Badge variant="secondary" className="text-xs">
@@ -195,11 +224,36 @@ export function PartsTable({
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm">
-                      <div className="font-medium text-green-600">{part.currentStock}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Đã dùng: {part.usedQuantity} / Tổng: {part.initialQuantity}
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm">
+                        <div className="font-medium text-green-600">{part.currentStock}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Đã dùng: {part.usedQuantity} / Tổng: {part.initialQuantity}
+                        </div>
                       </div>
+                      {showActions && onIncreaseStock && onDecreaseStock && (
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 w-6 p-0"
+                            onClick={() => onIncreaseStock(part.id, 1)}
+                            title="Tăng số lượng"
+                          >
+                            <PlusCircle className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 w-6 p-0"
+                            onClick={() => onDecreaseStock(part.id, 1)}
+                            disabled={part.currentStock <= 0}
+                            title="Giảm số lượng"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>{formatPrice(part.unitPrice)}</TableCell>
@@ -222,6 +276,13 @@ export function PartsTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      <TablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

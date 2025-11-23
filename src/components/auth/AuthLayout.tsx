@@ -12,7 +12,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
       <div className="w-full max-w-md">
         {/* Logo/Brand Section */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-orange-50 to-orange-100 px-6 py-3 rounded-2xl shadow-lg border border-orange-200 mb-4">
+          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-secondary/50 to-secondary px-6 py-3 rounded-2xl shadow-lg border border-border mb-4">
             <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shadow-md">
               <svg
                 className="w-6 h-6 text-primary"
@@ -26,8 +26,8 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           </div>
         </div>
 
-        {/* Authh Card */}
-        <div className="bg-card border rounded-2xl p-8 shadow">
+        {/* Auth Card */}
+        <div className="bg-card border rounded-2xl p-8 shadow-lg">
           <div className="mb-6 text-center">
             <h2 className="text-2xl font-bold text-foreground mb-2">{title}</h2>
             {subtitle && (

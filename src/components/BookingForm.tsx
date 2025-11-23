@@ -5,14 +5,16 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TablePagination } from '@/components/ui/table-pagination';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { apiClient } from '@/lib/api';
+import { useAvailableSlots } from '@/hooks/useAvailableSlots';
+import { useTimeSlots } from '@/hooks/useTimeSlots';
+import { useVinLookup, VinData } from '@/hooks/useVinLookup';
 import { bookingApi } from '@/lib/bookingUtils';
 import { extractErrorMessage } from '@/lib/responseHandler';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createColumnHelper } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import {
   AlertCircle,
@@ -21,7 +23,7 @@ import {
   Clock,
   Wrench
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
@@ -41,24 +43,18 @@ const bookingSchema = z.object({
 
 type BookingFormData = z.infer<typeof bookingSchema>;
 
-// Service type for React Table
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  duration: number;
-  compatibleVehicles: string[];
-  relatedParts: Record<string, string[]>; // Model -> Parts mapping
-  category?: string;
-  status?: string;
-}
-
-// Column helper for React Table
-const columnHelper = createColumnHelper<Service>();
-
 interface BookingFormProps {
-  services: Service[];
+  services: Array<{
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    duration: number;
+    compatibleVehicles: string[];
+    relatedParts: Record<string, string[]>;
+    category?: string;
+    status?: string;
+  }>;
 }
 
 export function BookingForm({ services }: BookingFormProps) {
@@ -66,7 +62,6 @@ export function BookingForm({ services }: BookingFormProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Form setup
   const form = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
@@ -81,124 +76,37 @@ export function BookingForm({ services }: BookingFormProps) {
     }
   });
 
-  // State
-  const [vinData, setVinData] = useState<{
-    vin: string;
-    name: string;
-    plateNumber: string;
-    color: string;
-    distanceTraveledKm: number;
-    batteryDegradation: number;
-    purchasedAt: string;
-    createdAt: string;
-    entityStatus: string;
-    userId: number;
-    username: string;
-    modelId: number;
-    modelName: string;
-  } | null>(() => {
-    // Load vinData from localStorage on mount with error handling
-    try {
-      const savedVinData = localStorage.getItem('bookingVinData');
-      return savedVinData ? JSON.parse(savedVinData) : null;
-    } catch (error) {
-      console.warn('Failed to parse vinData from localStorage:', error);
-      // Clear corrupted data
-      localStorage.removeItem('bookingVinData');
-      return null;
-    }
-  });
-  const [availableDates, setAvailableDates] = useState<Date[]>([]);
-  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
-  const [isLoadingTimeSlots, setIsLoadingTimeSlots] = useState(false);
-  const [workingHours, setWorkingHours] = useState<string[]>([]);
-  const [slotsData, setSlotsData] = useState<Array<{ date: string; bookedHours: number[] }>>([]);
-  const [isLoadingSlots, setIsLoadingSlots] = useState(true);
+  const { vinData, setVinData, lookupVin, clearVinData } = useVinLookup();
+  const {
+    workingHours,
+    slots,
+    availableDates,
+    availableDateStrings,
+    calendarMonth,
+    setCalendarMonth,
+    defaultCalendarMonth,
+    isLoading: isLoadingSlots,
+    refetchSlots,
+  } = useAvailableSlots();
 
-  // Get selected date and time slot from form
   const selectedDate = form.watch('selectedDate');
-  const selectedTimeSlot = form.watch('selectedTimeSlot');
-
-  // Convert hour string "07:00" to hour number 7
-  const hourStringToNumber = useCallback((hourStr: string): number => {
-    return parseInt(hourStr.split(':')[0], 10);
-  }, []);
-
-  const loadTimeSlots = useCallback(
-    async (date: Date) => {
-      if (!workingHours.length) {
-        setIsLoadingTimeSlots(false);
-        return;
-      }
-
-      setIsLoadingTimeSlots(true);
-      const dateKey = format(date, 'yyyy-MM-dd');
-
-      // Find booked hours for this date from API
-      const daySlot = slotsData.find(s => s.date === dateKey);
-      const bookedHours = daySlot?.bookedHours || [];
-      const bookedHoursSet = new Set(bookedHours);
-
-      // Generate available time slots from working hours
-      // BE handles: max 5 customers per slot, 1 booking per customer per day
-      const available: string[] = [];
-      for (const hour of workingHours) {
-        const hourNum = hourStringToNumber(hour);
-
-        // Skip if this hour is fully booked (BE returns it in bookedHours)
-        if (bookedHoursSet.has(hourNum)) {
-          continue;
-        }
-
-        // Add hour as-is (e.g., "07:00")
-        available.push(hour);
-      }
-
-      setAvailableTimeSlots(available);
-
-      const currentTimeSlot = form.getValues('selectedTimeSlot');
-      if (currentTimeSlot && !available.includes(currentTimeSlot)) {
-        form.setValue('selectedTimeSlot', '');
-      }
-      setIsLoadingTimeSlots(false);
-    },
-    [workingHours, slotsData, form, hourStringToNumber]
+  const { availableTimeSlots, isLoading: isLoadingTimeSlots, loadTimeSlots } = useTimeSlots(
+    workingHours,
+    slots,
+    selectedDate
   );
 
-  const handleVinLookup = useCallback(async (vin: string) => {
-    if (!vin.trim()) return;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
-    try {
-      const vehicleData = await apiClient.getVehicleByVin(vin);
-      setVinData(vehicleData);
-
-      // Auto-fill form with vehicle data
-      form.setValue('plate', vehicleData.plateNumber || '');
-      form.setValue('model', vehicleData.modelName || '');
-
-      toast({
-        title: 'Thành công',
-        description: 'Đã tìm thấy thông tin xe'
-      });
-    } catch (error) {
-      console.error('VIN lookup error:', error);
-      toast({
-        title: 'Lỗi',
-        description: 'Không thể tra cứu thông tin xe với mã VIN này. VIN có thể chưa được đăng ký trong hệ thống.',
-        variant: 'destructive'
-      });
-    }
-  }, [form, toast]);
-
-  // Pre-fill VIN if navigated from vehicle profile or edit mode
+  // Pre-fill form from location state
   useEffect(() => {
     if (location.state?.preselectVin) {
       form.setValue('vin', location.state.preselectVin);
-      // Tự động hiển thị thông tin xe mà không cần tra cứu
       if (location.state?.preselectVehicle) {
         const vehicle = location.state.preselectVehicle;
-        // Map old format to new API format
-        setVinData({
+        const mappedVinData: VinData = {
           vin: location.state.preselectVin,
           name: vehicle.name || vehicle.model || '',
           plateNumber: vehicle.plateNumber || vehicle.plate || '',
@@ -212,21 +120,18 @@ export function BookingForm({ services }: BookingFormProps) {
           username: vehicle.username || '',
           modelId: vehicle.modelId || 0,
           modelName: vehicle.modelName || vehicle.model || ''
-        });
-        form.setValue('plate', vehicle.plateNumber || vehicle.plate || '');
-        form.setValue('model', vehicle.modelName || vehicle.model || '');
+        };
+        setVinData(mappedVinData);
+        form.setValue('plate', mappedVinData.plateNumber);
+        form.setValue('model', mappedVinData.modelName);
       }
     }
 
-    // Pre-fill form data if in edit mode
     if (location.state?.editMode && location.state?.existingBooking) {
       const booking = location.state.existingBooking;
-
-      // Pre-fill VIN and vehicle data
       if (booking.vehicle) {
         form.setValue('vin', booking.vehicle.vin);
-        // Map old format to new API format
-        setVinData({
+        const mappedVinData: VinData = {
           vin: booking.vehicle.vin,
           name: booking.vehicle.name || booking.vehicle.model || '',
           plateNumber: booking.vehicle.plateNumber || booking.vehicle.plate || '',
@@ -240,103 +145,69 @@ export function BookingForm({ services }: BookingFormProps) {
           username: booking.vehicle.username || '',
           modelId: booking.vehicle.modelId || 0,
           modelName: booking.vehicle.modelName || booking.vehicle.model || ''
-        });
-        form.setValue('plate', booking.vehicle.plateNumber || booking.vehicle.plate || '');
-        form.setValue('model', booking.vehicle.modelName || booking.vehicle.model || '');
+        };
+        setVinData(mappedVinData);
+        form.setValue('plate', mappedVinData.plateNumber);
+        form.setValue('model', mappedVinData.modelName);
       }
-
-      // Pre-fill selected services
-      if (booking.services && booking.services.length > 0) {
-        const serviceIds = booking.services.map(service => service.id);
-        form.setValue('services', serviceIds);
+      if (booking.services) {
+        form.setValue('services', booking.services.map((s: { id: string }) => s.id));
       }
-
-      // Pre-fill selected date and time
       if (booking.date) {
         form.setValue('selectedDate', new Date(booking.date));
       }
       if (booking.time) {
         form.setValue('selectedTimeSlot', booking.time);
       }
-
-      // Pre-fill notes
       if (booking.notes) {
         form.setValue('notes', booking.notes);
       }
     }
-  }, [location.state, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state?.preselectVin, location.state?.preselectVehicle, location.state?.editMode, location.state?.existingBooking, setVinData]);
 
-  // Pre-fill form fields when vinData is loaded from localStorage
+  // Pre-fill form when vinData loads
   useEffect(() => {
     if (vinData && !location.state?.preselectVin && !location.state?.editMode) {
       form.setValue('vin', vinData.vin);
       form.setValue('plate', vinData.plateNumber || '');
       form.setValue('model', vinData.modelName || '');
     }
-  }, [vinData, form, location.state]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vinData, location.state?.preselectVin, location.state?.editMode]);
 
-  // Save vinData to localStorage whenever it changes
+  // Clear time slot if not available
   useEffect(() => {
-    if (vinData) {
-      localStorage.setItem('bookingVinData', JSON.stringify(vinData));
-    } else {
-      localStorage.removeItem('bookingVinData');
+    const currentTimeSlot = form.getValues('selectedTimeSlot');
+    if (currentTimeSlot && !availableTimeSlots.includes(currentTimeSlot)) {
+      form.setValue('selectedTimeSlot', '');
     }
-  }, [vinData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableTimeSlots]);
 
-  // Load working hours and slots from API on mount
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoadingSlots(true);
-      try {
-        // Load working hours
-        const workingHoursData = await bookingApi.getWorkingHours();
-        setWorkingHours(workingHoursData.enumValue || []);
+  const handleVinLookup = async () => {
+    const vin = form.getValues('vin');
+    if (!vin.trim()) return;
 
-        // Load available slots
-        const slots = await bookingApi.getAvailableSlots();
-        setSlotsData(slots);
-
-        // Calculate available dates from slots
-        const dates: Date[] = slots.map(slot => new Date(slot.date));
-        setAvailableDates(dates);
-      } catch (error) {
-        console.error('Failed to load working hours and slots:', error);
-        toast({
-          title: 'Lỗi',
-          description: 'Không thể tải thông tin khung giờ. Vui lòng thử lại.',
-          variant: 'destructive'
-        });
-      } finally {
-        setIsLoadingSlots(false);
+    try {
+      const vehicleData = await lookupVin(vin);
+      if (vehicleData) {
+        form.setValue('plate', vehicleData.plateNumber || '');
+        form.setValue('model', vehicleData.modelName || '');
       }
-    };
-    loadData();
-  }, [toast]);
-
-  // Load time slots when date changes
-  useEffect(() => {
-    if (selectedDate) {
-      loadTimeSlots(selectedDate);
+    } catch {
+      // Error already handled in hook
     }
-  }, [selectedDate, loadTimeSlots]);
+  };
 
-  // Lọc dịch vụ theo model xe từ VIN
   const visibleServices = useMemo(() => {
     if (!vinData?.modelName) return [];
-
     return services.filter(service =>
       service.compatibleVehicles.includes(vinData.modelName) ||
       service.compatibleVehicles.includes('All')
     );
   }, [services, vinData?.modelName]);
 
-  // Local state for search and pagination (giống ServiceTable)
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
-
-  // Filter services based on search query
   const filteredServices = useMemo(() => {
     if (!searchQuery.trim()) return visibleServices;
     return visibleServices.filter(service =>
@@ -345,37 +216,34 @@ export function BookingForm({ services }: BookingFormProps) {
     );
   }, [visibleServices, searchQuery]);
 
-  // Paginate filtered services
   const paginatedServices = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredServices.slice(startIndex, endIndex);
+    return filteredServices.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredServices, currentPage, itemsPerPage]);
 
   const totalPages = Math.ceil(filteredServices.length / itemsPerPage);
-
-  // Selection handlers (giống ServiceTable)
   const selectedServices = form.watch('services') || [];
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredServices.length);
 
   const handleSelectAll = () => {
     const allIds = paginatedServices.map(service => service.id);
-    const newSelection = [...new Set([...selectedServices, ...allIds])];
-    form.setValue('services', newSelection);
+    form.setValue('services', [...new Set([...selectedServices, ...allIds])]);
   };
 
   const handleDeselectAll = () => {
     const currentPageIds = paginatedServices.map(service => service.id);
-    const newSelection = selectedServices.filter(id => !currentPageIds.includes(id));
-    form.setValue('services', newSelection);
+    form.setValue('services', selectedServices.filter(id => !currentPageIds.includes(id)));
   };
 
   const handleServiceToggle = (serviceId: string) => {
     const isSelected = selectedServices.includes(serviceId);
-    if (isSelected) {
-      form.setValue('services', selectedServices.filter(id => id !== serviceId));
-    } else {
-      form.setValue('services', [...selectedServices, serviceId]);
-    }
+    form.setValue(
+      'services',
+      isSelected
+        ? selectedServices.filter(id => id !== serviceId)
+        : [...selectedServices, serviceId]
+    );
   };
 
   const allCurrentPageSelected = paginatedServices.every(service =>
@@ -386,36 +254,22 @@ export function BookingForm({ services }: BookingFormProps) {
     selectedServices.includes(service.id)
   );
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, filteredServices.length);
-
   const onSubmit = async (data: BookingFormData) => {
     try {
       const dateString = format(data.selectedDate, 'yyyy-MM-dd');
-      // selectedTimeSlot is now just "07:00" format
-      const slotStart = data.selectedTimeSlot;
+      const scheduleValue = `${dateString} ${data.selectedTimeSlot}:00`;
 
-      // Calculate total price and selected services
-      const selectedServices = services.filter(s => data.services.includes(s.id));
-      const totalPrice = selectedServices.reduce((sum, service) => sum + service.price, 0);
-      const totalDuration = selectedServices.reduce((sum, service) => sum + service.duration, 0);
-
-      // Compose schedule time 'yyyy-MM-dd HH:mm:ss' from selected slot (use slotStart already extracted above)
-      const scheduleValue = `${dateString} ${slotStart}:00`;
-
-      // Get current customer
       const userStr = localStorage.getItem('user');
       const currentUser = userStr ? JSON.parse(userStr) as { id?: number } : {};
       const customerId = currentUser?.id;
 
-      // Build catalog details payload
-      const catalogDetailsPayload = selectedServices.map(s => ({
+      const selectedServicesList = services.filter(s => data.services.includes(s.id));
+      const catalogDetailsPayload = selectedServicesList.map(s => ({
         catalogId: Number(s.id),
         modelId: vinData?.modelId ?? 0,
         description: s.description || ''
       }));
 
-      // Call backend to create booking
       try {
         const created = await bookingApi.createBooking({
           customerId: Number(customerId),
@@ -428,85 +282,61 @@ export function BookingForm({ services }: BookingFormProps) {
           catalogDetails: catalogDetailsPayload
         });
 
-        // Reload slots data from API to reflect the new booking
-        try {
-          const updatedSlots = await bookingApi.getAvailableSlots();
-          setSlotsData(updatedSlots);
-          // Recalculate available dates
-          const dates: Date[] = updatedSlots.map(slot => new Date(slot.date));
-          setAvailableDates(dates);
-          // Reload time slots for the selected date
-          if (data.selectedDate) {
-            await loadTimeSlots(data.selectedDate);
-          }
-        } catch (slotError) {
-          console.error('Failed to reload slots:', slotError);
+        await refetchSlots();
+        if (data.selectedDate) {
+          await loadTimeSlots(data.selectedDate);
         }
 
-        // Persist latest booking id for confirmation page
         if (created?.id) {
           localStorage.setItem('latestBookingId', String(created.id));
         }
+
+        const totalPrice = selectedServicesList.reduce((sum, s) => sum + s.price, 0);
+        const totalDuration = selectedServicesList.reduce((sum, s) => sum + s.duration, 0);
+
+        const bookingData = {
+          id: `BK${Date.now()}`,
+          vehicle: {
+            vin: data.vin,
+            model: vinData?.modelName || 'N/A'
+          },
+          services: selectedServicesList.map(s => ({
+            id: s.id,
+            name: s.name,
+            description: s.description,
+            price: s.price,
+            duration: s.duration
+          })),
+          date: dateString,
+          time: data.selectedTimeSlot,
+          notes: data.notes || '',
+          totalAmount: totalPrice,
+          estimatedDuration: totalDuration,
+          status: 'pending' as const,
+          createdAt: new Date().toISOString()
+        };
+
+        localStorage.setItem('latestBooking', JSON.stringify(bookingData));
+        clearVinData();
+
+        toast({
+          title: 'Đặt lịch thành công!',
+          description: 'Đang chuyển đến trang xác nhận...'
+        });
+
+        const latestId = localStorage.getItem('latestBookingId');
+        navigate('/customer/booking/confirmation', {
+          state: latestId ? { bookingId: Number(latestId) } : { bookingData }
+        });
       } catch (err) {
-        // Use centralized error handler to extract message from BE
         const errorMessage = extractErrorMessage(err);
         toast({
           title: 'Lỗi',
           description: errorMessage,
           variant: 'destructive'
         });
-        return; // Stop execution, don't continue to success flow
-      }
-
-      // Create booking data
-      const bookingData = {
-        id: `BK${Date.now()}`,
-        vehicle: {
-          vin: data.vin,
-          model: vinData?.modelName || 'N/A'
-        },
-        services: selectedServices.map(service => ({
-          id: service.id,
-          name: service.name,
-          description: service.description,
-          price: service.price,
-          duration: service.duration
-        })),
-        date: dateString,
-        time: data.selectedTimeSlot,
-        notes: data.notes || '',
-        totalAmount: totalPrice,
-        estimatedDuration: totalDuration,
-        status: 'pending' as const,
-        createdAt: new Date().toISOString()
-      };
-
-      // Save booking data to localStorage
-      localStorage.setItem('latestBooking', JSON.stringify(bookingData));
-
-      // Show success message
-      toast({
-        title: 'Đặt lịch thành công!',
-        description: 'Đang chuyển đến trang xác nhận...'
-      });
-
-      // Clear localStorage and navigate to confirmation page
-      localStorage.removeItem('bookingVinData');
-      // Prefer navigating with bookingId; fallback to local bookingData
-      const latestId = localStorage.getItem('latestBookingId');
-      if (latestId) {
-        navigate('/customer/booking/confirmation', {
-          state: { bookingId: Number(latestId) }
-        });
-      } else {
-        navigate('/customer/booking/confirmation', {
-          state: { bookingData }
-        });
       }
     } catch (error) {
-      // This outer catch is for unexpected errors only
-      // Normal API errors are already handled in the inner catch block
-      console.error('Unexpected booking error:', error);
       const errorMessage = extractErrorMessage(error);
       toast({
         title: 'Lỗi',
@@ -516,51 +346,43 @@ export function BookingForm({ services }: BookingFormProps) {
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
-  };
-
   const isEditMode = location.state?.editMode;
-
-  // Dynamic title and description based on VIN status and edit mode
-  const getPageContent = () => {
+  const pageContent = useMemo(() => {
     if (isEditMode) {
       return {
         title: 'Chỉnh sửa lịch hẹn',
         description: 'Cập nhật thông tin lịch hẹn của bạn'
       };
     }
-
     if (!vinData) {
       return {
         title: 'Đặt lịch bảo dưỡng',
         description: 'Điền thông tin để đặt lịch bảo dưỡng xe'
       };
     }
-
     return {
       title: 'Chọn dịch vụ và thời gian',
       description: `Xe: ${vinData.modelName} - VIN: ${vinData.vin}`
     };
-  };
+  }, [isEditMode, vinData]);
 
-  const pageContent = getPageContent();
+  const handleClearVin = () => {
+    clearVinData();
+    form.setValue('vin', '');
+    form.setValue('services', []);
+    setSearchQuery('');
+    setCurrentPage(1);
+  };
 
   return (
     <div className="space-y-6">
       <div className="text-center">
         <h1 className="text-3xl font-bold">{pageContent.title}</h1>
-        <p className="text-muted-foreground mt-2">
-          {pageContent.description}
-        </p>
+        <p className="text-muted-foreground mt-2">{pageContent.description}</p>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* VIN Input Section - chỉ hiện khi chưa có VIN data */}
           {!vinData && (
             <div className="space-y-4">
               <h2 className="text-2xl font-semibold flex items-center gap-2">
@@ -588,7 +410,7 @@ export function BookingForm({ services }: BookingFormProps) {
                 </div>
                 <Button
                   type="button"
-                  onClick={() => handleVinLookup(form.getValues('vin'))}
+                  onClick={handleVinLookup}
                   disabled={!form.getValues('vin')}
                 >
                   Tra cứu VIN
@@ -597,7 +419,6 @@ export function BookingForm({ services }: BookingFormProps) {
             </div>
           )}
 
-          {/* Vehicle Info Display - chỉ hiện khi đã có VIN data */}
           {vinData && (
             <div className="space-y-4">
               <h2 className="text-2xl font-semibold flex items-center gap-2">
@@ -656,18 +477,7 @@ export function BookingForm({ services }: BookingFormProps) {
                   </div>
                 </div>
                 <div className="mt-4 flex justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setVinData(null);
-                      form.setValue('vin', '');
-                      form.setValue('services', []);
-                      setSearchQuery('');
-                      setCurrentPage(1);
-                    }}
-                  >
+                  <Button type="button" variant="outline" size="sm" onClick={handleClearVin}>
                     Thay đổi VIN
                   </Button>
                 </div>
@@ -675,7 +485,6 @@ export function BookingForm({ services }: BookingFormProps) {
             </div>
           )}
 
-          {/* Service Selection - chỉ hiện khi có VIN data */}
           {vinData && (
             <div className="space-y-4">
               <h2 className="text-2xl font-semibold flex items-center gap-2">
@@ -686,21 +495,16 @@ export function BookingForm({ services }: BookingFormProps) {
               <FormField
                 control={form.control}
                 name="services"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <div className="space-y-4">
-                      {/* Search and Controls */}
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <Input
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Tìm kiếm dịch vụ..."
-                            className="w-64"
-                          />
-                          {/* Đã bỏ nút Chọn tất cả / Bỏ chọn tất cả vì đã có tickbox */}
-                        </div>
-
+                        <Input
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Tìm kiếm dịch vụ..."
+                          className="w-64"
+                        />
                         <div className="flex items-center gap-4">
                           {selectedServices.length > 0 && (
                             <Badge variant="secondary" className="text-sm">
@@ -712,52 +516,30 @@ export function BookingForm({ services }: BookingFormProps) {
                           </span>
                           {totalPages > 1 && (
                             <div className="flex items-center gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                                disabled={currentPage === 1}
-                              >
-                                Trước
-                              </Button>
                               <span className="text-sm text-muted-foreground">
                                 Trang {currentPage} / {totalPages}
                               </span>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                                disabled={currentPage === totalPages}
-                              >
-                                Sau
-                              </Button>
                             </div>
                           )}
                         </div>
                       </div>
 
-                      {/* Services Table */}
                       <div className="border rounded-lg">
                         <Table>
                           <TableHeader>
                             <TableRow>
                               <TableHead className="w-12">
                                 <div className="flex items-center justify-center">
-                                  <div className={cn(
-                                    "w-4 h-4 border-2 rounded flex items-center justify-center transition-colors cursor-pointer",
-                                    allCurrentPageSelected ? "bg-primary border-primary text-primary-foreground" :
-                                      someCurrentPageSelected ? "bg-primary/50 border-primary text-primary-foreground" :
-                                        "border-muted-foreground"
-                                  )}
-                                    onClick={() => {
-                                      if (allCurrentPageSelected) {
-                                        handleDeselectAll();
-                                      } else {
-                                        handleSelectAll();
-                                      }
-                                    }}
+                                  <div
+                                    className={cn(
+                                      "w-4 h-4 border-2 rounded flex items-center justify-center transition-colors cursor-pointer",
+                                      allCurrentPageSelected
+                                        ? "bg-primary border-primary text-primary-foreground"
+                                        : someCurrentPageSelected
+                                          ? "bg-primary/50 border-primary text-primary-foreground"
+                                          : "border-muted-foreground"
+                                    )}
+                                    onClick={allCurrentPageSelected ? handleDeselectAll : handleSelectAll}
                                   >
                                     {allCurrentPageSelected && (
                                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -774,27 +556,31 @@ export function BookingForm({ services }: BookingFormProps) {
                               <TableHead>Giá</TableHead>
                               <TableHead>Thời gian</TableHead>
                               <TableHead>Phụ tùng liên quan</TableHead>
-                              {/* Bỏ cột Trạng thái đã chọn */}
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {paginatedServices.map((service) => {
                               const isSelected = selectedServices.includes(service.id);
+                              const modelParts = vinData?.modelName ? service.relatedParts?.[vinData.modelName] : null;
                               return (
                                 <TableRow
                                   key={service.id}
                                   className={cn(
                                     "cursor-pointer hover:bg-muted/50",
-                                    isSelected ? "bg-primary/5" : ""
+                                    isSelected && "bg-primary/5"
                                   )}
                                   onClick={() => handleServiceToggle(service.id)}
                                 >
                                   <TableCell>
                                     <div className="flex items-center justify-center">
-                                      <div className={cn(
-                                        "w-4 h-4 border-2 rounded flex items-center justify-center transition-colors",
-                                        isSelected ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground"
-                                      )}>
+                                      <div
+                                        className={cn(
+                                          "w-4 h-4 border-2 rounded flex items-center justify-center transition-colors",
+                                          isSelected
+                                            ? "bg-primary border-primary text-primary-foreground"
+                                            : "border-muted-foreground"
+                                        )}
+                                      >
                                         {isSelected && (
                                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -806,9 +592,7 @@ export function BookingForm({ services }: BookingFormProps) {
                                   <TableCell>
                                     <div>
                                       <div className="font-medium">{service.name}</div>
-                                      <div className="text-sm text-muted-foreground">
-                                        {service.description}
-                                      </div>
+                                      <div className="text-sm text-muted-foreground">{service.description}</div>
                                     </div>
                                   </TableCell>
                                   <TableCell className="font-medium">
@@ -825,33 +609,24 @@ export function BookingForm({ services }: BookingFormProps) {
                                   </TableCell>
                                   <TableCell>
                                     <div className="flex flex-wrap gap-1">
-                                      {(() => {
-                                        const modelParts = vinData?.modelName ? service.relatedParts?.[vinData.modelName] : null;
-                                        if (!modelParts || modelParts.length === 0) {
-                                          return (
+                                      {!modelParts || modelParts.length === 0 ? (
+                                        <span className="text-xs text-muted-foreground">Không có phụ tùng</span>
+                                      ) : (
+                                        <>
+                                          {modelParts.slice(0, 2).map((part) => (
+                                            <Badge key={part} variant="secondary" className="text-xs">
+                                              {part}
+                                            </Badge>
+                                          ))}
+                                          {modelParts.length > 2 && (
                                             <span className="text-xs text-muted-foreground">
-                                              Không có phụ tùng
+                                              +{modelParts.length - 2} khác
                                             </span>
-                                          );
-                                        }
-                                        return (
-                                          <>
-                                            {modelParts.slice(0, 2).map((part) => (
-                                              <Badge key={part} variant="secondary" className="text-xs">
-                                                {part}
-                                              </Badge>
-                                            ))}
-                                            {modelParts.length > 2 && (
-                                              <span className="text-xs text-muted-foreground">
-                                                +{modelParts.length - 2} khác
-                                              </span>
-                                            )}
-                                          </>
-                                        );
-                                      })()}
+                                          )}
+                                        </>
+                                      )}
                                     </div>
                                   </TableCell>
-                                  {/* Bỏ hiển thị trạng thái đã chọn */}
                                 </TableRow>
                               );
                             })}
@@ -865,6 +640,15 @@ export function BookingForm({ services }: BookingFormProps) {
                           </TableBody>
                         </Table>
                       </div>
+
+                      {/* Pagination */}
+                      <div className="mt-4">
+                        <TablePagination
+                          currentPage={currentPage}
+                          totalPages={totalPages}
+                          onPageChange={setCurrentPage}
+                        />
+                      </div>
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -873,7 +657,6 @@ export function BookingForm({ services }: BookingFormProps) {
             </div>
           )}
 
-          {/* Booking Details - chỉ hiện khi có VIN data */}
           {vinData && (
             <div className="space-y-4">
               <h2 className="text-2xl font-semibold flex items-center gap-2">
@@ -882,7 +665,6 @@ export function BookingForm({ services }: BookingFormProps) {
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left Column - Date & Time */}
                 <div className="space-y-4">
                   <FormField
                     control={form.control}
@@ -900,11 +682,7 @@ export function BookingForm({ services }: BookingFormProps) {
                                   !field.value && "text-muted-foreground"
                                 )}
                               >
-                                {field.value ? (
-                                  format(field.value, "dd/MM/yyyy")
-                                ) : (
-                                  <span>Chọn ngày</span>
-                                )}
+                                {field.value ? format(field.value, "dd/MM/yyyy") : <span>Chọn ngày</span>}
                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
                             </FormControl>
@@ -914,18 +692,21 @@ export function BookingForm({ services }: BookingFormProps) {
                               mode="single"
                               selected={field.value}
                               onSelect={field.onChange}
-                              month={field.value || undefined}
-                              defaultMonth={field.value || undefined}
-                              modifiersClassNames={{ today: 'pointer-events-none opacity-60' }}
+                              month={calendarMonth || field.value || defaultCalendarMonth}
+                              onMonthChange={setCalendarMonth}
+                              defaultMonth={defaultCalendarMonth}
+                              classNames={{
+                                day_today: "", // Bỏ highlight ngày hiện tại
+                              }}
+                              modifiersClassNames={{}}
                               disabled={(date) => {
-                                const today = new Date();
-                                today.setHours(0, 0, 0, 0);
-                                const isSameDay = (a: Date, b: Date) => (
-                                  a.getFullYear() === b.getFullYear() &&
-                                  a.getMonth() === b.getMonth() &&
-                                  a.getDate() === b.getDate()
-                                );
-                                return date < today || !availableDates.some(d => isSameDay(d, date));
+                                const year = date.getFullYear();
+                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                const day = String(date.getDate()).padStart(2, '0');
+                                const dateStr = `${year}-${month}-${day}`;
+
+                                // Chỉ hiển thị các ngày có trong availableDateStrings (API đã xử lý logic)
+                                return !availableDateStrings.has(dateStr);
                               }}
                             />
                           </PopoverContent>
@@ -974,7 +755,6 @@ export function BookingForm({ services }: BookingFormProps) {
                   />
                 </div>
 
-                {/* Right Column - Notes */}
                 <div className="space-y-4">
                   <FormField
                     control={form.control}
@@ -998,7 +778,6 @@ export function BookingForm({ services }: BookingFormProps) {
             </div>
           )}
 
-          {/* Submit Button */}
           {vinData && (
             <div className="flex justify-end">
               <Button type="submit" size="lg">

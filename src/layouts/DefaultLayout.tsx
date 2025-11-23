@@ -1,6 +1,5 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
-import { authService } from '@/lib/auth';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 export default function DefaultLayout() {
@@ -11,9 +10,9 @@ export default function DefaultLayout() {
     return <Navigate to="/" replace />; // Chưa đăng nhập: về trang gốc
   }
 
-  const roleKey = authService.getRoleKey();
+  const roleDisplayName = user.roleDisplayName;
   // Khách hàng: chỉ riêng trang dashboard "/customer" dùng layout công khai (giống trang gốc)
-  if (roleKey === 'customer' && location.pathname === '/customer') {
+  if (roleDisplayName === 'Khách hàng' && location.pathname === '/customer') {
     return <Outlet />;
   }
 
@@ -21,7 +20,7 @@ export default function DefaultLayout() {
   return (
     <DashboardLayout user={{
       email: user.email,
-      role: roleKey || 'customer',
+      role: roleDisplayName,
       userType: 'service'
     }}>
       <Outlet />

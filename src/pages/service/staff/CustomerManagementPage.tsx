@@ -40,8 +40,6 @@ export default function CustomerManagementPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
@@ -177,28 +175,25 @@ export default function CustomerManagementPage() {
   };
 
 
-  // Derived lists for filters and pagination
+  // Derived lists for filters
   const uniqueRoles = Array.from(new Set(customers.map(c => c.roleDisplayName).filter(Boolean))) as string[];
   const filtered = customers.filter(c =>
     (roleFilter !== 'ALL' ? c.roleDisplayName === roleFilter : true) &&
     (statusFilter !== 'ALL' ? String(c.status) === statusFilter : true)
   );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const startIdx = (currentPage - 1) * pageSize;
-  const pageItems = filtered.slice(startIdx, startIdx + pageSize);
+  // CustomerTable handles pagination internally, so we pass all filtered customers
 
   return (
     <div className="space-y-6">
       <CustomerTable
-        customers={pageItems}
+        customers={filtered}
         onEdit={handleEditCustomer}
         onDelete={handleDeleteCustomer}
         onAdd={handleAddCustomer}
         showActions={true}
         filters={(
           <>
-            <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setPage(1); }}>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Vai trò" />
               </SelectTrigger>
@@ -209,7 +204,7 @@ export default function CustomerManagementPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
@@ -223,18 +218,10 @@ export default function CustomerManagementPage() {
           </>
         )}
         rightAction={(
-          <div className="flex items-center gap-2">
-            <Button onClick={handleAddCustomer}>
-              <Plus className="w-4 h-4 mr-2" />
-              Thêm tài khoản
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
-              Trước
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>
-              Sau
-            </Button>
-          </div>
+          <Button onClick={handleAddCustomer}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm tài khoản
+          </Button>
         )}
       />
 

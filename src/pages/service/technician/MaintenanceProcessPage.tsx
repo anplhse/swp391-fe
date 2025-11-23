@@ -1,13 +1,23 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TablePagination } from '@/components/ui/table-pagination';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, CheckCircle, Clock, Play } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/useDebounce';
+import { authService } from '@/lib/auth';
+import { bookingApi } from '@/lib/bookingUtils';
+import { showApiErrorToast, showApiResponseToast } from '@/lib/responseHandler';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { AlertCircle, CheckCircle, Clock, Play, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface MaintenanceStep {
   id: string;
@@ -22,6 +32,8 @@ interface MaintenanceStep {
 
 interface MaintenanceTask {
   id: string;
+  jobId: number;
+  bookingId: number;
   vehiclePlate: string;
   customerName: string;
   serviceType: string;
@@ -36,15 +48,109 @@ interface MaintenanceTask {
 
 export default function MaintenanceProcessPage() {
   const [tasks, setTasks] = useState<MaintenanceTask[]>([]);
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
+
+  const filterSchema = z.object({
+    search: z.string().optional(),
+    status: z.string().optional(),
+  });
+  type FilterForm = z.infer<typeof filterSchema>;
+
+  const filterForm = useForm<FilterForm>({
+    resolver: zodResolver(filterSchema),
+    defaultValues: { search: '', status: 'all' }
+  });
+
+  const watchFilters = filterForm.watch();
+  const debouncedSearchTerm = useDebounce(watchFilters.search || '', 300);
   const [selectedTask, setSelectedTask] = useState<MaintenanceTask | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const [isStarting, setIsStarting] = useState<{ [key: string]: boolean }>({});
+  const [isCompleting, setIsCompleting] = useState<{ [key: string]: boolean }>({});
+
+  const loadTasks = useCallback(async () => {
+    try {
+      const currentUser = authService.getAuthState().user;
+      if (!currentUser || !currentUser.id) {
+        console.error('User not found or missing ID');
+        return;
+      }
+
+      // Get technician-specific tasks (backend handles permission logic)
+      const jobs = await bookingApi.getTechnicianTasks(currentUser.id);
+
+      // Load booking details for each job to get vehicle and customer info
+      const tasksWithDetails = await Promise.all(
+        jobs.map(async (job) => {
+          try {
+            const booking = await bookingApi.getBookingById(job.bookingId);
+
+            const toStatus = (s: string): MaintenanceTask['status'] => {
+              const normalized = (s || '').toUpperCase();
+              if (normalized === 'IN_PROGRESS') return 'in_progress';
+              if (normalized === 'COMPLETED') return 'completed';
+              if (normalized === 'PENDING') return 'pending';
+              return 'pending';
+            };
+
+            const progress = job.status === 'COMPLETED' ? 100 :
+              job.status === 'IN_PROGRESS' ? 50 : 0;
+
+            return {
+              id: String(job.id),
+              jobId: job.id,
+              bookingId: job.bookingId,
+              vehiclePlate: booking.vehicleVin,
+              customerName: booking.customerName,
+              serviceType: (booking.catalogDetails || []).map(c => c.serviceName).join(', ') || 'Bảo dưỡng',
+              status: toStatus(job.status),
+              progress: progress,
+              startTime: job.startTime || undefined,
+              estimatedEndTime: job.estEndTime || undefined,
+              actualEndTime: job.actualEndTime || undefined,
+              steps: [],
+              notes: job.notes || '',
+            };
+          } catch (error) {
+            console.error(`Failed to load booking ${job.bookingId}:`, error);
+            // Return task with minimal info if booking load fails
+            const toStatus = (s: string): MaintenanceTask['status'] => {
+              const normalized = (s || '').toUpperCase();
+              if (normalized === 'IN_PROGRESS') return 'in_progress';
+              if (normalized === 'COMPLETED') return 'completed';
+              if (normalized === 'PENDING') return 'pending';
+              return 'pending';
+            };
+            return {
+              id: String(job.id),
+              jobId: job.id,
+              bookingId: job.bookingId,
+              vehiclePlate: `Booking #${job.bookingId}`,
+              customerName: 'N/A',
+              serviceType: 'Bảo dưỡng',
+              status: toStatus(job.status),
+              progress: job.status === 'COMPLETED' ? 100 : job.status === 'IN_PROGRESS' ? 50 : 0,
+              startTime: job.startTime || undefined,
+              estimatedEndTime: job.estEndTime || undefined,
+              actualEndTime: job.actualEndTime || undefined,
+              steps: [],
+              notes: job.notes || '',
+            };
+          }
+        })
+      );
+
+      setTasks(tasksWithDetails);
+    } catch (error) {
+      console.error('Failed to load tasks:', error);
+      showApiErrorToast(error, toast, 'Không thể tải danh sách công việc');
+    }
+  }, [toast]);
 
   useEffect(() => {
-    // Tasks should be loaded from API
-    // TODO: Load tasks from API
-    setTasks([]);
-  }, []);
+    loadTasks();
+  }, [loadTasks]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -72,29 +178,81 @@ export default function MaintenanceProcessPage() {
     }
   };
 
-  const filteredTasks = tasks.filter(task => {
-    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-    const matchesSearch = searchTerm === '' ||
-      task.vehiclePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.serviceType.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      const matchesStatus = (watchFilters.status || 'all') === 'all' || task.status === watchFilters.status;
+      const matchesSearch = !debouncedSearchTerm.trim() ||
+        task.vehiclePlate.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        task.customerName.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        task.serviceType.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+      return matchesStatus && matchesSearch;
+    });
+  }, [tasks, watchFilters.status, debouncedSearchTerm]);
 
-  const handleStartTask = (taskId: string) => {
-    setTasks(tasks.map(task =>
-      task.id === taskId
-        ? { ...task, status: 'in_progress' as const, startTime: new Date().toISOString() }
-        : task
-    ));
+  const totalPages = Math.ceil(filteredTasks.length / pageSize);
+  const paginatedTasks = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredTasks.slice(startIndex, startIndex + pageSize);
+  }, [filteredTasks, currentPage, pageSize]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, watchFilters.status]);
+
+  const handleStartTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.jobId) {
+      toast({
+        title: 'Lỗi',
+        description: 'Không tìm thấy job ID.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsStarting(prev => ({ ...prev, [taskId]: true }));
+
+    try {
+      await bookingApi.startJob(task.jobId);
+
+      showApiResponseToast({ message: 'Đã bắt đầu công việc' }, toast, 'Đã bắt đầu công việc');
+
+      // Reload tasks to get updated status
+      await loadTasks();
+    } catch (error) {
+      console.error('Failed to start job:', error);
+      showApiErrorToast(error, toast, 'Không thể bắt đầu công việc');
+    } finally {
+      setIsStarting(prev => ({ ...prev, [taskId]: false }));
+    }
   };
 
-  const handleCompleteTask = (taskId: string) => {
-    setTasks(tasks.map(task =>
-      task.id === taskId
-        ? { ...task, status: 'completed' as const, progress: 100, actualEndTime: new Date().toISOString() }
-        : task
-    ));
+  const handleCompleteTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.jobId) {
+      toast({
+        title: 'Lỗi',
+        description: 'Không tìm thấy job ID.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsCompleting(prev => ({ ...prev, [taskId]: true }));
+
+    try {
+      await bookingApi.completeJob(task.jobId);
+
+      showApiResponseToast({ message: 'Đã hoàn thành công việc' }, toast, 'Đã hoàn thành công việc');
+
+      // Reload tasks to get updated status
+      await loadTasks();
+    } catch (error) {
+      console.error('Failed to complete job:', error);
+      showApiErrorToast(error, toast, 'Không thể hoàn thành công việc');
+    } finally {
+      setIsCompleting(prev => ({ ...prev, [taskId]: false }));
+    }
   };
 
   const handleStartStep = (taskId: string, stepId: string) => {
@@ -130,33 +288,64 @@ export default function MaintenanceProcessPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Input
-              placeholder="Tìm kiếm..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64"
+        <Form {...filterForm}>
+          <form className="flex items-center gap-3">
+            <FormField
+              name="search"
+              control={filterForm.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        placeholder="Tìm kiếm..."
+                        {...field}
+                        className="w-64 pr-10"
+                      />
+                      {field.value && (
+                        <button
+                          type="button"
+                          onClick={() => field.onChange('')}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
             />
-          </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="pending">Chờ xử lý</SelectItem>
-              <SelectItem value="in_progress">Đang thực hiện</SelectItem>
-              <SelectItem value="completed">Hoàn thành</SelectItem>
-              <SelectItem value="cancelled">Đã hủy</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <FormField
+              name="status"
+              control={filterForm.control}
+              render={({ field }) => (
+                <FormItem>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="all">Tất cả</SelectItem>
+                      <SelectItem value="pending">Chờ xử lý</SelectItem>
+                      <SelectItem value="in_progress">Đang thực hiện</SelectItem>
+                      <SelectItem value="completed">Hoàn thành</SelectItem>
+                      <SelectItem value="cancelled">Đã hủy</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>Job ID</TableHead>
             <TableHead>Dịch vụ</TableHead>
             <TableHead>Xe</TableHead>
             <TableHead>Khách hàng</TableHead>
@@ -166,39 +355,63 @@ export default function MaintenanceProcessPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredTasks.map((task) => (
-            <TableRow key={task.id}>
-              <TableCell className="font-medium">{task.serviceType}</TableCell>
-              <TableCell>{task.vehiclePlate}</TableCell>
-              <TableCell>{task.customerName}</TableCell>
-              <TableCell>{getStatusBadge(task.status)}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Progress value={task.progress} className="h-2 w-20" />
-                  <span className="text-sm text-muted-foreground">{task.progress}%</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  {task.status === 'pending' && (
-                    <Button size="sm" onClick={() => handleStartTask(task.id)}>
-                      Bắt đầu
+          {paginatedTasks.length > 0 ? (
+            paginatedTasks.map((task) => (
+              <TableRow key={task.id}>
+                <TableCell className="font-medium">#{task.jobId}</TableCell>
+                <TableCell className="font-medium">{task.serviceType}</TableCell>
+                <TableCell>{task.vehiclePlate}</TableCell>
+                <TableCell>{task.customerName}</TableCell>
+                <TableCell>{getStatusBadge(task.status)}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Progress value={task.progress} className="h-2 w-20" />
+                    <span className="text-sm text-muted-foreground">{task.progress}%</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    {task.status === 'pending' && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleStartTask(task.id)}
+                        disabled={isStarting[task.id]}
+                      >
+                        {isStarting[task.id] ? 'Đang xử lý...' : 'Bắt đầu'}
+                      </Button>
+                    )}
+                    {task.status === 'in_progress' && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleCompleteTask(task.id)}
+                        disabled={isCompleting[task.id]}
+                      >
+                        {isCompleting[task.id] ? 'Đang xử lý...' : 'Hoàn thành'}
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => setSelectedTask(task)}>
+                      Chi tiết
                     </Button>
-                  )}
-                  {task.status === 'in_progress' && (
-                    <Button size="sm" onClick={() => handleCompleteTask(task.id)}>
-                      Hoàn thành
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm" onClick={() => setSelectedTask(task)}>
-                    Chi tiết
-                  </Button>
-                </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                Không có dữ liệu
               </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
+
+      {/* Pagination */}
+      <TablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
 
       {/* Task Details Modal */}
       {selectedTask && (

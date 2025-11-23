@@ -68,8 +68,8 @@ export default function Verify() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md border rounded-xl p-6 bg-card">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-background">
+      <div className="w-full max-w-md border rounded-2xl p-6 bg-card shadow-lg">
         <h1 className="text-2xl font-semibold mb-2">Xác minh tài khoản</h1>
         <div className="space-y-3">
           <div className="space-y-2">

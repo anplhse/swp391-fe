@@ -92,6 +92,10 @@ class AuthService {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    // Clear booking-related data to prevent data leakage between users
+    localStorage.removeItem('latestBookingId');
+    localStorage.removeItem('latestBooking');
+    localStorage.removeItem('bookingVinData');
   }
 
   private notifyListeners() {
@@ -110,6 +114,11 @@ class AuthService {
   }
 
   async login(credentials: LoginRequest): Promise<LoginResponse> {
+    // Clear booking-related data from previous user session
+    localStorage.removeItem('latestBookingId');
+    localStorage.removeItem('latestBooking');
+    localStorage.removeItem('bookingVinData');
+
     this.authState.isLoading = true;
     this.notifyListeners();
 
@@ -152,10 +161,20 @@ class AuthService {
     return response;
   }
 
-  // Public helper: derive role key from display name for routing/guards
-  getRoleKey(): string | null {
-    const display = this.authState.user?.roleDisplayName;
-    return display ? this.mapRole(display) : null;
+  // Get role display name directly from backend
+  getRoleDisplayName(): string | null {
+    return this.authState.user?.roleDisplayName || null;
+  }
+
+  // Check if user is customer
+  isCustomer(): boolean {
+    return this.authState.user?.roleDisplayName === 'Khách hàng';
+  }
+
+  // Check if user is service role (staff, technician, admin)
+  isServiceRole(): boolean {
+    const role = this.authState.user?.roleDisplayName;
+    return role === 'Nhân viên' || role === 'Kỹ thuật viên' || role === 'Quản trị viên';
   }
 
   async logout(): Promise<void> {
@@ -191,31 +210,6 @@ class AuthService {
     this.clearAuth();
   };
 
-  private mapRole(backendRole: string): string {
-    if (!backendRole) {
-      throw new Error('Role không được xác định từ backend');
-    }
-
-    const normalized = backendRole.trim().toLowerCase();
-
-    // Role mapping với các từ khóa (lowercase để match với normalized)
-    const roleKeywords = {
-      customer: ['customer', 'khách hàng'],
-      staff: ['staff', 'nhân viên'],
-      technician: ['technician', 'kỹ thuật viên'],
-      admin: ['admin', 'administrator', 'quản trị viên']
-    };
-
-    // Tìm role phù hợp
-    for (const [role, keywords] of Object.entries(roleKeywords)) {
-      if (keywords.some(keyword => normalized.includes(keyword))) {
-        return role;
-      }
-    }
-
-    // Throw error for unknown roles
-    throw new Error(`Role "${backendRole}" không được hỗ trợ. Vui lòng liên hệ quản trị viên.`);
-  }
 
 
   async refreshAccessToken(): Promise<boolean> {

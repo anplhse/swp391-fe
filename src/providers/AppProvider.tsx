@@ -1,32 +1,23 @@
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router-dom";
-import AuthEventListener from "../components/AuthEventListener";
-import ScrollToTop from "../components/ScrollToTop";
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes - data được coi là fresh trong 5 phút
+      gcTime: 1000 * 60 * 10, // 10 minutes - cache được giữ trong 10 phút (trước đây là cacheTime)
+      retry: 1, // Retry 1 lần khi fail
+      refetchOnWindowFocus: false, // Không refetch khi focus lại window
+    },
+  },
+});
 
-interface AppProviderProps {
-  children: React.ReactNode;
-}
-
-const AppProvider = ({ children }: AppProviderProps) => {
+export default function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <ScrollToTop>
-            <AuthEventListener />
-            {children}
-          </ScrollToTop>
-        </BrowserRouter>
+        {children}
       </TooltipProvider>
     </QueryClientProvider>
   );
-};
-
-export default AppProvider;
+}
