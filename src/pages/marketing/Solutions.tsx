@@ -124,14 +124,14 @@ const vehicleModels: VehicleModel[] = [
 ];
 
 export default function Solutions() {
-  const navigate = useNavigate();
+const navigate = useNavigate();
   const [hoveredVehicle, setHoveredVehicle] = useState<number | null>(null);
 
   return (
     <div
       className="min-h-screen text-foreground relative overflow-hidden"
       style={{
-        background: 'linear-gradient(-45deg, hsl(var(--chart-5)), hsl(var(--chart-4)), hsl(var(--chart-3)), hsl(var(--muted)))',
+        background: 'linear-gradient(-45deg, hsl(14, 100%, 68%), hsl(26, 100%, 74%), hsl(16, 100%, 78%), hsl(24, 100%, 83%))',
         backgroundSize: '400% 400%',
         animation: 'gradientShift 15s ease infinite'
       }}
@@ -142,14 +142,6 @@ export default function Solutions() {
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
       `}</style>
-<<<<<<< HEAD
-   
-      {/* Header */}
-      <header className="w-full border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 bg-gradient-to-r from-secondary/50 to-secondary px-4 py-2 rounded-2xl shadow-xl border border-border">
-            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center shadow-lg">
-=======
 
       {/* Decorative clouds */}
       <div className="absolute top-10 left-10 w-32 h-32 bg-card/20 rounded-full blur-3xl" style={{ animation: 'float 6s ease-in-out infinite' }}></div>
@@ -165,30 +157,17 @@ export default function Solutions() {
             }}
           >
             <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center shadow-md">
->>>>>>> 6947e3eca92bc3caddcfa3af32014578d55d337d
               <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11C5.84 5 5.28 5.42 5.08 6.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
               </svg>
             </div>
-            <span className="font-semibold text-foreground">VinFast Service Workshop</span>
+            <span className="font-semibold text-gray-800">VinFast Service Workshop</span>
           </div>
-<<<<<<< HEAD
-          <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-            <a href="/about" className="hover:text-foreground">Giới thiệu</a>
-            <a href="/services" className="hover:text-foreground">Dịch vụ</a>
-            <a href="/pricing" className="hover:text-foreground">Bảng giá</a>
-            <a href="/blog" className="hover:text-foreground">Blog</a>
-            <a href="/contact" className="hover:text-foreground">Liên hệ</a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Button 
-=======
           <div className="flex items-center gap-3 relative z-30">
             <Button
->>>>>>> 6947e3eca92bc3caddcfa3af32014578d55d337d
               onClick={() => navigate('/')}
               variant="outline"
-              className="font-semibold px-6 py-2 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 hover:scale-105"
+className="font-semibold px-6 py-2 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300 hover:scale-105"
             >
               Trang chủ
             </Button>
@@ -206,21 +185,16 @@ export default function Solutions() {
         {/* Header Section */}
         <div className="text-center space-y-4" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
           <div className="inline-block mb-4">
-            <span className="px-5 py-2 bg-card/20 backdrop-blur-sm text-foreground text-sm font-semibold rounded-full border border-border/30 shadow-lg">
+            <span className="px-5 py-2 bg-card/20 backdrop-blur-sm text-primary-foreground text-sm font-semibold rounded-full border border-border/30 shadow-lg">
               🚗 Xe điện VinFast
             </span>
           </div>
-<<<<<<< HEAD
-          <h1 
-            className="text-4xl md:text-6xl font-bold text-foreground mb-6"
-            style={{ 
-=======
           <h1
             className="text-5xl md:text-7xl font-black mb-5 text-primary-foreground"
             style={{
->>>>>>> 6947e3eca92bc3caddcfa3af32014578d55d337d
               letterSpacing: '-0.03em',
-              textShadow: '0 4px 20px hsl(var(--foreground) / 0.2)'
+              textShadow: '0 4px 20px rgba(0,0,0,0.3), 0 0 40px rgba(255,255,255,0.1)',
+              animation: 'pulse 3s ease-in-out infinite'
             }}
           >
             Dòng xe VinFast chúng tôi sửa chữa
@@ -255,35 +229,34 @@ export default function Solutions() {
                     Ngừng sản xuất
                   </div>
                 )}
-
-                {/* Overlay Info - Show on hover */}
+{/* Overlay Info - Show on hover */}
                 {hoveredVehicle === index && (
-                  <div className="absolute inset-0 bg-foreground/75 backdrop-blur-sm p-6 flex flex-col justify-end animate-in fade-in duration-300">
-                    <div className="text-primary-foreground space-y-3">
+                  <div className="absolute inset-0 bg-black/75 backdrop-blur-sm p-6 flex flex-col justify-end animate-in fade-in duration-300">
+                    <div className="text-white space-y-3">
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <div>
-                          <p className="text-muted-foreground">Số chỗ ngồi</p>
-                          <p className="font-extrabold text-foreground">{vehicle.seats} chỗ</p>
+                          <p className="text-white/70">Số chỗ ngồi</p>
+                          <p className="font-semibold">{vehicle.seats} chỗ</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Pin</p>
-                          <p className="font-extrabold text-foreground">{vehicle.batteryCapacity} kWh</p>
+                          <p className="text-white/70">Pin</p>
+                          <p className="font-semibold">{vehicle.batteryCapacity} kWh</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Quãng đường</p>
-                          <p className="font-extrabold text-foreground">{vehicle.range} km</p>
+                          <p className="text-white/70">Quãng đường</p>
+                          <p className="font-semibold">{vehicle.range} km</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Công suất</p>
-                          <p className="font-extrabold text-foreground">{vehicle.power} kW</p>
+                          <p className="text-white/70">Công suất</p>
+                          <p className="font-semibold">{vehicle.power} kW</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Tăng tốc</p>
-                          <p className="font-extrabold text-foreground">{vehicle.acceleration}s (0-100km/h)</p>
+                          <p className="text-white/70">Tăng tốc</p>
+                          <p className="font-semibold">{vehicle.acceleration}s (0-100km/h)</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Trọng lượng</p>
-                          <p className="font-extrabold text-foreground">{vehicle.weight} kg</p>
+                          <p className="text-white/70">Trọng lượng</p>
+                          <p className="font-semibold">{vehicle.weight} kg</p>
                         </div>
                       </div>
                     </div>
@@ -303,5 +276,3 @@ export default function Solutions() {
     </div>
   );
 }
-
-
