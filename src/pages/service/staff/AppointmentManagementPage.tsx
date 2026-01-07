@@ -112,7 +112,7 @@ export default function AppointmentManagementPage() {
   const { toast } = useToast();
 
   const appointmentSchema = z.object({
-    status: z.enum(['pending', 'confirmed', 'paid', 'in_progress', 'completed', 'cancelled', 'rejected']),
+    status: z.enum(['pending', 'confirmed', 'assigned', 'paid', 'in_progress', 'completed', 'cancelled', 'rejected']),
     technician: z.string().optional(),
     notes: z.string().optional()
   });
@@ -435,7 +435,7 @@ export default function AppointmentManagementPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Trạng thái</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue />
@@ -444,6 +444,7 @@ export default function AppointmentManagementPage() {
                       <SelectContent>
                         <SelectItem value="pending">Chờ xác nhận</SelectItem>
                         <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                        <SelectItem value="assigned">Đã phân công</SelectItem>
                         <SelectItem value="paid">Đã thanh toán</SelectItem>
                         <SelectItem value="in_progress">Đang thực hiện</SelectItem>
                         <SelectItem value="completed">Hoàn thành</SelectItem>
